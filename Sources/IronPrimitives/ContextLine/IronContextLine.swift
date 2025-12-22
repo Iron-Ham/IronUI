@@ -91,19 +91,18 @@ public struct IronContextLine<Content: View>: View {
   // MARK: Public
 
   public var body: some View {
-    HStack(alignment: .top, spacing: theme.spacing.sm) {
+    HStack(alignment: .center, spacing: 0) {
       // The connector line
       ContextLineShape(position: position)
-        .stroke(lineColor, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
-        .frame(width: lineWidth + curveRadius * 2, height: contentHeight)
+        .stroke(lineColor, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round, lineJoin: .round))
+        .frame(width: branchWidth, height: contentHeight)
         .opacity(animateReveal ? (isRevealed ? 1 : 0) : 1)
 
-      // Child content with proper alignment
+      // Child content
       content
         .opacity(animateReveal ? (isRevealed ? 1 : 0) : 1)
         .offset(y: animateReveal ? (isRevealed ? 0 : -8) : 0)
     }
-    .padding(.leading, theme.spacing.sm)
     .background(
       GeometryReader { geometry in
         Color.clear.preference(
@@ -151,8 +150,9 @@ public struct IronContextLine<Content: View>: View {
     }
   }
 
-  private var curveRadius: CGFloat {
-    theme.radii.sm
+  /// Width of the connector shape (vertical line + horizontal branch)
+  private var branchWidth: CGFloat {
+    theme.spacing.lg // 24pt gives nice visual connection
   }
 
   private var minHeight: CGFloat {
@@ -163,64 +163,70 @@ public struct IronContextLine<Content: View>: View {
 // MARK: - ContextLineShape
 
 /// Custom shape that draws the curved connector line.
+///
+/// The shape draws connectors that form a tree structure:
+/// ```
+/// ├── First item    (.first)
+/// │
+/// ├── Middle item   (.middle)
+/// │
+/// └── Last item     (.last)
+/// ```
 private struct ContextLineShape: Shape {
   let position: IronContextLinePosition
 
   func path(in rect: CGRect) -> Path {
     var path = Path()
 
-    let lineX = rect.minX + rect.width / 2
-    let curveRadius = min(rect.width / 2, 8)
+    let lineX = rect.minX
+    let curveRadius = min(8, rect.height / 4)
+    let branchY = rect.midY
 
     switch position {
     case .single:
-      // Curved corner from top to right
-      // ┌─
+      // Single item: vertical from top to branch point, then curves right
       // │
+      // └──
       path.move(to: CGPoint(x: lineX, y: rect.minY))
-      path.addLine(to: CGPoint(x: lineX, y: rect.minY + curveRadius))
+      path.addLine(to: CGPoint(x: lineX, y: branchY - curveRadius))
       path.addQuadCurve(
-        to: CGPoint(x: lineX + curveRadius, y: rect.minY + curveRadius * 2),
-        control: CGPoint(x: lineX, y: rect.minY + curveRadius * 2),
+        to: CGPoint(x: lineX + curveRadius, y: branchY),
+        control: CGPoint(x: lineX, y: branchY),
       )
-      path.addLine(to: CGPoint(x: rect.maxX, y: rect.minY + curveRadius * 2))
+      path.addLine(to: CGPoint(x: rect.maxX, y: branchY))
 
     case .first:
-      // Vertical line with curve at bottom going right
+      // First in group: vertical line full height + horizontal branch at midY
+      // ├── content
       // │
-      // └─
-      path.move(to: CGPoint(x: lineX, y: rect.minY))
-      path.addLine(to: CGPoint(x: lineX, y: rect.maxY - curveRadius))
-      path.addQuadCurve(
-        to: CGPoint(x: lineX + curveRadius, y: rect.maxY),
-        control: CGPoint(x: lineX, y: rect.maxY),
-      )
-      path.addLine(to: CGPoint(x: rect.maxX, y: rect.maxY))
-
-    case .middle:
-      // Vertical line with horizontal branch
-      // │
-      // ├─
-      // │
-      let midY = rect.midY
       path.move(to: CGPoint(x: lineX, y: rect.minY))
       path.addLine(to: CGPoint(x: lineX, y: rect.maxY))
-
       // Horizontal branch
-      path.move(to: CGPoint(x: lineX, y: midY))
-      path.addLine(to: CGPoint(x: rect.maxX, y: midY))
+      path.move(to: CGPoint(x: lineX, y: branchY))
+      path.addLine(to: CGPoint(x: rect.maxX, y: branchY))
+
+    case .middle:
+      // Middle item: vertical line full height + horizontal branch
+      // │
+      // ├── content
+      // │
+      path.move(to: CGPoint(x: lineX, y: rect.minY))
+      path.addLine(to: CGPoint(x: lineX, y: rect.maxY))
+      // Horizontal branch
+      path.move(to: CGPoint(x: lineX, y: branchY))
+      path.addLine(to: CGPoint(x: rect.maxX, y: branchY))
 
     case .last:
-      // Corner from top continuing right
+      // Last item: vertical from top to branch, then curves right
       // │
-      // └─
+      // └── content
       path.move(to: CGPoint(x: lineX, y: rect.minY))
-      path.addLine(to: CGPoint(x: lineX, y: rect.midY - curveRadius))
+      path.addLine(to: CGPoint(x: lineX, y: branchY - curveRadius))
       path.addQuadCurve(
-        to: CGPoint(x: lineX + curveRadius, y: rect.midY),
-        control: CGPoint(x: lineX, y: rect.midY),
+        to: CGPoint(x: lineX + curveRadius, y: branchY),
+        control: CGPoint(x: lineX, y: branchY),
       )
-      path.addLine(to: CGPoint(x: rect.maxX, y: rect.midY))
+      path.addLine(to: CGPoint(x: rect.maxX, y: branchY))
 
     case .continuation:
       // Just a vertical line (for items that have children below)
@@ -295,6 +301,32 @@ extension IronContextLine {
   public func contextLineStyle(_ style: IronContextLineStyle) -> IronContextLine {
     IronContextLine(position: position, style: style) { content }
   }
+}
+
+// MARK: - ContextLineContinuation
+
+/// A simple vertical continuation line for manual nesting scenarios.
+///
+/// Use this when you need to show a continuation line alongside nested content:
+///
+/// ```swift
+/// HStack(alignment: .top, spacing: 0) {
+///   ContextLineContinuation()
+///   VStack {
+///     // nested items
+///   }
+/// }
+/// ```
+struct ContextLineContinuation: View {
+  var body: some View {
+    Rectangle()
+      .fill(theme.colors.divider)
+      .frame(width: 1.5)
+      .frame(width: theme.spacing.lg, alignment: .leading)
+  }
+
+  @Environment(\.ironTheme) private var theme
+
 }
 
 // MARK: - IronContextGroup
@@ -385,12 +417,15 @@ private struct IronContextGroupLayout: _VariadicView_UnaryViewRoot {
 }
 
 #Preview("IronContextLine - Group") {
-  VStack(alignment: .leading, spacing: 8) {
+  VStack(alignment: .leading, spacing: 0) {
     HStack(spacing: 8) {
       Image(systemName: "network")
       Text("API Request")
         .fontWeight(.medium)
     }
+    .padding(.bottom, 4)
+
+    // Use spacing: 0 between context lines so they connect!
     IronContextLine(position: .first) {
       HStack(spacing: 4) {
         Image(systemName: "arrow.up.circle")
@@ -441,15 +476,25 @@ private struct IronContextGroupLayout: _VariadicView_UnaryViewRoot {
 }
 
 #Preview("IronContextLine - Nested") {
-  VStack(alignment: .leading, spacing: 4) {
+  VStack(alignment: .leading, spacing: 0) {
     HStack(spacing: 8) {
       Image(systemName: "folder")
       Text("Build Project")
         .fontWeight(.medium)
     }
-    IronContextLine(position: .first) {
-      VStack(alignment: .leading, spacing: 4) {
-        Text("Compiling sources...")
+    .padding(.bottom, 4)
+
+    // First level: Compiling with continuation line
+    IronContextLine(position: .continuation) {
+      Text("Compiling sources...")
+    }
+
+    // Nested items (further indented by being inside another context)
+    HStack(alignment: .top, spacing: 0) {
+      // Continuation line for the parent level
+      ContextLineContinuation()
+
+      VStack(alignment: .leading, spacing: 0) {
         IronContextLine(position: .first) {
           Text("Module A ✓")
             .foregroundStyle(.secondary)
@@ -460,6 +505,8 @@ private struct IronContextGroupLayout: _VariadicView_UnaryViewRoot {
         }
       }
     }
+
+    // Final result
     IronContextLine(position: .last, style: .success) {
       HStack(spacing: 4) {
         Image(systemName: "checkmark.circle.fill")
