@@ -341,3 +341,137 @@ struct IronDividerTests {
     // Combined configuration works
   }
 }
+
+// MARK: - IronContextLinePositionTests
+
+@Suite("IronContextLinePosition")
+struct IronContextLinePositionTests {
+  @Test("all positions are available")
+  func allPositionsAvailable() {
+    let positions = IronContextLinePosition.allCases
+    #expect(positions.count == 5)
+    #expect(positions.contains(.single))
+    #expect(positions.contains(.first))
+    #expect(positions.contains(.middle))
+    #expect(positions.contains(.last))
+    #expect(positions.contains(.continuation))
+  }
+}
+
+// MARK: - IronContextLineStyleTests
+
+@Suite("IronContextLineStyle")
+struct IronContextLineStyleTests {
+  @Test("all styles are available")
+  func allStylesAvailable() {
+    let styles = IronContextLineStyle.allCases
+    #expect(styles.count == 6)
+    #expect(styles.contains(.subtle))
+    #expect(styles.contains(.standard))
+    #expect(styles.contains(.prominent))
+    #expect(styles.contains(.accent))
+    #expect(styles.contains(.success))
+    #expect(styles.contains(.error))
+  }
+}
+
+// MARK: - IronContextLineTests
+
+@Suite("IronContextLine")
+@MainActor
+struct IronContextLineTests {
+
+  @Test("can be created with defaults")
+  func createWithDefaults() {
+    _ = IronContextLine {
+      Text("Content")
+    }
+    // Context line created successfully
+  }
+
+  @Test("supports all positions", arguments: IronContextLinePosition.allCases)
+  func supportsPosition(position: IronContextLinePosition) {
+    _ = IronContextLine(position: position) {
+      Text("Content")
+    }
+    // Context line created with position
+  }
+
+  @Test("supports standard styles")
+  func supportsStandardStyles() {
+    _ = IronContextLine(style: .subtle) { Text("Subtle") }
+    _ = IronContextLine(style: .standard) { Text("Standard") }
+    _ = IronContextLine(style: .prominent) { Text("Prominent") }
+    _ = IronContextLine(style: .accent) { Text("Accent") }
+    _ = IronContextLine(style: .success) { Text("Success") }
+    _ = IronContextLine(style: .error) { Text("Error") }
+    // All styles work
+  }
+
+  @Test("supports custom color")
+  func supportsCustomColor() {
+    _ = IronContextLine(style: .custom(.purple)) {
+      Text("Custom color")
+    }
+    // Custom color works
+  }
+
+  @Test("supports animated reveal")
+  func supportsAnimatedReveal() {
+    @State var isRevealed = false
+    _ = IronContextLine(isRevealed: $isRevealed) {
+      Text("Animated content")
+    }
+    // Animated context line created
+  }
+
+  @Test("supports combined configuration")
+  func supportsCombinedConfiguration() {
+    _ = IronContextLine(position: .last, style: .success) {
+      HStack {
+        Image(systemName: "checkmark")
+        Text("Success")
+      }
+    }
+    // Combined configuration works
+  }
+
+  @Test("supports nested context lines")
+  func supportsNestedContextLines() {
+    _ = IronContextLine(position: .first) {
+      VStack {
+        Text("Parent")
+        IronContextLine(position: .last) {
+          Text("Nested child")
+        }
+      }
+    }
+    // Nested context lines work
+  }
+}
+
+// MARK: - IronContextGroupTests
+
+@Suite("IronContextGroup")
+@MainActor
+struct IronContextGroupTests {
+
+  @Test("can be created with content")
+  func createWithContent() {
+    _ = IronContextGroup {
+      Text("First")
+      Text("Second")
+      Text("Third")
+    }
+    // Context group created successfully
+  }
+
+  @Test("supports style")
+  func supportsStyle() {
+    _ = IronContextGroup(style: .accent) {
+      Text("Styled item 1")
+      Text("Styled item 2")
+    }
+    // Styled context group created
+  }
+}
