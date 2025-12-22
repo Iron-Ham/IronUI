@@ -384,6 +384,9 @@ extension IronBadge {
 extension View {
   /// Adds a badge overlay to the view.
   ///
+  /// The badge is positioned at the top-trailing corner, offset outside
+  /// the view bounds so it doesn't obscure the content.
+  ///
   /// ```swift
   /// Image(systemName: "bell")
   ///   .ironBadge(count: 5)
@@ -394,14 +397,12 @@ extension View {
   ///   - hidesWhenZero: Whether to hide when count is zero.
   ///   - style: The visual style of the badge.
   ///   - color: The semantic color of the badge.
-  ///   - size: The size of the badge.
   /// - Returns: The view with a badge overlay.
   public func ironBadge(
     count: Int,
     hidesWhenZero: Bool = true,
     style: IronBadgeStyle = .filled,
-    color: IronBadgeColor = .primary,
-    size: IronBadgeSize = .medium
+    color: IronBadgeColor = .error,
   ) -> some View {
     overlay(alignment: .topTrailing) {
       IronBadge.count(
@@ -409,13 +410,17 @@ extension View {
         hidesWhenZero: hidesWhenZero,
         style: style,
         color: color,
-        size: size
+        size: .small,
       )
       .fixedSize()
+      .offset(x: 6, y: -6)
     }
   }
 
   /// Adds a dot badge overlay to the view.
+  ///
+  /// The badge is positioned at the top-trailing corner, offset outside
+  /// the view bounds so it doesn't obscure the content.
   ///
   /// ```swift
   /// Image(systemName: "bell")
@@ -425,17 +430,16 @@ extension View {
   /// - Parameters:
   ///   - isVisible: Whether the badge is visible.
   ///   - color: The semantic color of the badge.
-  ///   - size: The size of the badge.
   /// - Returns: The view with a dot badge overlay.
   public func ironBadge(
     isVisible: Bool,
     color: IronBadgeColor = .error,
-    size: IronBadgeSize = .small
   ) -> some View {
     overlay(alignment: .topTrailing) {
       if isVisible {
-        IronBadge(color: color, size: size)
+        IronBadge(color: color, size: .small)
           .fixedSize()
+          .offset(x: 4, y: -4)
       }
     }
   }
