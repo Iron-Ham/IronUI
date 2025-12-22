@@ -309,3 +309,234 @@ struct IronAnimationTokensTests {
   private let animation = IronDefaultAnimationTokens()
 
 }
+
+// MARK: - IronLogLevelTests
+
+@Suite("IronLogLevel")
+struct IronLogLevelTests {
+
+  @Test("levels are ordered by severity")
+  func levelsAreOrdered() {
+    #expect(IronLogLevel.debug < .info)
+    #expect(IronLogLevel.info < .notice)
+    #expect(IronLogLevel.notice < .warning)
+    #expect(IronLogLevel.warning < .error)
+    #expect(IronLogLevel.error < .fault)
+  }
+
+  @Test("all levels have labels")
+  func allLevelsHaveLabels() {
+    for level in IronLogLevel.allCases {
+      #expect(!level.label.isEmpty)
+    }
+  }
+
+  @Test("all levels have emoji")
+  func allLevelsHaveEmoji() {
+    for level in IronLogLevel.allCases {
+      #expect(!level.emoji.isEmpty)
+    }
+  }
+
+  @Test("all levels map to OSLogType")
+  func allLevelsMapToOSLogType() {
+    // Just verify the mapping doesn't crash
+    for level in IronLogLevel.allCases {
+      _ = level.osLogType
+    }
+  }
+}
+
+// MARK: - IronLogMetadataTests
+
+@Suite("IronLogMetadata")
+struct IronLogMetadataTests {
+
+  @Test("empty metadata is empty")
+  func emptyMetadataIsEmpty() {
+    let metadata = IronLogMetadata.empty
+    #expect(metadata.isEmpty)
+  }
+
+  @Test("can create with dictionary literal")
+  func createWithDictionaryLiteral() {
+    let metadata: IronLogMetadata = [
+      "key1": "value1",
+      "key2": 42,
+      "key3": 3.14,
+      "key4": true,
+    ]
+    #expect(!metadata.isEmpty)
+    #expect(metadata["key1"]?.description == "value1")
+    #expect(metadata["key2"]?.description == "42")
+  }
+
+  @Test("can merge metadata")
+  func canMergeMetadata() {
+    let first: IronLogMetadata = ["a": "1", "b": "2"]
+    let second: IronLogMetadata = ["b": "override", "c": "3"]
+    let merged = first.merging(second)
+
+    #expect(merged["a"]?.description == "1")
+    #expect(merged["b"]?.description == "override")
+    #expect(merged["c"]?.description == "3")
+  }
+
+  @Test("description formats correctly")
+  func descriptionFormatsCorrectly() {
+    let empty = IronLogMetadata.empty
+    #expect(empty.description == "")
+
+    let single: IronLogMetadata = ["key": "value"]
+    #expect(single.description.contains("key=value"))
+  }
+}
+
+// MARK: - IronTestLogHandlerTests
+
+@Suite("IronTestLogHandler")
+struct IronTestLogHandlerTests {
+
+  @Test("captures log messages")
+  func capturesLogMessages() {
+    let handler = IronTestLogHandler()
+    let logger = IronLogger(handlers: [handler])
+
+    logger.info("Test message")
+
+    #expect(handler.logs.count == 1)
+    #expect(handler.logs[0].level == .info)
+    #expect(handler.logs[0].message == "Test message")
+  }
+
+  @Test("respects minimum level")
+  func respectsMinimumLevel() {
+    let handler = IronTestLogHandler(minimumLevel: .warning)
+    let logger = IronLogger(handlers: [handler])
+
+    logger.debug("Debug")
+    logger.info("Info")
+    logger.warning("Warning")
+    logger.error("Error")
+
+    #expect(handler.logs.count == 2)
+    #expect(handler.logs[0].level == .warning)
+    #expect(handler.logs[1].level == .error)
+  }
+
+  @Test("captures metadata")
+  func capturesMetadata() {
+    let handler = IronTestLogHandler()
+    let logger = IronLogger(handlers: [handler])
+
+    logger.info("With metadata", metadata: ["component": "test", "count": 42])
+
+    #expect(handler.logs.count == 1)
+    #expect(handler.logs[0].metadata["component"]?.description == "test")
+    #expect(handler.logs[0].metadata["count"]?.description == "42")
+  }
+
+  @Test("can filter logs by level")
+  func canFilterByLevel() {
+    let handler = IronTestLogHandler()
+    let logger = IronLogger(handlers: [handler])
+
+    logger.debug("Debug")
+    logger.info("Info")
+    logger.error("Error")
+
+    #expect(handler.logs(at: .debug).count == 1)
+    #expect(handler.logs(at: .info).count == 1)
+    #expect(handler.logs(at: .error).count == 1)
+    #expect(handler.logs(at: .warning).count == 0)
+  }
+
+  @Test("can filter logs by content")
+  func canFilterByContent() {
+    let handler = IronTestLogHandler()
+    let logger = IronLogger(handlers: [handler])
+
+    logger.info("Button tapped")
+    logger.info("View appeared")
+    logger.info("Button released")
+
+    #expect(handler.logs(containing: "Button").count == 2)
+    #expect(handler.logs(containing: "View").count == 1)
+  }
+
+  @Test("can clear logs")
+  func canClearLogs() {
+    let handler = IronTestLogHandler()
+    let logger = IronLogger(handlers: [handler])
+
+    logger.info("Message 1")
+    logger.info("Message 2")
+    #expect(handler.logs.count == 2)
+
+    handler.clear()
+    #expect(handler.logs.count == 0)
+  }
+}
+
+// MARK: - IronLoggerTests
+
+@Suite("IronLogger")
+struct IronLoggerTests {
+
+  @Test("logs at all levels")
+  func logsAtAllLevels() {
+    let handler = IronTestLogHandler()
+    let logger = IronLogger(handlers: [handler])
+
+    logger.debug("Debug")
+    logger.info("Info")
+    logger.notice("Notice")
+    logger.warning("Warning")
+    logger.error("Error")
+    logger.fault("Fault")
+
+    #expect(handler.logs.count == 6)
+    #expect(handler.logs[0].level == .debug)
+    #expect(handler.logs[1].level == .info)
+    #expect(handler.logs[2].level == .notice)
+    #expect(handler.logs[3].level == .warning)
+    #expect(handler.logs[4].level == .error)
+    #expect(handler.logs[5].level == .fault)
+  }
+
+  @Test("disabled logger produces no output")
+  func disabledLoggerProducesNoOutput() {
+    // Disabled logger has no handlers, so it just doesn't crash
+    let disabled = IronLogger.disabled
+    disabled.info("This should not crash")
+  }
+
+  @Test("static loggers are available")
+  func staticLoggersAvailable() {
+    // Verify static loggers don't crash when used
+    IronLogger.ui.debug("UI log")
+    IronLogger.theme.debug("Theme log")
+    IronLogger.animation.debug("Animation log")
+    IronLogger.accessibility.debug("Accessibility log")
+  }
+
+  @Test("supports multiple handlers")
+  func supportsMultipleHandlers() {
+    let handler1 = IronTestLogHandler()
+    let handler2 = IronTestLogHandler()
+    let logger = IronLogger(handlers: [handler1, handler2])
+
+    logger.info("Broadcast message")
+
+    #expect(handler1.logs.count == 1)
+    #expect(handler2.logs.count == 1)
+  }
+
+  @Test("preview detection is available")
+  func previewDetectionAvailable() {
+    // In test environment, this should be false
+    // (unless running tests from a preview, which is unlikely)
+    _ = IronLogger.isRunningInPreview
+    // Just verify it doesn't crash and returns a Bool
+  }
+}

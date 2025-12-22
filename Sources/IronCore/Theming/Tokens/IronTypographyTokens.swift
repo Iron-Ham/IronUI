@@ -74,7 +74,36 @@ public protocol IronTypographyTokens: Sendable {
 
 // MARK: - IronDefaultTypographyTokens
 
-/// Default typography tokens using the system font with Dynamic Type support.
+/// Default typography tokens using system text styles with full Dynamic Type support.
+///
+/// These tokens map to SwiftUI's built-in text styles, ensuring proper scaling
+/// when users adjust their Dynamic Type settings in Accessibility preferences.
+///
+/// ## Dynamic Type Behavior
+///
+/// All fonts automatically scale based on the user's preferred content size.
+/// This ensures your app remains accessible to users with vision impairments.
+///
+/// ## Text Style Mapping
+///
+/// | Token | Base Style | Typical Use |
+/// |-------|------------|-------------|
+/// | displayLarge | largeTitle | Hero headlines |
+/// | displayMedium | largeTitle (lighter) | Secondary heroes |
+/// | displaySmall | title | Prominent headings |
+/// | headlineLarge | title | Section headers |
+/// | headlineMedium | title2 | Subsections |
+/// | headlineSmall | title3 | Card headers |
+/// | titleLarge | headline | Dialog titles |
+/// | titleMedium | subheadline | List item titles |
+/// | titleSmall | footnote (medium) | Compact titles |
+/// | bodyLarge | body | Primary content |
+/// | bodyMedium | callout | Standard content |
+/// | bodySmall | footnote | Dense content |
+/// | labelLarge | subheadline | Prominent buttons |
+/// | labelMedium | footnote (medium) | Standard buttons |
+/// | labelSmall | caption | Compact labels |
+/// | caption | caption2 | Metadata |
 public struct IronDefaultTypographyTokens: IronTypographyTokens {
 
   // MARK: Lifecycle
@@ -84,66 +113,66 @@ public struct IronDefaultTypographyTokens: IronTypographyTokens {
   // MARK: Public
 
   public var displayLarge: Font {
-    .system(size: 57, weight: .regular, design: .default)
+    .largeTitle.weight(.bold)
   }
 
   public var displayMedium: Font {
-    .system(size: 45, weight: .regular, design: .default)
+    .largeTitle.weight(.semibold)
   }
 
   public var displaySmall: Font {
-    .system(size: 36, weight: .regular, design: .default)
+    .title.weight(.semibold)
   }
 
   public var headlineLarge: Font {
-    .system(size: 32, weight: .semibold, design: .default)
+    .title.weight(.bold)
   }
 
   public var headlineMedium: Font {
-    .system(size: 28, weight: .semibold, design: .default)
+    .title2.weight(.semibold)
   }
 
   public var headlineSmall: Font {
-    .system(size: 24, weight: .semibold, design: .default)
+    .title3.weight(.semibold)
   }
 
   public var titleLarge: Font {
-    .system(size: 22, weight: .medium, design: .default)
+    .headline
   }
 
   public var titleMedium: Font {
-    .system(size: 16, weight: .medium, design: .default)
+    .subheadline.weight(.medium)
   }
 
   public var titleSmall: Font {
-    .system(size: 14, weight: .medium, design: .default)
+    .footnote.weight(.medium)
   }
 
   public var bodyLarge: Font {
-    .system(size: 16, weight: .regular, design: .default)
+    .body
   }
 
   public var bodyMedium: Font {
-    .system(size: 14, weight: .regular, design: .default)
+    .callout
   }
 
   public var bodySmall: Font {
-    .system(size: 12, weight: .regular, design: .default)
+    .footnote
   }
 
   public var labelLarge: Font {
-    .system(size: 14, weight: .medium, design: .default)
+    .subheadline.weight(.medium)
   }
 
   public var labelMedium: Font {
-    .system(size: 12, weight: .medium, design: .default)
+    .footnote.weight(.medium)
   }
 
   public var labelSmall: Font {
-    .system(size: 11, weight: .medium, design: .default)
+    .caption.weight(.medium)
   }
 
   public var caption: Font {
-    .system(size: 12, weight: .regular, design: .default)
+    .caption2
   }
 }

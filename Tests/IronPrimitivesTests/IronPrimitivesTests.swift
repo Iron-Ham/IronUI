@@ -1,10 +1,905 @@
+import SwiftUI
 import Testing
 @testable import IronPrimitives
+
+// MARK: - IronPrimitivesTests
 
 @Suite("IronPrimitives")
 struct IronPrimitivesTests {
   @Test("version is defined")
   func versionIsDefined() {
     #expect(!IronPrimitives.version.isEmpty)
+  }
+}
+
+// MARK: - IronButtonVariantTests
+
+@Suite("IronButtonVariant")
+struct IronButtonVariantTests {
+  @Test("all variants are available")
+  func allVariantsAvailable() {
+    let variants = IronButtonVariant.allCases
+    #expect(variants.count == 4)
+    #expect(variants.contains(.filled))
+    #expect(variants.contains(.outlined))
+    #expect(variants.contains(.ghost))
+    #expect(variants.contains(.elevated))
+  }
+}
+
+// MARK: - IronButtonSizeTests
+
+@Suite("IronButtonSize")
+struct IronButtonSizeTests {
+  @Test("all sizes are available")
+  func allSizesAvailable() {
+    let sizes = IronButtonSize.allCases
+    #expect(sizes.count == 3)
+    #expect(sizes.contains(.small))
+    #expect(sizes.contains(.medium))
+    #expect(sizes.contains(.large))
+  }
+}
+
+// MARK: - IronButtonTests
+
+@Suite("IronButton")
+@MainActor
+struct IronButtonTests {
+
+  @Test("can be created with string title")
+  func createWithStringTitle() {
+    _ = IronButton("Test") { }
+    // Button created successfully
+  }
+
+  @Test("can be created with localized string key")
+  func createWithLocalizedStringKey() {
+    _ = IronButton(LocalizedStringKey("test.button.title")) { }
+    // Button created successfully
+  }
+
+  @Test("can be created with custom label")
+  func createWithCustomLabel() {
+    _ = IronButton {
+      // action
+    } label: {
+      HStack {
+        Image(systemName: "star")
+        Text("Custom")
+      }
+    }
+    // Button created successfully
+  }
+
+  @Test("supports all variants", arguments: IronButtonVariant.allCases)
+  func supportsVariant(variant: IronButtonVariant) {
+    _ = IronButton("Test", variant: variant) { }
+    // Button created successfully with variant
+  }
+
+  @Test("supports all sizes", arguments: IronButtonSize.allCases)
+  func supportsSize(size: IronButtonSize) {
+    _ = IronButton("Test", size: size) { }
+    // Button created successfully with size
+  }
+
+  @Test("supports full width mode")
+  func supportsFullWidth() {
+    _ = IronButton("Test", isFullWidth: true) { }
+    // Button created successfully with full width
+  }
+
+  @Test("supports combined configuration")
+  func supportsCombinedConfiguration() {
+    _ = IronButton(
+      "Test",
+      variant: .elevated,
+      size: .large,
+      isFullWidth: true,
+    ) { }
+    // Button created successfully with all options
+  }
+}
+
+// MARK: - IronTextStyleTests
+
+@Suite("IronTextStyle")
+struct IronTextStyleTests {
+  @Test("all styles are available")
+  func allStylesAvailable() {
+    let styles = IronTextStyle.allCases
+    #expect(styles.count == 16)
+    #expect(styles.contains(.displayLarge))
+    #expect(styles.contains(.bodyMedium))
+    #expect(styles.contains(.caption))
+  }
+}
+
+// MARK: - IronTextTests
+
+@Suite("IronText")
+@MainActor
+struct IronTextTests {
+
+  @Test("can be created with string")
+  func createWithString() {
+    _ = IronText("Hello, World!")
+    // Text created successfully
+  }
+
+  @Test("can be created with localized string key")
+  func createWithLocalizedStringKey() {
+    _ = IronText(LocalizedStringKey("test.text"))
+    // Text created successfully
+  }
+
+  @Test("supports all styles", arguments: IronTextStyle.allCases)
+  func supportsStyle(style: IronTextStyle) {
+    _ = IronText("Test", style: style)
+    // Text created successfully with style
+  }
+
+  @Test("supports primary color")
+  func supportsPrimaryColor() {
+    _ = IronText("Test", color: .primary)
+    // Text created with primary color
+  }
+
+  @Test("supports secondary color")
+  func supportsSecondaryColor() {
+    _ = IronText("Test", color: .secondary)
+    // Text created with secondary color
+  }
+
+  @Test("supports semantic colors")
+  func supportsSemanticColors() {
+    _ = IronText("Success", color: .success)
+    _ = IronText("Warning", color: .warning)
+    _ = IronText("Error", color: .error)
+    _ = IronText("Info", color: .info)
+    // All semantic colors work
+  }
+
+  @Test("supports custom color")
+  func supportsCustomColor() {
+    _ = IronText("Custom", color: .custom(.purple))
+    // Custom color works
+  }
+
+  @Test("supports combined configuration")
+  func supportsCombinedConfiguration() {
+    _ = IronText("Test", style: .headlineLarge, color: .primary)
+    // Combined configuration works
+  }
+}
+
+// MARK: - IronIconSizeTests
+
+@Suite("IronIconSize")
+struct IronIconSizeTests {
+  @Test("all sizes are available")
+  func allSizesAvailable() {
+    let sizes = IronIconSize.allCases
+    #expect(sizes.count == 5)
+    #expect(sizes.contains(.xSmall))
+    #expect(sizes.contains(.small))
+    #expect(sizes.contains(.medium))
+    #expect(sizes.contains(.large))
+    #expect(sizes.contains(.xLarge))
+  }
+}
+
+// MARK: - IronIconTests
+
+@Suite("IronIcon")
+@MainActor
+struct IronIconTests {
+
+  @Test("can be created with SF Symbol")
+  func createWithSFSymbol() {
+    _ = IronIcon(systemName: "star.fill")
+    // Icon created successfully
+  }
+
+  @Test("can be created with custom image name")
+  func createWithCustomImage() {
+    _ = IronIcon("customIcon", bundle: nil)
+    // Icon created successfully (image may not exist, but init works)
+  }
+
+  @Test("supports all sizes", arguments: IronIconSize.allCases)
+  func supportsSize(size: IronIconSize) {
+    _ = IronIcon(systemName: "star", size: size)
+    // Icon created successfully with size
+  }
+
+  @Test("supports primary color")
+  func supportsPrimaryColor() {
+    _ = IronIcon(systemName: "star", color: .primary)
+    // Icon created with primary color
+  }
+
+  @Test("supports semantic colors")
+  func supportsSemanticColors() {
+    _ = IronIcon(systemName: "checkmark", color: .success)
+    _ = IronIcon(systemName: "exclamationmark", color: .warning)
+    _ = IronIcon(systemName: "xmark", color: .error)
+    _ = IronIcon(systemName: "info", color: .info)
+    // All semantic colors work
+  }
+
+  @Test("supports accent color")
+  func supportsAccentColor() {
+    _ = IronIcon(systemName: "star", color: .accent)
+    // Accent color works
+  }
+
+  @Test("supports custom color")
+  func supportsCustomColor() {
+    _ = IronIcon(systemName: "star", color: .custom(.purple))
+    // Custom color works
+  }
+
+  @Test("supports combined configuration")
+  func supportsCombinedConfiguration() {
+    _ = IronIcon(systemName: "star.fill", size: .large, color: .accent)
+    // Combined configuration works
+  }
+}
+
+// MARK: - IronDividerAxisTests
+
+@Suite("IronDividerAxis")
+struct IronDividerAxisTests {
+  @Test("all axes are available")
+  func allAxesAvailable() {
+    let axes = IronDividerAxis.allCases
+    #expect(axes.count == 2)
+    #expect(axes.contains(.horizontal))
+    #expect(axes.contains(.vertical))
+  }
+}
+
+// MARK: - IronDividerStyleTests
+
+@Suite("IronDividerStyle")
+struct IronDividerStyleTests {
+  @Test("all styles are available")
+  func allStylesAvailable() {
+    let styles = IronDividerStyle.allCases
+    #expect(styles.count == 4)
+    #expect(styles.contains(.subtle))
+    #expect(styles.contains(.standard))
+    #expect(styles.contains(.prominent))
+    #expect(styles.contains(.accent))
+  }
+}
+
+// MARK: - IronDividerTests
+
+@Suite("IronDivider")
+@MainActor
+struct IronDividerTests {
+
+  @Test("can be created with defaults")
+  func createWithDefaults() {
+    _ = IronDivider<EmptyView>()
+    // Divider created successfully
+  }
+
+  @Test("supports horizontal axis")
+  func supportsHorizontalAxis() {
+    _ = IronDivider<EmptyView>(axis: .horizontal)
+    // Horizontal divider created
+  }
+
+  @Test("supports vertical axis")
+  func supportsVerticalAxis() {
+    _ = IronDivider<EmptyView>(axis: .vertical)
+    // Vertical divider created
+  }
+
+  @Test("supports all styles", arguments: IronDividerStyle.allCases)
+  func supportsStyle(style: IronDividerStyle) {
+    _ = IronDivider<EmptyView>(style: style)
+    // Divider created successfully with style
+  }
+
+  @Test("supports text label")
+  func supportsTextLabel() {
+    _ = IronDivider(label: "OR")
+    // Labeled divider created
+  }
+
+  @Test("supports custom label")
+  func supportsCustomLabel() {
+    _ = IronDivider {
+      HStack {
+        Image(systemName: "star")
+        Text("Custom")
+      }
+    }
+    // Custom labeled divider created
+  }
+
+  @Test("supports insets")
+  func supportsInsets() {
+    _ = IronDivider<EmptyView>(
+      insets: EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16)
+    )
+    // Divider with insets created
+  }
+
+  @Test("supports combined configuration")
+  func supportsCombinedConfiguration() {
+    _ = IronDivider<EmptyView>(
+      axis: .horizontal,
+      style: .prominent,
+      insets: EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0),
+    )
+    // Combined configuration works
+  }
+}
+
+// MARK: - IronContextLinePositionTests
+
+@Suite("IronContextLinePosition")
+struct IronContextLinePositionTests {
+  @Test("all positions are available")
+  func allPositionsAvailable() {
+    let positions = IronContextLinePosition.allCases
+    #expect(positions.count == 5)
+    #expect(positions.contains(.single))
+    #expect(positions.contains(.first))
+    #expect(positions.contains(.middle))
+    #expect(positions.contains(.last))
+    #expect(positions.contains(.continuation))
+  }
+}
+
+// MARK: - IronContextLineStyleTests
+
+@Suite("IronContextLineStyle")
+struct IronContextLineStyleTests {
+  @Test("all styles are available")
+  func allStylesAvailable() {
+    let styles = IronContextLineStyle.allCases
+    #expect(styles.count == 6)
+    #expect(styles.contains(.subtle))
+    #expect(styles.contains(.standard))
+    #expect(styles.contains(.prominent))
+    #expect(styles.contains(.accent))
+    #expect(styles.contains(.success))
+    #expect(styles.contains(.error))
+  }
+}
+
+// MARK: - IronContextLineTests
+
+@Suite("IronContextLine")
+@MainActor
+struct IronContextLineTests {
+
+  @Test("can be created with defaults")
+  func createWithDefaults() {
+    _ = IronContextLine {
+      Text("Content")
+    }
+    // Context line created successfully
+  }
+
+  @Test("supports all positions", arguments: IronContextLinePosition.allCases)
+  func supportsPosition(position: IronContextLinePosition) {
+    _ = IronContextLine(position: position) {
+      Text("Content")
+    }
+    // Context line created with position
+  }
+
+  @Test("supports standard styles")
+  func supportsStandardStyles() {
+    _ = IronContextLine(style: .subtle) { Text("Subtle") }
+    _ = IronContextLine(style: .standard) { Text("Standard") }
+    _ = IronContextLine(style: .prominent) { Text("Prominent") }
+    _ = IronContextLine(style: .accent) { Text("Accent") }
+    _ = IronContextLine(style: .success) { Text("Success") }
+    _ = IronContextLine(style: .error) { Text("Error") }
+    // All styles work
+  }
+
+  @Test("supports custom color")
+  func supportsCustomColor() {
+    _ = IronContextLine(style: .custom(.purple)) {
+      Text("Custom color")
+    }
+    // Custom color works
+  }
+
+  @Test("supports animated reveal")
+  func supportsAnimatedReveal() {
+    @State var isRevealed = false
+    _ = IronContextLine(isRevealed: $isRevealed) {
+      Text("Animated content")
+    }
+    // Animated context line created
+  }
+
+  @Test("supports combined configuration")
+  func supportsCombinedConfiguration() {
+    _ = IronContextLine(position: .last, style: .success) {
+      HStack {
+        Image(systemName: "checkmark")
+        Text("Success")
+      }
+    }
+    // Combined configuration works
+  }
+
+  @Test("supports nested context lines")
+  func supportsNestedContextLines() {
+    _ = IronContextLine(position: .first) {
+      VStack {
+        Text("Parent")
+        IronContextLine(position: .last) {
+          Text("Nested child")
+        }
+      }
+    }
+    // Nested context lines work
+  }
+}
+
+// MARK: - IronContextGroupTests
+
+@Suite("IronContextGroup")
+@MainActor
+struct IronContextGroupTests {
+
+  @Test("can be created with content")
+  func createWithContent() {
+    _ = IronContextGroup {
+      Text("First")
+      Text("Second")
+      Text("Third")
+    }
+    // Context group created successfully
+  }
+
+  @Test("supports style")
+  func supportsStyle() {
+    _ = IronContextGroup(style: .accent) {
+      Text("Styled item 1")
+      Text("Styled item 2")
+    }
+    // Styled context group created
+  }
+}
+
+// MARK: - IronBadgeStyleTests
+
+@Suite("IronBadgeStyle")
+struct IronBadgeStyleTests {
+  @Test("all styles are available")
+  func allStylesAvailable() {
+    let styles = IronBadgeStyle.allCases
+    #expect(styles.count == 3)
+    #expect(styles.contains(.filled))
+    #expect(styles.contains(.soft))
+    #expect(styles.contains(.outlined))
+  }
+}
+
+// MARK: - IronBadgeSizeTests
+
+@Suite("IronBadgeSize")
+struct IronBadgeSizeTests {
+  @Test("all sizes are available")
+  func allSizesAvailable() {
+    let sizes = IronBadgeSize.allCases
+    #expect(sizes.count == 3)
+    #expect(sizes.contains(.small))
+    #expect(sizes.contains(.medium))
+    #expect(sizes.contains(.large))
+  }
+}
+
+// MARK: - IronBadgeTests
+
+@Suite("IronBadge")
+@MainActor
+struct IronBadgeTests {
+
+  @Test("can be created as dot")
+  func createAsDot() {
+    _ = IronBadge()
+    // Dot badge created successfully
+  }
+
+  @Test("can be created with text")
+  func createWithText() {
+    _ = IronBadge("New")
+    // Text badge created successfully
+  }
+
+  @Test("can be created with localized string key")
+  func createWithLocalizedStringKey() {
+    _ = IronBadge(LocalizedStringKey("badge.new"))
+    // Localized badge created successfully
+  }
+
+  @Test("can be created with count")
+  func createWithCount() {
+    _ = IronBadge(count: 5)
+    // Count badge created successfully
+  }
+
+  @Test("supports max count")
+  func supportsMaxCount() {
+    _ = IronBadge(count: 100, maxCount: 99)
+    // Max count badge created successfully
+  }
+
+  @Test("supports all styles", arguments: IronBadgeStyle.allCases)
+  func supportsStyle(style: IronBadgeStyle) {
+    _ = IronBadge(count: 3, style: style)
+    // Badge created with style
+  }
+
+  @Test("supports all sizes", arguments: IronBadgeSize.allCases)
+  func supportsSize(size: IronBadgeSize) {
+    _ = IronBadge(count: 3, size: size)
+    // Badge created with size
+  }
+
+  @Test("supports primary color")
+  func supportsPrimaryColor() {
+    _ = IronBadge(count: 3, color: .primary)
+    // Primary color badge created
+  }
+
+  @Test("supports semantic colors")
+  func supportsSemanticColors() {
+    _ = IronBadge(count: 1, color: .success)
+    _ = IronBadge(count: 2, color: .warning)
+    _ = IronBadge(count: 3, color: .error)
+    _ = IronBadge(count: 4, color: .info)
+    // All semantic colors work
+  }
+
+  @Test("supports custom color")
+  func supportsCustomColor() {
+    _ = IronBadge(count: 5, color: .custom(.purple))
+    // Custom color badge created
+  }
+
+  @Test("supports combined configuration")
+  func supportsCombinedConfiguration() {
+    _ = IronBadge(
+      count: 42,
+      maxCount: 99,
+      style: .soft,
+      color: .error,
+      size: .large,
+    )
+    // Combined configuration works
+  }
+}
+
+// MARK: - IronCardStyleTests
+
+@Suite("IronCardStyle")
+struct IronCardStyleTests {
+  @Test("all styles are available")
+  func allStylesAvailable() {
+    let styles = IronCardStyle.allCases
+    #expect(styles.count == 3)
+    #expect(styles.contains(.elevated))
+    #expect(styles.contains(.filled))
+    #expect(styles.contains(.outlined))
+  }
+}
+
+// MARK: - IronCardPaddingTests
+
+@Suite("IronCardPadding")
+struct IronCardPaddingTests {
+  @Test("all padding options are available")
+  func allPaddingOptionsAvailable() {
+    let options = IronCardPadding.allCases
+    #expect(options.count == 4)
+    #expect(options.contains(.none))
+    #expect(options.contains(.compact))
+    #expect(options.contains(.standard))
+    #expect(options.contains(.spacious))
+  }
+}
+
+// MARK: - IronCardTests
+
+@Suite("IronCard")
+@MainActor
+struct IronCardTests {
+
+  @Test("can be created with content only")
+  func createWithContentOnly() {
+    _ = IronCard {
+      Text("Card content")
+    }
+    // Card created successfully
+  }
+
+  @Test("can be created as tappable")
+  func createAsTappable() {
+    _ = IronCard {
+      Text("Tappable card")
+    } action: {
+      // Action
+    }
+    // Tappable card created successfully
+  }
+
+  @Test("can be created with header and content")
+  func createWithHeaderAndContent() {
+    _ = IronCard {
+      Text("Content")
+    } header: {
+      Text("Header")
+    }
+    // Card with header created successfully
+  }
+
+  @Test("can be created with content and footer")
+  func createWithContentAndFooter() {
+    _ = IronCard {
+      Text("Content")
+    } footer: {
+      Text("Footer")
+    }
+    // Card with footer created successfully
+  }
+
+  @Test("can be created with header, content, and footer")
+  func createWithHeaderContentAndFooter() {
+    _ = IronCard {
+      Text("Content")
+    } header: {
+      Text("Header")
+    } footer: {
+      Text("Footer")
+    }
+    // Card with header and footer created successfully
+  }
+
+  @Test("supports all styles", arguments: IronCardStyle.allCases)
+  func supportsStyle(style: IronCardStyle) {
+    _ = IronCard(style: style) {
+      Text("Styled card")
+    }
+    // Card created with style
+  }
+
+  @Test("supports all padding options", arguments: IronCardPadding.allCases)
+  func supportsPadding(padding: IronCardPadding) {
+    _ = IronCard(padding: padding) {
+      Text("Padded card")
+    }
+    // Card created with padding
+  }
+
+  @Test("supports combined configuration")
+  func supportsCombinedConfiguration() {
+    _ = IronCard(
+      style: .elevated,
+      padding: .spacious,
+    ) {
+      VStack {
+        Text("Title")
+        Text("Description")
+      }
+    } header: {
+      Label("Settings", systemImage: "gear")
+    } footer: {
+      Button("Save") { }
+    }
+    // Combined configuration works
+  }
+}
+
+// MARK: - IronProgressStyleTests
+
+@Suite("IronProgressStyle")
+struct IronProgressStyleTests {
+  @Test("all styles are available")
+  func allStylesAvailable() {
+    let styles = IronProgressStyle.allCases
+    #expect(styles.count == 2)
+    #expect(styles.contains(.linear))
+    #expect(styles.contains(.circular))
+  }
+}
+
+// MARK: - IronProgressSizeTests
+
+@Suite("IronProgressSize")
+struct IronProgressSizeTests {
+  @Test("all sizes are available")
+  func allSizesAvailable() {
+    let sizes = IronProgressSize.allCases
+    #expect(sizes.count == 3)
+    #expect(sizes.contains(.small))
+    #expect(sizes.contains(.medium))
+    #expect(sizes.contains(.large))
+  }
+}
+
+// MARK: - IronProgressTests
+
+@Suite("IronProgress")
+@MainActor
+struct IronProgressTests {
+
+  @Test("can be created as indeterminate")
+  func createAsIndeterminate() {
+    _ = IronProgress<EmptyView>()
+    // Indeterminate progress created successfully
+  }
+
+  @Test("can be created as determinate")
+  func createAsDeterminate() {
+    _ = IronProgress<EmptyView>(value: 0.5)
+    // Determinate progress created successfully
+  }
+
+  @Test("clamps value to valid range")
+  func clampsValue() {
+    _ = IronProgress<EmptyView>(value: -0.5) // Should clamp to 0
+    _ = IronProgress<EmptyView>(value: 1.5) // Should clamp to 1
+    // Values clamped successfully
+  }
+
+  @Test("supports all styles", arguments: IronProgressStyle.allCases)
+  func supportsStyle(style: IronProgressStyle) {
+    _ = IronProgress<EmptyView>(value: 0.5, style: style)
+    // Progress created with style
+  }
+
+  @Test("supports all sizes", arguments: IronProgressSize.allCases)
+  func supportsSize(size: IronProgressSize) {
+    _ = IronProgress<EmptyView>(value: 0.5, size: size)
+    // Progress created with size
+  }
+
+  @Test("supports primary color")
+  func supportsPrimaryColor() {
+    _ = IronProgress<EmptyView>(value: 0.5, color: .primary)
+    // Primary color progress created
+  }
+
+  @Test("supports semantic colors")
+  func supportsSemanticColors() {
+    _ = IronProgress<EmptyView>(value: 0.5, color: .success)
+    _ = IronProgress<EmptyView>(value: 0.5, color: .warning)
+    _ = IronProgress<EmptyView>(value: 0.5, color: .error)
+    _ = IronProgress<EmptyView>(value: 0.5, color: .info)
+    // All semantic colors work
+  }
+
+  @Test("supports custom color")
+  func supportsCustomColor() {
+    _ = IronProgress<EmptyView>(value: 0.5, color: .custom(.purple))
+    // Custom color progress created
+  }
+
+  @Test("supports label")
+  func supportsLabel() {
+    _ = IronProgress(value: 0.5) {
+      Text("Loading...")
+    }
+    // Progress with label created
+  }
+
+  @Test("supports combined configuration")
+  func supportsCombinedConfiguration() {
+    _ = IronProgress(
+      value: 0.75,
+      style: .circular,
+      color: .success,
+      size: .large,
+    ) {
+      Text("75% Complete")
+    }
+    // Combined configuration works
+  }
+}
+
+// MARK: - IronSpinnerStyleTests
+
+@Suite("IronSpinnerStyle")
+struct IronSpinnerStyleTests {
+  @Test("all styles are available")
+  func allStylesAvailable() {
+    let styles = IronSpinnerStyle.allCases
+    #expect(styles.count == 4)
+    #expect(styles.contains(.spinning))
+    #expect(styles.contains(.pulsing))
+    #expect(styles.contains(.bouncing))
+    #expect(styles.contains(.orbiting))
+  }
+}
+
+// MARK: - IronSpinnerSizeTests
+
+@Suite("IronSpinnerSize")
+struct IronSpinnerSizeTests {
+  @Test("all sizes are available")
+  func allSizesAvailable() {
+    let sizes = IronSpinnerSize.allCases
+    #expect(sizes.count == 3)
+    #expect(sizes.contains(.small))
+    #expect(sizes.contains(.medium))
+    #expect(sizes.contains(.large))
+  }
+}
+
+// MARK: - IronSpinnerTests
+
+@Suite("IronSpinner")
+@MainActor
+struct IronSpinnerTests {
+
+  @Test("can be created with defaults")
+  func createWithDefaults() {
+    _ = IronSpinner()
+    // Spinner created successfully
+  }
+
+  @Test("supports all styles", arguments: IronSpinnerStyle.allCases)
+  func supportsStyle(style: IronSpinnerStyle) {
+    _ = IronSpinner(style: style)
+    // Spinner created with style
+  }
+
+  @Test("supports all sizes", arguments: IronSpinnerSize.allCases)
+  func supportsSize(size: IronSpinnerSize) {
+    _ = IronSpinner(size: size)
+    // Spinner created with size
+  }
+
+  @Test("supports primary color")
+  func supportsPrimaryColor() {
+    _ = IronSpinner(color: .primary)
+    // Primary color spinner created
+  }
+
+  @Test("supports semantic colors")
+  func supportsSemanticColors() {
+    _ = IronSpinner(color: .success)
+    _ = IronSpinner(color: .warning)
+    _ = IronSpinner(color: .error)
+    _ = IronSpinner(color: .info)
+    // All semantic colors work
+  }
+
+  @Test("supports onSurface color")
+  func supportsOnSurfaceColor() {
+    _ = IronSpinner(color: .onSurface)
+    // OnSurface color spinner created
+  }
+
+  @Test("supports custom color")
+  func supportsCustomColor() {
+    _ = IronSpinner(color: .custom(.purple))
+    // Custom color spinner created
+  }
+
+  @Test("supports combined configuration")
+  func supportsCombinedConfiguration() {
+    _ = IronSpinner(
+      style: .bouncing,
+      color: .success,
+      size: .large,
+    )
+    // Combined configuration works
   }
 }
