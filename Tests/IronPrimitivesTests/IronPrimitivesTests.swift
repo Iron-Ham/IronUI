@@ -812,3 +812,94 @@ struct IronProgressTests {
     // Combined configuration works
   }
 }
+
+// MARK: - IronSpinnerStyleTests
+
+@Suite("IronSpinnerStyle")
+struct IronSpinnerStyleTests {
+  @Test("all styles are available")
+  func allStylesAvailable() {
+    let styles = IronSpinnerStyle.allCases
+    #expect(styles.count == 4)
+    #expect(styles.contains(.spinning))
+    #expect(styles.contains(.pulsing))
+    #expect(styles.contains(.bouncing))
+    #expect(styles.contains(.orbiting))
+  }
+}
+
+// MARK: - IronSpinnerSizeTests
+
+@Suite("IronSpinnerSize")
+struct IronSpinnerSizeTests {
+  @Test("all sizes are available")
+  func allSizesAvailable() {
+    let sizes = IronSpinnerSize.allCases
+    #expect(sizes.count == 3)
+    #expect(sizes.contains(.small))
+    #expect(sizes.contains(.medium))
+    #expect(sizes.contains(.large))
+  }
+}
+
+// MARK: - IronSpinnerTests
+
+@Suite("IronSpinner")
+@MainActor
+struct IronSpinnerTests {
+
+  @Test("can be created with defaults")
+  func createWithDefaults() {
+    _ = IronSpinner()
+    // Spinner created successfully
+  }
+
+  @Test("supports all styles", arguments: IronSpinnerStyle.allCases)
+  func supportsStyle(style: IronSpinnerStyle) {
+    _ = IronSpinner(style: style)
+    // Spinner created with style
+  }
+
+  @Test("supports all sizes", arguments: IronSpinnerSize.allCases)
+  func supportsSize(size: IronSpinnerSize) {
+    _ = IronSpinner(size: size)
+    // Spinner created with size
+  }
+
+  @Test("supports primary color")
+  func supportsPrimaryColor() {
+    _ = IronSpinner(color: .primary)
+    // Primary color spinner created
+  }
+
+  @Test("supports semantic colors")
+  func supportsSemanticColors() {
+    _ = IronSpinner(color: .success)
+    _ = IronSpinner(color: .warning)
+    _ = IronSpinner(color: .error)
+    _ = IronSpinner(color: .info)
+    // All semantic colors work
+  }
+
+  @Test("supports onSurface color")
+  func supportsOnSurfaceColor() {
+    _ = IronSpinner(color: .onSurface)
+    // OnSurface color spinner created
+  }
+
+  @Test("supports custom color")
+  func supportsCustomColor() {
+    _ = IronSpinner(color: .custom(.purple))
+    // Custom color spinner created
+  }
+
+  @Test("supports combined configuration")
+  func supportsCombinedConfiguration() {
+    _ = IronSpinner(
+      style: .bouncing,
+      color: .success,
+      size: .large,
+    )
+    // Combined configuration works
+  }
+}
