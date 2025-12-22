@@ -150,11 +150,18 @@ public struct IronBadge: View {
             .strokeBorder(badgeColor, lineWidth: borderWidth)
         }
       }
+      // Delightful entrance animation - badge pops in with spring
+      .scaleEffect(hasAppeared ? 1.0 : 0.0)
+      .animation(.spring(response: 0.35, dampingFraction: 0.6), value: hasAppeared)
+      .onAppear { hasAppeared = true }
   }
 
   // MARK: Private
 
   @Environment(\.ironTheme) private var theme
+
+  /// Tracks whether the badge has appeared for entrance animation.
+  @State private var hasAppeared = false
 
   /// Scaled metrics for Dynamic Type support.
   @ScaledMetric(relativeTo: .caption2)
