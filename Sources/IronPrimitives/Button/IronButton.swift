@@ -107,7 +107,7 @@ public struct IronButton<Label: View>: View {
 
 // MARK: - Convenience Initializers
 
-extension IronButton where Label == Text {
+extension IronButton where Label == IronText {
   /// Creates a button with a text label.
   ///
   /// - Parameters:
@@ -127,7 +127,7 @@ extension IronButton where Label == Text {
     self.size = size
     self.isFullWidth = isFullWidth
     self.action = action
-    label = Text(title)
+    label = IronText(title, style: .labelLarge, color: .onPrimary)
   }
 
   /// Creates a button with a text label from a string.
@@ -149,7 +149,7 @@ extension IronButton where Label == Text {
     self.size = size
     self.isFullWidth = isFullWidth
     self.action = action
-    label = Text(title)
+    label = IronText(title, style: .labelLarge, color: .onPrimary)
   }
 }
 

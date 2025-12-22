@@ -903,3 +903,666 @@ struct IronSpinnerTests {
     // Combined configuration works
   }
 }
+
+// MARK: - IronTextFieldStyleTests
+
+@Suite("IronTextFieldStyle")
+struct IronTextFieldStyleTests {
+  @Test("all styles are available")
+  func allStylesAvailable() {
+    let styles = IronTextFieldStyle.allCases
+    #expect(styles.count == 3)
+    #expect(styles.contains(.outlined))
+    #expect(styles.contains(.filled))
+    #expect(styles.contains(.underlined))
+  }
+}
+
+// MARK: - IronTextFieldSizeTests
+
+@Suite("IronTextFieldSize")
+struct IronTextFieldSizeTests {
+  @Test("all sizes are available")
+  func allSizesAvailable() {
+    let sizes = IronTextFieldSize.allCases
+    #expect(sizes.count == 3)
+    #expect(sizes.contains(.small))
+    #expect(sizes.contains(.medium))
+    #expect(sizes.contains(.large))
+  }
+}
+
+// MARK: - IronTextFieldStateTests
+
+@Suite("IronTextFieldState")
+struct IronTextFieldStateTests {
+  @Test("supports normal state")
+  func supportsNormalState() {
+    let state = IronTextFieldState.normal
+    #expect(state == .normal)
+  }
+
+  @Test("supports success state")
+  func supportsSuccessState() {
+    let state = IronTextFieldState.success
+    #expect(state == .success)
+  }
+
+  @Test("supports error state with message")
+  func supportsErrorState() {
+    let message = "Invalid input"
+    let state = IronTextFieldState.error(message)
+    if case .error(let errorMessage) = state {
+      #expect(errorMessage == message)
+    } else {
+      Issue.record("Expected error state")
+    }
+  }
+}
+
+// MARK: - IronTextFieldTests
+
+@Suite("IronTextField")
+@MainActor
+struct IronTextFieldTests {
+
+  @Test("can be created with localized string key")
+  func createWithLocalizedKey() {
+    let placeholder: LocalizedStringKey = "Enter text"
+    _ = IronTextField(placeholder, text: .constant(""))
+    // TextField created successfully
+  }
+
+  @Test("can be created with string")
+  func createWithString() {
+    _ = IronTextField("Enter text", text: .constant(""))
+    // TextField created successfully
+  }
+
+  @Test("supports all styles", arguments: IronTextFieldStyle.allCases)
+  func supportsStyle(style: IronTextFieldStyle) {
+    _ = IronTextField("Test", text: .constant(""), style: style)
+    // TextField created with style
+  }
+
+  @Test("supports all sizes", arguments: IronTextFieldSize.allCases)
+  func supportsSize(size: IronTextFieldSize) {
+    _ = IronTextField("Test", text: .constant(""), size: size)
+    // TextField created with size
+  }
+
+  @Test("supports normal state")
+  func supportsNormalState() {
+    _ = IronTextField("Test", text: .constant(""), state: .normal)
+    // Normal state works
+  }
+
+  @Test("supports success state")
+  func supportsSuccessState() {
+    _ = IronTextField("Test", text: .constant(""), state: .success)
+    // Success state works
+  }
+
+  @Test("supports error state")
+  func supportsErrorState() {
+    _ = IronTextField("Test", text: .constant(""), state: .error("Error message"))
+    // Error state works
+  }
+
+  @Test("supports leading icon")
+  func supportsLeadingIcon() {
+    _ = IronTextField("Test", text: .constant(""), leading: {
+      Image(systemName: "envelope")
+    })
+    // Leading icon works
+  }
+
+  @Test("supports trailing icon")
+  func supportsTrailingIcon() {
+    _ = IronTextField("Test", text: .constant(""), trailing: {
+      Image(systemName: "xmark.circle")
+    })
+    // Trailing icon works
+  }
+
+  @Test("supports leading and trailing icons")
+  func supportsLeadingAndTrailingIcons() {
+    _ = IronTextField("Test", text: .constant(""), leading: {
+      Image(systemName: "magnifyingglass")
+    }, trailing: {
+      Image(systemName: "xmark.circle")
+    })
+    // Both icons work
+  }
+
+  @Test("supports combined configuration")
+  func supportsCombinedConfiguration() {
+    _ = IronTextField(
+      "Email",
+      text: .constant("test@example.com"),
+      style: .outlined,
+      size: .large,
+      state: .success,
+      leading: {
+        Image(systemName: "envelope")
+      },
+      trailing: {
+        Image(systemName: "checkmark.circle")
+      },
+    )
+    // Combined configuration works
+  }
+}
+
+// MARK: - IronSecureFieldTests
+
+@Suite("IronSecureField")
+@MainActor
+struct IronSecureFieldTests {
+
+  @Test("can be created with localized string key")
+  func createWithLocalizedKey() {
+    let placeholder: LocalizedStringKey = "Password"
+    _ = IronSecureField(placeholder, text: .constant(""))
+    // SecureField created successfully
+  }
+
+  @Test("can be created with string")
+  func createWithString() {
+    _ = IronSecureField("Password", text: .constant(""))
+    // SecureField created successfully
+  }
+
+  @Test("supports all styles", arguments: IronTextFieldStyle.allCases)
+  func supportsStyle(style: IronTextFieldStyle) {
+    _ = IronSecureField("Password", text: .constant(""), style: style)
+    // SecureField created with style
+  }
+
+  @Test("supports all sizes", arguments: IronTextFieldSize.allCases)
+  func supportsSize(size: IronTextFieldSize) {
+    _ = IronSecureField("Password", text: .constant(""), size: size)
+    // SecureField created with size
+  }
+
+  @Test("supports normal state")
+  func supportsNormalState() {
+    _ = IronSecureField("Password", text: .constant(""), state: .normal)
+    // Normal state works
+  }
+
+  @Test("supports success state")
+  func supportsSuccessState() {
+    _ = IronSecureField("Password", text: .constant(""), state: .success)
+    // Success state works
+  }
+
+  @Test("supports error state")
+  func supportsErrorState() {
+    _ = IronSecureField("Password", text: .constant(""), state: .error("Password too weak"))
+    // Error state works
+  }
+
+  @Test("supports show toggle")
+  func supportsShowToggle() {
+    _ = IronSecureField("Password", text: .constant(""), showToggle: true)
+    // Show toggle works
+  }
+
+  @Test("supports hiding toggle")
+  func supportsHidingToggle() {
+    _ = IronSecureField("Password", text: .constant(""), showToggle: false)
+    // Hidden toggle works
+  }
+
+  @Test("supports leading icon")
+  func supportsLeadingIcon() {
+    _ = IronSecureField("Password", text: .constant(""), leading: {
+      Image(systemName: "lock")
+    })
+    // Leading icon works
+  }
+
+  @Test("supports combined configuration")
+  func supportsCombinedConfiguration() {
+    _ = IronSecureField(
+      "Password",
+      text: .constant("secret123"),
+      style: .outlined,
+      size: .large,
+      state: .success,
+      showToggle: true,
+      leading: {
+        Image(systemName: "lock")
+      },
+    )
+    // Combined configuration works
+  }
+}
+
+// MARK: - IronToggleSizeTests
+
+@Suite("IronToggleSize")
+struct IronToggleSizeTests {
+  @Test("all sizes are available")
+  func allSizesAvailable() {
+    let sizes = IronToggleSize.allCases
+    #expect(sizes.count == 3)
+    #expect(sizes.contains(.small))
+    #expect(sizes.contains(.medium))
+    #expect(sizes.contains(.large))
+  }
+}
+
+// MARK: - IronToggleTests
+
+@Suite("IronToggle")
+@MainActor
+struct IronToggleTests {
+
+  @Test("can be created without label")
+  func createWithoutLabel() {
+    _ = IronToggle(isOn: .constant(true))
+    // Toggle created successfully
+  }
+
+  @Test("can be created with localized string key")
+  func createWithLocalizedKey() {
+    let title: LocalizedStringKey = "Dark Mode"
+    _ = IronToggle(title, isOn: .constant(false))
+    // Toggle created successfully
+  }
+
+  @Test("can be created with string")
+  func createWithString() {
+    _ = IronToggle("Dark Mode", isOn: .constant(false))
+    // Toggle created successfully
+  }
+
+  @Test("can be created with custom label")
+  func createWithCustomLabel() {
+    _ = IronToggle(isOn: .constant(true)) {
+      Label("Wi-Fi", systemImage: "wifi")
+    }
+    // Toggle created with custom label
+  }
+
+  @Test("supports all sizes", arguments: IronToggleSize.allCases)
+  func supportsSize(size: IronToggleSize) {
+    _ = IronToggle(isOn: .constant(true), size: size)
+    // Toggle created with size
+  }
+
+  @Test("supports primary color")
+  func supportsPrimaryColor() {
+    _ = IronToggle(isOn: .constant(true), color: .primary)
+    // Primary color works
+  }
+
+  @Test("supports success color")
+  func supportsSuccessColor() {
+    _ = IronToggle(isOn: .constant(true), color: .success)
+    // Success color works
+  }
+
+  @Test("supports warning color")
+  func supportsWarningColor() {
+    _ = IronToggle(isOn: .constant(true), color: .warning)
+    // Warning color works
+  }
+
+  @Test("supports error color")
+  func supportsErrorColor() {
+    _ = IronToggle(isOn: .constant(true), color: .error)
+    // Error color works
+  }
+
+  @Test("supports custom color")
+  func supportsCustomColor() {
+    _ = IronToggle(isOn: .constant(true), color: .custom(.purple))
+    // Custom color works
+  }
+
+  @Test("supports combined configuration")
+  func supportsCombinedConfiguration() {
+    _ = IronToggle(
+      "Notifications",
+      isOn: .constant(true),
+      size: .large,
+      color: .success,
+    )
+    // Combined configuration works
+  }
+}
+
+// MARK: - IronCheckboxSizeTests
+
+@Suite("IronCheckboxSize")
+struct IronCheckboxSizeTests {
+  @Test("all sizes are available")
+  func allSizesAvailable() {
+    let sizes = IronCheckboxSize.allCases
+    #expect(sizes.count == 3)
+    #expect(sizes.contains(.small))
+    #expect(sizes.contains(.medium))
+    #expect(sizes.contains(.large))
+  }
+}
+
+// MARK: - IronCheckboxTests
+
+@Suite("IronCheckbox")
+@MainActor
+struct IronCheckboxTests {
+
+  @Test("can be created without label")
+  func createWithoutLabel() {
+    _ = IronCheckbox(isChecked: .constant(true))
+    // Checkbox created successfully
+  }
+
+  @Test("can be created with localized string key")
+  func createWithLocalizedKey() {
+    let title: LocalizedStringKey = "Accept Terms"
+    _ = IronCheckbox(title, isChecked: .constant(false))
+    // Checkbox created successfully
+  }
+
+  @Test("can be created with string")
+  func createWithString() {
+    _ = IronCheckbox("Accept Terms", isChecked: .constant(false))
+    // Checkbox created successfully
+  }
+
+  @Test("can be created with custom label")
+  func createWithCustomLabel() {
+    _ = IronCheckbox(isChecked: .constant(true)) {
+      VStack(alignment: .leading) {
+        Text("Email Notifications")
+        Text("Receive updates via email")
+          .font(.caption)
+      }
+    }
+    // Checkbox created with custom label
+  }
+
+  @Test("supports all sizes", arguments: IronCheckboxSize.allCases)
+  func supportsSize(size: IronCheckboxSize) {
+    _ = IronCheckbox(isChecked: .constant(true), size: size)
+    // Checkbox created with size
+  }
+
+  @Test("supports primary color")
+  func supportsPrimaryColor() {
+    _ = IronCheckbox(isChecked: .constant(true), color: .primary)
+    // Primary color works
+  }
+
+  @Test("supports success color")
+  func supportsSuccessColor() {
+    _ = IronCheckbox(isChecked: .constant(true), color: .success)
+    // Success color works
+  }
+
+  @Test("supports warning color")
+  func supportsWarningColor() {
+    _ = IronCheckbox(isChecked: .constant(true), color: .warning)
+    // Warning color works
+  }
+
+  @Test("supports error color")
+  func supportsErrorColor() {
+    _ = IronCheckbox(isChecked: .constant(true), color: .error)
+    // Error color works
+  }
+
+  @Test("supports custom color")
+  func supportsCustomColor() {
+    _ = IronCheckbox(isChecked: .constant(true), color: .custom(.purple))
+    // Custom color works
+  }
+
+  @Test("supports combined configuration")
+  func supportsCombinedConfiguration() {
+    _ = IronCheckbox(
+      "Accept Terms",
+      isChecked: .constant(true),
+      size: .large,
+      color: .success,
+    )
+    // Combined configuration works
+  }
+}
+
+// MARK: - IronRadioSizeTests
+
+@Suite("IronRadioSize")
+struct IronRadioSizeTests {
+  @Test("all sizes are available")
+  func allSizesAvailable() {
+    let sizes = IronRadioSize.allCases
+    #expect(sizes.count == 3)
+    #expect(sizes.contains(.small))
+    #expect(sizes.contains(.medium))
+    #expect(sizes.contains(.large))
+  }
+}
+
+// MARK: - TestRadioOption
+
+private enum TestRadioOption: String {
+  case first
+  case second
+  case third
+}
+
+// MARK: - IronRadioTests
+
+@Suite("IronRadio")
+@MainActor
+struct IronRadioTests {
+
+  @Test("can be created with localized string key")
+  func createWithLocalizedKey() {
+    let title: LocalizedStringKey = "Option One"
+    _ = IronRadio(title, value: TestRadioOption.first, selection: .constant(.first))
+    // Radio created successfully
+  }
+
+  @Test("can be created with string")
+  func createWithString() {
+    _ = IronRadio("Option One", value: TestRadioOption.first, selection: .constant(.first))
+    // Radio created successfully
+  }
+
+  @Test("can be created with custom label")
+  func createWithCustomLabel() {
+    _ = IronRadio(value: TestRadioOption.first, selection: .constant(.first)) {
+      VStack(alignment: .leading) {
+        Text("Premium Plan")
+        Text("$9.99/month")
+          .font(.caption)
+      }
+    }
+    // Radio created with custom label
+  }
+
+  @Test("supports all sizes", arguments: IronRadioSize.allCases)
+  func supportsSize(size: IronRadioSize) {
+    _ = IronRadio("Test", value: TestRadioOption.first, selection: .constant(.first), size: size)
+    // Radio created with size
+  }
+
+  @Test("supports primary color")
+  func supportsPrimaryColor() {
+    _ = IronRadio("Test", value: TestRadioOption.first, selection: .constant(.first), color: .primary)
+    // Primary color works
+  }
+
+  @Test("supports success color")
+  func supportsSuccessColor() {
+    _ = IronRadio("Test", value: TestRadioOption.first, selection: .constant(.first), color: .success)
+    // Success color works
+  }
+
+  @Test("supports warning color")
+  func supportsWarningColor() {
+    _ = IronRadio("Test", value: TestRadioOption.first, selection: .constant(.first), color: .warning)
+    // Warning color works
+  }
+
+  @Test("supports error color")
+  func supportsErrorColor() {
+    _ = IronRadio("Test", value: TestRadioOption.first, selection: .constant(.first), color: .error)
+    // Error color works
+  }
+
+  @Test("supports custom color")
+  func supportsCustomColor() {
+    _ = IronRadio("Test", value: TestRadioOption.first, selection: .constant(.first), color: .custom(.purple))
+    // Custom color works
+  }
+
+  @Test("supports combined configuration")
+  func supportsCombinedConfiguration() {
+    _ = IronRadio(
+      "Premium",
+      value: TestRadioOption.first,
+      selection: .constant(.first),
+      size: .large,
+      color: .success,
+    )
+    // Combined configuration works
+  }
+}
+
+// MARK: - IronRadioGroupTests
+
+@Suite("IronRadioGroup")
+@MainActor
+struct IronRadioGroupTests {
+
+  @Test("can be created with content")
+  func createWithContent() {
+    _ = IronRadioGroup(selection: .constant(TestRadioOption.first)) {
+      IronRadio("First", value: TestRadioOption.first, selection: .constant(.first))
+      IronRadio("Second", value: TestRadioOption.second, selection: .constant(.first))
+    }
+    // RadioGroup created successfully
+  }
+
+  @Test("supports custom spacing")
+  func supportsCustomSpacing() {
+    _ = IronRadioGroup(selection: .constant(TestRadioOption.first), spacing: 24) {
+      IronRadio("First", value: TestRadioOption.first, selection: .constant(.first))
+      IronRadio("Second", value: TestRadioOption.second, selection: .constant(.first))
+    }
+    // Custom spacing works
+  }
+}
+
+// MARK: - IronAlertVariantTests
+
+@Suite("IronAlertVariant")
+struct IronAlertVariantTests {
+  @Test("all variants are available")
+  func allVariantsAvailable() {
+    let variants = IronAlertVariant.allCases
+    #expect(variants.count == 4)
+    #expect(variants.contains(.info))
+    #expect(variants.contains(.success))
+    #expect(variants.contains(.warning))
+    #expect(variants.contains(.error))
+  }
+}
+
+// MARK: - IronAlertTests
+
+@Suite("IronAlert")
+@MainActor
+struct IronAlertTests {
+
+  @Test("can be created with localized string key")
+  func createWithLocalizedKey() {
+    let message: LocalizedStringKey = "Alert message"
+    _ = IronAlert(message)
+    // Alert created successfully
+  }
+
+  @Test("can be created with string")
+  func createWithString() {
+    _ = IronAlert("Alert message")
+    // Alert created successfully
+  }
+
+  @Test("can be created with title and message")
+  func createWithTitleAndMessage() {
+    _ = IronAlert("Title", message: "Message content")
+    // Alert created with title
+  }
+
+  @Test("supports all variants", arguments: IronAlertVariant.allCases)
+  func supportsVariant(variant: IronAlertVariant) {
+    _ = IronAlert("Test message", variant: variant)
+    // Alert created with variant
+  }
+
+  @Test("supports info variant")
+  func supportsInfoVariant() {
+    _ = IronAlert("Info message", variant: .info)
+    // Info variant works
+  }
+
+  @Test("supports success variant")
+  func supportsSuccessVariant() {
+    _ = IronAlert("Success message", variant: .success)
+    // Success variant works
+  }
+
+  @Test("supports warning variant")
+  func supportsWarningVariant() {
+    _ = IronAlert("Warning message", variant: .warning)
+    // Warning variant works
+  }
+
+  @Test("supports error variant")
+  func supportsErrorVariant() {
+    _ = IronAlert("Error message", variant: .error)
+    // Error variant works
+  }
+
+  @Test("supports dismiss action")
+  func supportsDismissAction() {
+    var dismissed = false
+    _ = IronAlert("Dismissible", variant: .info) {
+      dismissed = true
+    }
+    // Dismiss action configured
+    #expect(!dismissed) // Not called yet
+  }
+
+  @Test("supports dismiss with title")
+  func supportsDismissWithTitle() {
+    _ = IronAlert("Title", message: "Message", variant: .info, onDismiss: {
+      // Dismiss action
+    })
+    // Dismiss with title works
+  }
+
+  @Test("supports custom actions")
+  func supportsCustomActions() {
+    _ = IronAlert("Alert", variant: .info, actions: {
+      Button("Action") { }
+    })
+    // Custom actions work
+  }
+
+  @Test("supports custom actions with title")
+  func supportsCustomActionsWithTitle() {
+    _ = IronAlert("Title", message: "Message", variant: .info, actions: {
+      Button("Primary") { }
+      Button("Secondary") { }
+    })
+    // Custom actions with title work
+  }
+}
