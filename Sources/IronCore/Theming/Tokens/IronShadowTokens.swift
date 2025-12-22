@@ -101,7 +101,7 @@ public struct IronShadowModifier: ViewModifier {
           color: layer.color,
           radius: layer.radius,
           x: layer.x,
-          y: layer.y
+          y: layer.y,
         )
       )
     }

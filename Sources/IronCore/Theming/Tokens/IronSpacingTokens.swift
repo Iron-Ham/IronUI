@@ -69,7 +69,11 @@ public protocol IronSpacingTokens: Sendable {
 /// Default spacing tokens following an 8-point grid system.
 public struct IronDefaultSpacingTokens: IronSpacingTokens {
 
+  // MARK: Lifecycle
+
   public init() { }
+
+  // MARK: Public
 
   public var none: CGFloat {
     0

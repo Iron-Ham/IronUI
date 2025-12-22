@@ -54,7 +54,11 @@ public protocol IronRadiusTokens: Sendable {
 /// Default radius tokens providing a modern, soft appearance.
 public struct IronDefaultRadiusTokens: IronRadiusTokens {
 
+  // MARK: Lifecycle
+
   public init() { }
+
+  // MARK: Public
 
   public var none: CGFloat {
     0

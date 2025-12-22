@@ -146,7 +146,7 @@ extension View {
   /// - Returns: A view with accessibility-aware animation.
   public func accessibleAnimation(
     _ animation: Animation?,
-    value: some Equatable
+    value: some Equatable,
   ) -> some View {
     modifier(AccessibleAnimationModifier(animation: animation, value: value))
   }
