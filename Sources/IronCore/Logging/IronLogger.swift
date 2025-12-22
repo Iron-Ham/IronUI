@@ -503,7 +503,10 @@ public struct IronLogger: Sendable {
     self.handlers = handlers
   }
 
-  /// Creates a logger using OSLog.
+  /// Creates a logger using OSLog (or print in SwiftUI Previews).
+  ///
+  /// In SwiftUI Previews, OSLog output doesn't appear in Xcode's console,
+  /// so we automatically use `IronPrintHandler` for visibility.
   ///
   /// - Parameters:
   ///   - subsystem: The subsystem identifier.
@@ -514,13 +517,22 @@ public struct IronLogger: Sendable {
     category: String,
     minimumLevel: IronLogLevel = .debug,
   ) {
-    handlers = [
-      IronOSLogHandler(
-        subsystem: subsystem,
-        category: category,
-        minimumLevel: minimumLevel,
-      )
-    ]
+    if Self.isRunningInPreview {
+      handlers = [
+        IronPrintHandler(
+          label: "\(subsystem).\(category)",
+          minimumLevel: minimumLevel,
+        )
+      ]
+    } else {
+      handlers = [
+        IronOSLogHandler(
+          subsystem: subsystem,
+          category: category,
+          minimumLevel: minimumLevel,
+        )
+      ]
+    }
   }
 
   // MARK: Public
@@ -551,6 +563,13 @@ public struct IronLogger: Sendable {
 
   /// A disabled logger that produces no output.
   public static let disabled = IronLogger(handlers: [])
+
+  /// Whether the code is currently running in a SwiftUI Preview.
+  ///
+  /// Use this to conditionally enable/disable features in previews.
+  public static var isRunningInPreview: Bool {
+    ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"
+  }
 
   /// Logs a debug message.
   public func debug(

@@ -531,4 +531,12 @@ struct IronLoggerTests {
     #expect(handler1.logs.count == 1)
     #expect(handler2.logs.count == 1)
   }
+
+  @Test("preview detection is available")
+  func previewDetectionAvailable() {
+    // In test environment, this should be false
+    // (unless running tests from a preview, which is unlikely)
+    _ = IronLogger.isRunningInPreview
+    // Just verify it doesn't crash and returns a Bool
+  }
 }
