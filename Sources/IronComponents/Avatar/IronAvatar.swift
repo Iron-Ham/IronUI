@@ -323,13 +323,13 @@ public struct IronAvatar<Badge: View>: View {
     }
   }
 
-  /// Badge size as a small status indicator.
-  /// Sized to fit comfortably within the mask cutout.
+  /// Badge size - 50% of avatar, centered within the mask cutout.
   private var badgeSize: CGFloat {
-    avatarSize * 0.3125
+    avatarSize * 0.5
   }
 
-  /// How far the badge bottom extends below the avatar's bottom edge.
+  /// Badge bottom offset - positions badge center correctly within the cutout.
+  /// Calculated: container (62.5%) centered with 3pt offset, badge (50%) centered within.
   private var badgeBottomOffset: CGFloat {
     avatarSize * 0.03125
   }
