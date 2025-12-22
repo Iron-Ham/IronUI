@@ -114,6 +114,9 @@ let package = Package(
       name: "IronComponents",
       dependencies: ["IronCore", "IronPrimitives", "IronLayouts"],
       path: "Sources/IronComponents",
+      resources: [
+        .process("Resources"),
+      ],
       swiftSettings: [
         .enableExperimentalFeature("StrictConcurrency"),
         .unsafeFlags(["-warnings-as-errors"]),

@@ -154,11 +154,9 @@ public struct IronAvatar<Badge: View>: View {
   @ViewBuilder
   var avatarMask: some View {
     if hasBadge {
-      AvatarWithBadgeCutout(
-        avatarSize: avatarSize,
-        badgeSize: badgeSize,
-        cutoutPadding: badgeCutoutPadding,
-      )
+      // Use the PDF mask asset for smooth cutout
+      Image("AvatarBadgeMask", bundle: .module)
+        .resizable()
     } else {
       Circle()
     }
@@ -251,38 +249,22 @@ public struct IronAvatar<Badge: View>: View {
       EmptyView()
 
     case .solid(let color, let width):
+      // When using PDF mask with badge, the border width is determined by the asset
       if hasBadge {
-        AvatarWithBadgeCutout(
-          avatarSize: avatarSize,
-          badgeSize: badgeSize,
-          cutoutPadding: badgeCutoutPadding,
-        )
-        .strokeBorder(color, lineWidth: width)
+        Image("AvatarBadgeBorder", bundle: .module)
+          .resizable()
+          .foregroundStyle(color)
       } else {
         Circle()
           .strokeBorder(color, lineWidth: width)
       }
 
     case .gradient(let color, let opacity, let width):
+      // When using PDF mask with badge, the border width is determined by the asset
       if hasBadge {
-        AvatarWithBadgeCutout(
-          avatarSize: avatarSize,
-          badgeSize: badgeSize,
-          cutoutPadding: badgeCutoutPadding,
-        )
-        .strokeBorder(
-          RadialGradient(
-            colors: [
-              color.opacity(0),
-              color.opacity(opacity * 0.5),
-              color.opacity(opacity),
-            ],
-            center: .center,
-            startRadius: avatarSize * 0.3,
-            endRadius: avatarSize * 0.5,
-          ),
-          lineWidth: width,
-        )
+        Image("AvatarBadgeBorder", bundle: .module)
+          .resizable()
+          .foregroundStyle(color.opacity(opacity))
       } else {
         Circle()
           .strokeBorder(
@@ -351,16 +333,6 @@ public struct IronAvatar<Badge: View>: View {
   /// How far the badge center is inset from the avatar edge
   private var badgeInset: CGFloat {
     badgeSize * 0.15
-  }
-
-  /// Extra padding around the badge for the cutout
-  private var badgeCutoutPadding: CGFloat {
-    switch size {
-    case .small: 2
-    case .medium: 2.5
-    case .large: 3
-    case .xlarge: 4
-    }
   }
 
   private var initialsStyle: IronTextStyle {
@@ -518,197 +490,6 @@ extension IronAvatar where Badge == IronAvatarStatusBadge {
     badge = IronAvatarStatusBadge(status: status)
     self.name = name
     badgeAccessibilityLabel = status.rawValue
-  }
-}
-
-// MARK: - AvatarWithBadgeCutout
-
-/// A circle shape with a smooth concave cutout for a badge at the bottom-trailing corner.
-///
-/// Creates a "pac-man bite" effect by combining two arcs with opposite winding directions:
-/// - The main circle arc (counterclockwise) going the long way around
-/// - The cutout arc (clockwise) curving inward to create the concave notch
-struct AvatarWithBadgeCutout: Shape {
-  let avatarSize: CGFloat
-  let badgeSize: CGFloat
-  let cutoutPadding: CGFloat
-
-  func path(in rect: CGRect) -> Path {
-    let center = CGPoint(x: rect.midX, y: rect.midY)
-    let radius = min(rect.width, rect.height) / 2
-
-    // Badge position: bottom-trailing, slightly inset
-    let badgeInset = badgeSize * 0.15
-    let badgeCenterX = rect.maxX - badgeSize / 2 - badgeInset
-    let badgeCenterY = rect.maxY - badgeSize / 2 - badgeInset
-    let badgeCenter = CGPoint(x: badgeCenterX, y: badgeCenterY)
-    let cutoutRadius = (badgeSize / 2) + cutoutPadding
-
-    // Calculate distance from avatar center to badge center
-    let dx = badgeCenter.x - center.x
-    let dy = badgeCenter.y - center.y
-    let d = sqrt(dx * dx + dy * dy)
-
-    // Angle from avatar center to badge center
-    let theta = atan2(dy, dx)
-
-    // Calculate intersection angles using law of cosines
-    // For main circle: angle from center to intersection points
-    let cosAlpha = (radius * radius + d * d - cutoutRadius * cutoutRadius) / (2 * radius * d)
-    let alpha = acos(min(1, max(-1, cosAlpha)))
-
-    // Intersection angles on main circle
-    let mainAngle1 = theta - alpha
-    let mainAngle2 = theta + alpha
-
-    // For cutout circle: angles from badge center to intersection points
-    let cosBeta = (cutoutRadius * cutoutRadius + d * d - radius * radius) / (2 * cutoutRadius * d)
-    let beta = acos(min(1, max(-1, cosBeta)))
-
-    // Cutout angles point back toward main circle (opposite direction)
-    let cutoutTheta = theta + .pi
-    let cutoutAngle1 = cutoutTheta + beta
-    let cutoutAngle2 = cutoutTheta - beta
-
-    var path = Path()
-
-    // Draw main arc counterclockwise from mainAngle2 to mainAngle1 (the long way around)
-    path.addArc(
-      center: center,
-      radius: radius,
-      startAngle: .radians(mainAngle2),
-      endAngle: .radians(mainAngle1 + 2 * .pi),
-      clockwise: false,
-    )
-
-    // Draw cutout arc CLOCKWISE to curve inward (creates the concave notch)
-    // cutoutAngle1 corresponds to mainAngle1, cutoutAngle2 corresponds to mainAngle2
-    // Since main arc ends at mainAngle1, cutout arc starts at cutoutAngle1
-    path.addArc(
-      center: badgeCenter,
-      radius: cutoutRadius,
-      startAngle: .radians(cutoutAngle1),
-      endAngle: .radians(cutoutAngle2),
-      clockwise: true,
-    )
-
-    path.closeSubpath()
-
-    return path
-  }
-}
-
-// MARK: InsettableShape
-
-extension AvatarWithBadgeCutout: InsettableShape {
-  func inset(by amount: CGFloat) -> some InsettableShape {
-    InsetAvatarWithBadgeCutout(
-      avatarSize: avatarSize,
-      badgeSize: badgeSize,
-      cutoutPadding: cutoutPadding,
-      insetAmount: amount,
-    )
-  }
-}
-
-// MARK: - InsetAvatarWithBadgeCutout
-
-/// An inset version of `AvatarWithBadgeCutout` for stroke borders.
-///
-/// Uses the same two-arc approach with opposite winding directions.
-struct InsetAvatarWithBadgeCutout: InsettableShape {
-  let avatarSize: CGFloat
-  let badgeSize: CGFloat
-  let cutoutPadding: CGFloat
-  let insetAmount: CGFloat
-
-  func path(in rect: CGRect) -> Path {
-    let insetRect = rect.insetBy(dx: insetAmount, dy: insetAmount)
-    let center = CGPoint(x: insetRect.midX, y: insetRect.midY)
-    let radius = min(insetRect.width, insetRect.height) / 2
-
-    // Badge position: bottom-trailing, slightly inset (same as non-inset version)
-    let badgeInset = badgeSize * 0.15
-    let badgeCenterX = rect.maxX - badgeSize / 2 - badgeInset
-    let badgeCenterY = rect.maxY - badgeSize / 2 - badgeInset
-    let badgeCenter = CGPoint(x: badgeCenterX, y: badgeCenterY)
-    let cutoutRadius = (badgeSize / 2) + cutoutPadding - insetAmount
-
-    // Calculate distance from avatar center to badge center
-    let dx = badgeCenter.x - center.x
-    let dy = badgeCenter.y - center.y
-    let d = sqrt(dx * dx + dy * dy)
-
-    // Angle from avatar center to badge center
-    let theta = atan2(dy, dx)
-
-    var path = Path()
-
-    // Check if cutout would be valid
-    guard
-      cutoutRadius > 0,
-      d < radius + cutoutRadius,
-      d > abs(radius - cutoutRadius)
-    else {
-      // No valid cutout, just draw a circle
-      path.addArc(
-        center: center,
-        radius: radius,
-        startAngle: .degrees(0),
-        endAngle: .degrees(360),
-        clockwise: false,
-      )
-      return path
-    }
-
-    // Calculate intersection angles using law of cosines
-    let cosAlpha = (radius * radius + d * d - cutoutRadius * cutoutRadius) / (2 * radius * d)
-    let alpha = acos(min(1, max(-1, cosAlpha)))
-
-    // Intersection angles on main circle
-    let mainAngle1 = theta - alpha
-    let mainAngle2 = theta + alpha
-
-    // For cutout circle: angles from badge center to intersection points
-    let cosBeta = (cutoutRadius * cutoutRadius + d * d - radius * radius) / (2 * cutoutRadius * d)
-    let beta = acos(min(1, max(-1, cosBeta)))
-
-    // Cutout angles point back toward main circle
-    let cutoutTheta = theta + .pi
-    let cutoutAngle1 = cutoutTheta + beta
-    let cutoutAngle2 = cutoutTheta - beta
-
-    // Draw main arc counterclockwise from mainAngle2 to mainAngle1 (the long way around)
-    path.addArc(
-      center: center,
-      radius: radius,
-      startAngle: .radians(mainAngle2),
-      endAngle: .radians(mainAngle1 + 2 * .pi),
-      clockwise: false,
-    )
-
-    // Draw cutout arc CLOCKWISE to curve inward
-    // cutoutAngle1 corresponds to mainAngle1, cutoutAngle2 corresponds to mainAngle2
-    path.addArc(
-      center: badgeCenter,
-      radius: cutoutRadius,
-      startAngle: .radians(cutoutAngle1),
-      endAngle: .radians(cutoutAngle2),
-      clockwise: true,
-    )
-
-    path.closeSubpath()
-
-    return path
-  }
-
-  func inset(by amount: CGFloat) -> some InsettableShape {
-    InsetAvatarWithBadgeCutout(
-      avatarSize: avatarSize,
-      badgeSize: badgeSize,
-      cutoutPadding: cutoutPadding,
-      insetAmount: insetAmount + amount,
-    )
   }
 }
 
