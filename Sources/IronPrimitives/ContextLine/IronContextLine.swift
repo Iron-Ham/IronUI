@@ -20,22 +20,49 @@ import SwiftUI
 /// }
 /// ```
 ///
+/// ## Leading Inset
+///
+/// By default, `IronContextLine` uses a font-relative inset (~8pt at body size)
+/// that aligns well with typical icon widths. Both default and custom inset
+/// values scale with Dynamic Type based on `insetRelativeTo`.
+///
+/// ```swift
+/// // Default 8pt, scales with body text style
+/// IronContextLine {
+///   Text("On branch main")
+/// }
+///
+/// // Custom 16pt, scales with body text style
+/// IronContextLine(leadingInset: 16) {
+///   Text("Larger inset, still scales")
+/// }
+///
+/// // Custom 16pt, scales with headline text style
+/// IronContextLine(leadingInset: 16, insetRelativeTo: .headline) {
+///   Text("Scales with headline sizing")
+/// }
+///
+/// // Fixed 16pt (no Dynamic Type scaling)
+/// IronContextLine(leadingInset: 16, insetRelativeTo: nil) {
+///   Text("Fixed value, no scaling")
+/// }
+///
+/// // No inset (flush alignment)
+/// IronContextLine(leadingInset: 0) {
+///   Text("Flush left")
+/// }
+/// ```
+///
 /// ## Grouped Items
 ///
 /// For multiple related items, use position to create connected branches:
 ///
 /// ```swift
-/// VStack(alignment: .leading) {
+/// VStack(alignment: .leading, spacing: 0) {
 ///   Text("API Call")
-///   IronContextLine(position: .first) {
-///     Text("Request sent")
-///   }
-///   IronContextLine(position: .middle) {
-///     Text("Processing...")
-///   }
-///   IronContextLine(position: .last) {
-///     Text("Response received")
-///   }
+///   IronContextLine(position: .first) { Text("Request sent") }
+///   IronContextLine(position: .middle) { Text("Processing...") }
+///   IronContextLine(position: .last) { Text("Response received") }
 /// }
 /// ```
 ///
@@ -55,14 +82,22 @@ public struct IronContextLine<Content: View>: View {
   /// - Parameters:
   ///   - position: The position in a group of context lines.
   ///   - style: The visual style of the connector.
+  ///   - leadingInset: Base inset value to align with parent icon. Defaults to 8pt.
+  ///     This value is scaled by Dynamic Type according to `insetRelativeTo`.
+  ///   - insetRelativeTo: The text style to scale the inset relative to.
+  ///     Pass `nil` for no scaling (fixed value).
   ///   - content: The child content to display.
   public init(
     position: IronContextLinePosition = .single,
     style: IronContextLineStyle = .standard,
+    leadingInset: CGFloat? = nil,
+    insetRelativeTo: Font.TextStyle? = .body,
     @ViewBuilder content: () -> Content,
   ) {
     self.position = position
     self.style = style
+    self.leadingInset = leadingInset
+    self.insetRelativeTo = insetRelativeTo
     self.content = content()
     _isRevealed = .constant(true)
     animateReveal = false
@@ -73,16 +108,24 @@ public struct IronContextLine<Content: View>: View {
   /// - Parameters:
   ///   - position: The position in a group of context lines.
   ///   - style: The visual style of the connector.
+  ///   - leadingInset: Base inset value to align with parent icon. Defaults to 8pt.
+  ///     This value is scaled by Dynamic Type according to `insetRelativeTo`.
+  ///   - insetRelativeTo: The text style to scale the inset relative to.
+  ///     Pass `nil` for no scaling (fixed value).
   ///   - isRevealed: Binding to control visibility with animation.
   ///   - content: The child content to display.
   public init(
     position: IronContextLinePosition = .single,
     style: IronContextLineStyle = .standard,
+    leadingInset: CGFloat? = nil,
+    insetRelativeTo: Font.TextStyle? = .body,
     isRevealed: Binding<Bool>,
     @ViewBuilder content: () -> Content,
   ) {
     self.position = position
     self.style = style
+    self.leadingInset = leadingInset
+    self.insetRelativeTo = insetRelativeTo
     self.content = content()
     _isRevealed = isRevealed
     animateReveal = true
@@ -103,6 +146,7 @@ public struct IronContextLine<Content: View>: View {
         .opacity(animateReveal ? (isRevealed ? 1 : 0) : 1)
         .offset(y: animateReveal ? (isRevealed ? 0 : -8) : 0)
     }
+    .padding(.leading, effectiveInset)
     .background(
       GeometryReader { geometry in
         Color.clear.preference(
@@ -119,15 +163,61 @@ public struct IronContextLine<Content: View>: View {
 
   // MARK: Private
 
+  /// Base inset value used for scaling calculations.
+  private static var baseInsetValue: CGFloat {
+    8
+  }
+
   @Binding private var isRevealed: Bool
   @State private var contentHeight: CGFloat = 24
 
   @Environment(\.ironTheme) private var theme
 
+  /// Scaled metrics for each text style, enabling Dynamic Type scaling.
+  /// Base value is 8pt (~half an icon width at standard size).
+  @ScaledMetric(relativeTo: .largeTitle)
+  private var insetLargeTitle: CGFloat = 8
+  @ScaledMetric(relativeTo: .title)
+  private var insetTitle: CGFloat = 8
+  @ScaledMetric(relativeTo: .title2)
+  private var insetTitle2: CGFloat = 8
+  @ScaledMetric(relativeTo: .title3)
+  private var insetTitle3: CGFloat = 8
+  @ScaledMetric(relativeTo: .headline)
+  private var insetHeadline: CGFloat = 8
+  @ScaledMetric(relativeTo: .subheadline)
+  private var insetSubheadline: CGFloat = 8
+  @ScaledMetric(relativeTo: .body)
+  private var insetBody: CGFloat = 8
+  @ScaledMetric(relativeTo: .callout)
+  private var insetCallout: CGFloat = 8
+  @ScaledMetric(relativeTo: .footnote)
+  private var insetFootnote: CGFloat = 8
+  @ScaledMetric(relativeTo: .caption)
+  private var insetCaption: CGFloat = 8
+  @ScaledMetric(relativeTo: .caption2)
+  private var insetCaption2: CGFloat = 8
+
   private let position: IronContextLinePosition
   private let style: IronContextLineStyle
+  private let leadingInset: CGFloat?
+  private let insetRelativeTo: Font.TextStyle?
   private let content: Content
   private let animateReveal: Bool
+
+  /// Effective inset: applies scaling to user-provided or default value.
+  private var effectiveInset: CGFloat {
+    // Determine the base value (user-provided or default)
+    let baseValue = leadingInset ?? Self.baseInsetValue
+
+    // If no text style specified, use fixed value (no scaling)
+    guard let textStyle = insetRelativeTo else {
+      return baseValue
+    }
+
+    // Apply Dynamic Type scaling to the base value
+    return baseValue * scaleFactor(for: textStyle)
+  }
 
   private var lineColor: Color {
     switch style {
@@ -158,6 +248,30 @@ public struct IronContextLine<Content: View>: View {
   private var minHeight: CGFloat {
     24
   }
+
+  /// Returns the scaled inset for a given text style.
+  private func scaledInset(for textStyle: Font.TextStyle) -> CGFloat {
+    switch textStyle {
+    case .largeTitle: return insetLargeTitle
+    case .title: return insetTitle
+    case .title2: return insetTitle2
+    case .title3: return insetTitle3
+    case .headline: return insetHeadline
+    case .subheadline: return insetSubheadline
+    case .body: return insetBody
+    case .callout: return insetCallout
+    case .footnote: return insetFootnote
+    case .caption: return insetCaption
+    case .caption2: return insetCaption2
+    @unknown default: return insetBody
+    }
+  }
+
+  /// Scale factor for a text style (how much the base value has been scaled by Dynamic Type).
+  private func scaleFactor(for textStyle: Font.TextStyle) -> CGFloat {
+    scaledInset(for: textStyle) / Self.baseInsetValue
+  }
+
 }
 
 // MARK: - ContextLineShape
@@ -342,6 +456,19 @@ struct ContextLineContinuation: View {
 ///   Text("Third result")
 /// }
 /// ```
+///
+/// ## Aligning with Parent Icons
+///
+/// ```swift
+/// HStack(spacing: 8) {
+///   Image(systemName: "list.bullet")
+///   Text("Results")
+/// }
+/// IronContextGroup(leadingInset: 10) {
+///   Text("Item 1")
+///   Text("Item 2")
+/// }
+/// ```
 public struct IronContextGroup<Content: View>: View {
 
   // MARK: Lifecycle
@@ -350,19 +477,33 @@ public struct IronContextGroup<Content: View>: View {
   ///
   /// - Parameters:
   ///   - style: The visual style for all lines.
+  ///   - leadingInset: Base inset value to align with parent icon. Defaults to 8pt.
+  ///     This value is scaled by Dynamic Type according to `insetRelativeTo`.
+  ///   - insetRelativeTo: The text style to scale the inset relative to.
+  ///     Pass `nil` for no scaling (fixed value).
   ///   - content: The child views to wrap in context lines.
   public init(
     style: IronContextLineStyle = .standard,
+    leadingInset: CGFloat? = nil,
+    insetRelativeTo: Font.TextStyle? = .body,
     @ViewBuilder content: () -> Content,
   ) {
     self.style = style
+    self.leadingInset = leadingInset
+    self.insetRelativeTo = insetRelativeTo
     self.content = content()
   }
 
   // MARK: Public
 
   public var body: some View {
-    _VariadicView.Tree(IronContextGroupLayout(style: style)) {
+    _VariadicView.Tree(
+      IronContextGroupLayout(
+        style: style,
+        leadingInset: leadingInset,
+        insetRelativeTo: insetRelativeTo,
+      )
+    ) {
       content
     }
   }
@@ -370,6 +511,8 @@ public struct IronContextGroup<Content: View>: View {
   // MARK: Private
 
   private let style: IronContextLineStyle
+  private let leadingInset: CGFloat?
+  private let insetRelativeTo: Font.TextStyle?
   private let content: Content
 }
 
@@ -377,6 +520,8 @@ public struct IronContextGroup<Content: View>: View {
 
 private struct IronContextGroupLayout: _VariadicView_UnaryViewRoot {
   let style: IronContextLineStyle
+  let leadingInset: CGFloat?
+  let insetRelativeTo: Font.TextStyle?
 
   @ViewBuilder
   func body(children: _VariadicView.Children) -> some View {
@@ -391,7 +536,12 @@ private struct IronContextGroupLayout: _VariadicView_UnaryViewRoot {
           return .middle
         }()
 
-        IronContextLine(position: position, style: style) {
+        IronContextLine(
+          position: position,
+          style: style,
+          leadingInset: leadingInset,
+          insetRelativeTo: insetRelativeTo,
+        ) {
           child
         }
       }
@@ -402,12 +552,15 @@ private struct IronContextGroupLayout: _VariadicView_UnaryViewRoot {
 // MARK: - Previews
 
 #Preview("IronContextLine - Single") {
-  VStack(alignment: .leading, spacing: 8) {
+  VStack(alignment: .leading, spacing: 0) {
     HStack(spacing: 8) {
       Image(systemName: "terminal")
       Text("Bash(git status)")
         .fontWeight(.medium)
     }
+    .padding(.bottom, 4)
+
+    // Default leadingInset is font-relative (~8pt at body size)
     IronContextLine {
       Text("On branch main, nothing to commit")
         .foregroundStyle(.secondary)
@@ -445,6 +598,56 @@ private struct IronContextGroupLayout: _VariadicView_UnaryViewRoot {
         Image(systemName: "checkmark.circle.fill")
           .foregroundStyle(.green)
         Text("200 OK")
+      }
+    }
+  }
+  .padding()
+}
+
+#Preview("IronContextLine - Inset Options") {
+  VStack(alignment: .leading, spacing: 16) {
+    VStack(alignment: .leading, spacing: 0) {
+      Text("Default 8pt (scales with .body)")
+        .font(.caption)
+        .foregroundStyle(.secondary)
+      IronContextLine {
+        Text("Scales with Dynamic Type")
+      }
+    }
+
+    VStack(alignment: .leading, spacing: 0) {
+      Text("Custom 16pt (scales with .body)")
+        .font(.caption)
+        .foregroundStyle(.secondary)
+      IronContextLine(leadingInset: 16) {
+        Text("Larger inset, still scales")
+      }
+    }
+
+    VStack(alignment: .leading, spacing: 0) {
+      Text("Custom 16pt (scales with .headline)")
+        .font(.caption)
+        .foregroundStyle(.secondary)
+      IronContextLine(leadingInset: 16, insetRelativeTo: .headline) {
+        Text("Scales with headline sizing")
+      }
+    }
+
+    VStack(alignment: .leading, spacing: 0) {
+      Text("Fixed 16pt (insetRelativeTo: nil)")
+        .font(.caption)
+        .foregroundStyle(.secondary)
+      IronContextLine(leadingInset: 16, insetRelativeTo: nil) {
+        Text("No Dynamic Type scaling")
+      }
+    }
+
+    VStack(alignment: .leading, spacing: 0) {
+      Text("No inset (leadingInset: 0)")
+        .font(.caption)
+        .foregroundStyle(.secondary)
+      IronContextLine(leadingInset: 0) {
+        Text("Flush to leading edge")
       }
     }
   }
