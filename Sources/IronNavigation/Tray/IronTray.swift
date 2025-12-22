@@ -57,18 +57,21 @@ public struct IronTray<Content: View, Header: View>: View {
   ///   - detents: The available height detents.
   ///   - selectedDetent: Binding to the current detent.
   ///   - showsDragIndicator: Whether to show the drag handle.
+  ///   - onDismiss: Called when the tray is dismissed via drag or background tap.
   ///   - content: The tray content.
   ///   - header: The header view.
   public init(
     detents: Set<IronTrayDetent> = [.medium],
     selectedDetent: Binding<IronTrayDetent>? = nil,
     showsDragIndicator: Bool = true,
+    onDismiss: (() -> Void)? = nil,
     @ViewBuilder content: () -> Content,
     @ViewBuilder header: () -> Header,
   ) {
     self.detents = detents.isEmpty ? [.medium] : detents
     _externalSelectedDetent = selectedDetent ?? .constant(.medium)
     self.showsDragIndicator = showsDragIndicator
+    self.onDismiss = onDismiss
     self.content = content()
     self.header = header()
   }
@@ -112,6 +115,7 @@ public struct IronTray<Content: View, Header: View>: View {
             topTrailingRadius: theme.radii.xl,
           )
         )
+        .ignoresSafeArea(edges: .bottom)
         .ironShadow(theme.shadows.lg)
         .offset(y: max(0, -dragOffset))
         .gesture(dragGesture(availableHeight: availableHeight))
@@ -144,6 +148,7 @@ public struct IronTray<Content: View, Header: View>: View {
 
   private let detents: Set<IronTrayDetent>
   private let showsDragIndicator: Bool
+  private let onDismiss: (() -> Void)?
   private let content: Content
   private let header: Header
 
@@ -237,6 +242,7 @@ public struct IronTray<Content: View, Header: View>: View {
       currentHeight = 0
     }
     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+      onDismiss?()
       dismiss()
     }
   }
@@ -267,17 +273,20 @@ extension IronTray where Header == EmptyView {
   ///   - detents: The available height detents.
   ///   - selectedDetent: Binding to the current detent.
   ///   - showsDragIndicator: Whether to show the drag handle.
+  ///   - onDismiss: Called when the tray is dismissed via drag or background tap.
   ///   - content: The tray content.
   public init(
     detents: Set<IronTrayDetent> = [.medium],
     selectedDetent: Binding<IronTrayDetent>? = nil,
     showsDragIndicator: Bool = true,
+    onDismiss: (() -> Void)? = nil,
     @ViewBuilder content: () -> Content,
   ) {
     self.init(
       detents: detents,
       selectedDetent: selectedDetent,
       showsDragIndicator: showsDragIndicator,
+      onDismiss: onDismiss,
       content: content,
       header: { EmptyView() },
     )
@@ -381,10 +390,14 @@ public struct IronTrayHeader: View {
       Button("Show Tray") {
         showTray = true
       }
+      .buttonStyle(.borderedProminent)
     }
 
     if showTray {
-      IronTray(detents: [.small, .medium, .large]) {
+      IronTray(
+        detents: [.small, .medium, .large],
+        onDismiss: { showTray = false },
+      ) {
         VStack(spacing: 16) {
           Text("Tray Content")
             .font(.title2)
@@ -412,8 +425,19 @@ public struct IronTrayHeader: View {
     Color.green.opacity(0.3)
       .ignoresSafeArea()
 
+    VStack {
+      Text("Background Content")
+      Button("Show Tray") {
+        showTray = true
+      }
+      .buttonStyle(.borderedProminent)
+    }
+
     if showTray {
-      IronTray(detents: [.medium, .large]) {
+      IronTray(
+        detents: [.medium, .large],
+        onDismiss: { showTray = false },
+      ) {
         VStack(spacing: 16) {
           Text("Settings Content")
           Toggle("Dark Mode", isOn: .constant(false))
