@@ -126,7 +126,7 @@ public struct IronAvatar<Badge: View>: View {
   // MARK: Public
 
   public var body: some View {
-    let inset = badgeInset
+    let bottomOffset = badgeBottomOffset
     return ZStack(alignment: .bottomTrailing) {
       avatarContent
         .frame(width: avatarSize, height: avatarSize)
@@ -139,8 +139,10 @@ public struct IronAvatar<Badge: View>: View {
 
       badge
         .frame(width: badgeSize, height: badgeSize)
-        .alignmentGuide(.trailing) { d in d[HorizontalAlignment.center] + inset }
-        .alignmentGuide(.bottom) { d in d[VerticalAlignment.center] + inset }
+        // Position badge centerX at avatar's trailing edge
+        .alignmentGuide(.trailing) { d in d[HorizontalAlignment.center] }
+        // Position badge bottom slightly below avatar's bottom
+        .alignmentGuide(.bottom) { d in d[VerticalAlignment.bottom] - bottomOffset }
     }
     .accessibilityElement(children: .ignore)
     .accessibilityLabel(accessibilityLabel)
@@ -321,18 +323,22 @@ public struct IronAvatar<Badge: View>: View {
     }
   }
 
+  /// Badge size proportional to avatar to match the PDF mask cutout
+  /// The mask is designed for ~62.5% badge-to-avatar ratio (GitHub uses 20pt badge on 32pt avatar)
   private var badgeSize: CGFloat {
-    switch size {
-    case .small: 12
-    case .medium: 14
-    case .large: 18
-    case .xlarge: 24
-    }
+    // Use approximately 50% of avatar size to fit within the mask cutout
+    avatarSize * 0.5
   }
 
-  /// How far the badge center is inset from the avatar edge
-  private var badgeInset: CGFloat {
-    badgeSize * 0.15
+  /// How far the badge bottom extends below the avatar's bottom edge
+  /// Based on GitHub's positioning: small avatar (32pt) uses 3pt offset
+  private var badgeBottomOffset: CGFloat {
+    switch size {
+    case .small: 2
+    case .medium: 3
+    case .large: 4
+    case .xlarge: 5
+    }
   }
 
   private var initialsStyle: IronTextStyle {
