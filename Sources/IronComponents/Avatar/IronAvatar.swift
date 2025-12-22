@@ -582,11 +582,13 @@ struct AvatarWithBadgeCutout: Shape {
     )
 
     // Draw cutout arc CLOCKWISE to curve inward (creates the concave notch)
+    // cutoutAngle1 corresponds to mainAngle1, cutoutAngle2 corresponds to mainAngle2
+    // Since main arc ends at mainAngle1, cutout arc starts at cutoutAngle1
     path.addArc(
       center: badgeCenter,
       radius: cutoutRadius,
-      startAngle: .radians(cutoutAngle2),
-      endAngle: .radians(cutoutAngle1),
+      startAngle: .radians(cutoutAngle1),
+      endAngle: .radians(cutoutAngle2),
       clockwise: true,
     )
 
@@ -686,11 +688,12 @@ struct InsetAvatarWithBadgeCutout: InsettableShape {
     )
 
     // Draw cutout arc CLOCKWISE to curve inward
+    // cutoutAngle1 corresponds to mainAngle1, cutoutAngle2 corresponds to mainAngle2
     path.addArc(
       center: badgeCenter,
       radius: cutoutRadius,
-      startAngle: .radians(cutoutAngle2),
-      endAngle: .radians(cutoutAngle1),
+      startAngle: .radians(cutoutAngle1),
+      endAngle: .radians(cutoutAngle2),
       clockwise: true,
     )
 
