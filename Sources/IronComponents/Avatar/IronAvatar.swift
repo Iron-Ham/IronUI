@@ -323,16 +323,15 @@ public struct IronAvatar<Badge: View>: View {
     }
   }
 
-  /// Badge size proportional to avatar to match the PDF mask cutout.
-  /// The mask is designed for 62.5% badge-to-avatar ratio.
+  /// Badge size as a small status indicator.
+  /// Sized to fit comfortably within the mask cutout.
   private var badgeSize: CGFloat {
-    avatarSize * 0.625
+    avatarSize * 0.3125
   }
 
   /// How far the badge bottom extends below the avatar's bottom edge.
-  /// The mask cutout is positioned at ~9.375% below the avatar edge.
   private var badgeBottomOffset: CGFloat {
-    avatarSize * 0.09375
+    avatarSize * 0.03125
   }
 
   private var initialsStyle: IronTextStyle {
