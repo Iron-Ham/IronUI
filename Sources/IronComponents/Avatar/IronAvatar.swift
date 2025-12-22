@@ -130,7 +130,9 @@ public struct IronAvatar<Badge: View>: View {
     return ZStack(alignment: .bottomTrailing) {
       avatarContent
         .frame(width: avatarSize, height: avatarSize)
-        .clipShape(avatarShape)
+        .mask {
+          avatarMask
+        }
         .overlay {
           innerBorderOverlay
         }
@@ -148,6 +150,20 @@ public struct IronAvatar<Badge: View>: View {
 
   /// For internal use: allows setting badge accessibility label for status convenience initializers
   var badgeAccessibilityLabel: String?
+
+  @ViewBuilder
+  var avatarMask: some View {
+    if hasBadge {
+      AvatarWithBadgeCutout(
+        avatarSize: avatarSize,
+        badgeSize: badgeSize,
+        cutoutPadding: badgeCutoutPadding,
+      )
+      .fill(style: FillStyle(eoFill: true))
+    } else {
+      Circle()
+    }
+  }
 
   // MARK: Private
 
@@ -178,20 +194,6 @@ public struct IronAvatar<Badge: View>: View {
 
   private var hasBadge: Bool {
     Badge.self != EmptyView.self
-  }
-
-  private var avatarShape: some Shape {
-    if hasBadge {
-      AnyShape(
-        AvatarWithBadgeCutout(
-          avatarSize: avatarSize,
-          badgeSize: badgeSize,
-          cutoutPadding: badgeCutoutPadding,
-        )
-      )
-    } else {
-      AnyShape(Circle())
-    }
   }
 
   @ViewBuilder
@@ -749,24 +751,6 @@ public enum IronAvatarInnerBorder: Sendable {
   case solid(color: Color, width: CGFloat = 1)
   /// A gradient inner border that fades from transparent to the specified color.
   case gradient(color: Color, opacity: Double = 0.15, width: CGFloat = 3)
-}
-
-// MARK: - AnyShape
-
-/// Type-erased shape for conditional shape usage.
-struct AnyShape: Shape {
-  init(_ shape: some Shape) {
-    pathBuilder = { rect in
-      shape.path(in: rect)
-    }
-  }
-
-  func path(in rect: CGRect) -> Path {
-    pathBuilder(rect)
-  }
-
-  private let pathBuilder: @Sendable (CGRect) -> Path
-
 }
 
 // MARK: - Previews
