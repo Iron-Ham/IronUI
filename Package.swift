@@ -1,68 +1,68 @@
-// swift-tools-version: 6.0
+// swift-tools-version: 6.2
 
 import PackageDescription
 
 let package = Package(
   name: "IronUI",
   platforms: [
-    .iOS(.v14),
-    .macOS(.v11),
+    .iOS(.v26),
+    .macOS(.v26),
   ],
   products: [
     // MARK: - Full Library (Umbrella)
     .library(
       name: "IronUI",
-      targets: ["IronUI"]
+      targets: ["IronUI"],
     ),
     // MARK: - Individual Modules
     .library(
       name: "IronCore",
-      targets: ["IronCore"]
+      targets: ["IronCore"],
     ),
     .library(
       name: "IronPrimitives",
-      targets: ["IronPrimitives"]
+      targets: ["IronPrimitives"],
     ),
     .library(
       name: "IronComponents",
-      targets: ["IronComponents"]
+      targets: ["IronComponents"],
     ),
     .library(
       name: "IronLayouts",
-      targets: ["IronLayouts"]
+      targets: ["IronLayouts"],
     ),
     .library(
       name: "IronNavigation",
-      targets: ["IronNavigation"]
+      targets: ["IronNavigation"],
     ),
     .library(
       name: "IronForms",
-      targets: ["IronForms"]
+      targets: ["IronForms"],
     ),
     .library(
       name: "IronDataDisplay",
-      targets: ["IronDataDisplay"]
+      targets: ["IronDataDisplay"],
     ),
     .library(
       name: "IronKitBridge",
-      targets: ["IronKitBridge"]
+      targets: ["IronKitBridge"],
     ),
   ],
   dependencies: [
     // Documentation
     .package(
       url: "https://github.com/swiftlang/swift-docc-plugin",
-      from: "1.4.0"
+      from: "1.4.0",
     ),
     // Code Formatting (Airbnb Style Guide)
     .package(
       url: "https://github.com/airbnb/swift",
-      from: "1.2.0"
+      from: "1.2.0",
     ),
     // Snapshot Testing (test-only)
     .package(
       url: "https://github.com/pointfreeco/swift-snapshot-testing",
-      from: "1.17.0"
+      from: "1.17.0",
     ),
   ],
   targets: [
@@ -72,13 +72,14 @@ let package = Package(
       dependencies: [],
       path: "Sources/IronCore",
       swiftSettings: [
-        .enableExperimentalFeature("StrictConcurrency")
-      ]
+        .enableExperimentalFeature("StrictConcurrency"),
+        .unsafeFlags(["-warnings-as-errors"]),
+      ],
     ),
     .testTarget(
       name: "IronCoreTests",
       dependencies: ["IronCore"],
-      path: "Tests/IronCoreTests"
+      path: "Tests/IronCoreTests",
     ),
 
     // MARK: - Primitives Module
@@ -87,13 +88,14 @@ let package = Package(
       dependencies: ["IronCore"],
       path: "Sources/IronPrimitives",
       swiftSettings: [
-        .enableExperimentalFeature("StrictConcurrency")
-      ]
+        .enableExperimentalFeature("StrictConcurrency"),
+        .unsafeFlags(["-warnings-as-errors"]),
+      ],
     ),
     .testTarget(
       name: "IronPrimitivesTests",
       dependencies: ["IronPrimitives"],
-      path: "Tests/IronPrimitivesTests"
+      path: "Tests/IronPrimitivesTests",
     ),
 
     // MARK: - Layouts Module
@@ -102,8 +104,9 @@ let package = Package(
       dependencies: ["IronCore"],
       path: "Sources/IronLayouts",
       swiftSettings: [
-        .enableExperimentalFeature("StrictConcurrency")
-      ]
+        .enableExperimentalFeature("StrictConcurrency"),
+        .unsafeFlags(["-warnings-as-errors"]),
+      ],
     ),
 
     // MARK: - Components Module
@@ -112,13 +115,14 @@ let package = Package(
       dependencies: ["IronCore", "IronPrimitives", "IronLayouts"],
       path: "Sources/IronComponents",
       swiftSettings: [
-        .enableExperimentalFeature("StrictConcurrency")
-      ]
+        .enableExperimentalFeature("StrictConcurrency"),
+        .unsafeFlags(["-warnings-as-errors"]),
+      ],
     ),
     .testTarget(
       name: "IronComponentsTests",
       dependencies: ["IronComponents"],
-      path: "Tests/IronComponentsTests"
+      path: "Tests/IronComponentsTests",
     ),
 
     // MARK: - Navigation Module
@@ -127,8 +131,9 @@ let package = Package(
       dependencies: ["IronCore", "IronPrimitives", "IronComponents"],
       path: "Sources/IronNavigation",
       swiftSettings: [
-        .enableExperimentalFeature("StrictConcurrency")
-      ]
+        .enableExperimentalFeature("StrictConcurrency"),
+        .unsafeFlags(["-warnings-as-errors"]),
+      ],
     ),
 
     // MARK: - Forms Module
@@ -137,8 +142,9 @@ let package = Package(
       dependencies: ["IronCore", "IronPrimitives", "IronComponents"],
       path: "Sources/IronForms",
       swiftSettings: [
-        .enableExperimentalFeature("StrictConcurrency")
-      ]
+        .enableExperimentalFeature("StrictConcurrency"),
+        .unsafeFlags(["-warnings-as-errors"]),
+      ],
     ),
 
     // MARK: - Data Display Module
@@ -147,8 +153,9 @@ let package = Package(
       dependencies: ["IronCore", "IronPrimitives", "IronComponents"],
       path: "Sources/IronDataDisplay",
       swiftSettings: [
-        .enableExperimentalFeature("StrictConcurrency")
-      ]
+        .enableExperimentalFeature("StrictConcurrency"),
+        .unsafeFlags(["-warnings-as-errors"]),
+      ],
     ),
 
     // MARK: - Kit Bridge Module
@@ -157,8 +164,9 @@ let package = Package(
       dependencies: ["IronCore"],
       path: "Sources/IronKitBridge",
       swiftSettings: [
-        .enableExperimentalFeature("StrictConcurrency")
-      ]
+        .enableExperimentalFeature("StrictConcurrency"),
+        .unsafeFlags(["-warnings-as-errors"]),
+      ],
     ),
 
     // MARK: - Umbrella Module
@@ -176,8 +184,9 @@ let package = Package(
       ],
       path: "Sources/IronUI",
       swiftSettings: [
-        .enableExperimentalFeature("StrictConcurrency")
-      ]
+        .enableExperimentalFeature("StrictConcurrency"),
+        .unsafeFlags(["-warnings-as-errors"]),
+      ],
     ),
 
     // MARK: - Snapshot Tests (XCTest-based)
@@ -187,15 +196,15 @@ let package = Package(
         "IronUI",
         .product(name: "SnapshotTesting", package: "swift-snapshot-testing"),
       ],
-      path: "Tests/IronUISnapshotTests"
+      path: "Tests/IronUISnapshotTests",
     ),
 
     // MARK: - Integration Tests
     .testTarget(
       name: "IronUIIntegrationTests",
       dependencies: ["IronUI"],
-      path: "Tests/IronUIIntegrationTests"
+      path: "Tests/IronUIIntegrationTests",
     ),
   ],
-  swiftLanguageModes: [.v6]
+  swiftLanguageModes: [.v6],
 )
