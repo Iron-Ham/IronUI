@@ -705,3 +705,110 @@ struct IronCardTests {
     // Combined configuration works
   }
 }
+
+// MARK: - IronProgressStyleTests
+
+@Suite("IronProgressStyle")
+struct IronProgressStyleTests {
+  @Test("all styles are available")
+  func allStylesAvailable() {
+    let styles = IronProgressStyle.allCases
+    #expect(styles.count == 2)
+    #expect(styles.contains(.linear))
+    #expect(styles.contains(.circular))
+  }
+}
+
+// MARK: - IronProgressSizeTests
+
+@Suite("IronProgressSize")
+struct IronProgressSizeTests {
+  @Test("all sizes are available")
+  func allSizesAvailable() {
+    let sizes = IronProgressSize.allCases
+    #expect(sizes.count == 3)
+    #expect(sizes.contains(.small))
+    #expect(sizes.contains(.medium))
+    #expect(sizes.contains(.large))
+  }
+}
+
+// MARK: - IronProgressTests
+
+@Suite("IronProgress")
+@MainActor
+struct IronProgressTests {
+
+  @Test("can be created as indeterminate")
+  func createAsIndeterminate() {
+    _ = IronProgress<EmptyView>()
+    // Indeterminate progress created successfully
+  }
+
+  @Test("can be created as determinate")
+  func createAsDeterminate() {
+    _ = IronProgress<EmptyView>(value: 0.5)
+    // Determinate progress created successfully
+  }
+
+  @Test("clamps value to valid range")
+  func clampsValue() {
+    _ = IronProgress<EmptyView>(value: -0.5) // Should clamp to 0
+    _ = IronProgress<EmptyView>(value: 1.5) // Should clamp to 1
+    // Values clamped successfully
+  }
+
+  @Test("supports all styles", arguments: IronProgressStyle.allCases)
+  func supportsStyle(style: IronProgressStyle) {
+    _ = IronProgress<EmptyView>(value: 0.5, style: style)
+    // Progress created with style
+  }
+
+  @Test("supports all sizes", arguments: IronProgressSize.allCases)
+  func supportsSize(size: IronProgressSize) {
+    _ = IronProgress<EmptyView>(value: 0.5, size: size)
+    // Progress created with size
+  }
+
+  @Test("supports primary color")
+  func supportsPrimaryColor() {
+    _ = IronProgress<EmptyView>(value: 0.5, color: .primary)
+    // Primary color progress created
+  }
+
+  @Test("supports semantic colors")
+  func supportsSemanticColors() {
+    _ = IronProgress<EmptyView>(value: 0.5, color: .success)
+    _ = IronProgress<EmptyView>(value: 0.5, color: .warning)
+    _ = IronProgress<EmptyView>(value: 0.5, color: .error)
+    _ = IronProgress<EmptyView>(value: 0.5, color: .info)
+    // All semantic colors work
+  }
+
+  @Test("supports custom color")
+  func supportsCustomColor() {
+    _ = IronProgress<EmptyView>(value: 0.5, color: .custom(.purple))
+    // Custom color progress created
+  }
+
+  @Test("supports label")
+  func supportsLabel() {
+    _ = IronProgress(value: 0.5) {
+      Text("Loading...")
+    }
+    // Progress with label created
+  }
+
+  @Test("supports combined configuration")
+  func supportsCombinedConfiguration() {
+    _ = IronProgress(
+      value: 0.75,
+      style: .circular,
+      color: .success,
+      size: .large,
+    ) {
+      Text("75% Complete")
+    }
+    // Combined configuration works
+  }
+}

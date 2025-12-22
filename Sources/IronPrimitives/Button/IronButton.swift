@@ -74,7 +74,10 @@ public struct IronButton<Label: View>: View {
   // MARK: Public
 
   public var body: some View {
-    Button(action: action) {
+    Button {
+      IronLogger.ui.debug("IronButton tapped", metadata: ["variant": .string("\(variant)"), "size": .string("\(size)")])
+      action()
+    } label: {
       label
         .contentTransition(.interpolate)
     }

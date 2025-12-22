@@ -164,7 +164,10 @@ public struct IronCard<Content: View, Header: View, Footer: View>: View {
   public var body: some View {
     Group {
       if let action {
-        Button(action: action) {
+        Button {
+          IronLogger.ui.debug("IronCard tapped", metadata: ["style": .string("\(style)")])
+          action()
+        } label: {
           cardContent
         }
         .buttonStyle(IronCardButtonStyle(style: style, isPressed: false))
