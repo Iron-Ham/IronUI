@@ -475,3 +475,113 @@ struct IronContextGroupTests {
     // Styled context group created
   }
 }
+
+// MARK: - IronBadgeStyleTests
+
+@Suite("IronBadgeStyle")
+struct IronBadgeStyleTests {
+  @Test("all styles are available")
+  func allStylesAvailable() {
+    let styles = IronBadgeStyle.allCases
+    #expect(styles.count == 3)
+    #expect(styles.contains(.filled))
+    #expect(styles.contains(.soft))
+    #expect(styles.contains(.outlined))
+  }
+}
+
+// MARK: - IronBadgeSizeTests
+
+@Suite("IronBadgeSize")
+struct IronBadgeSizeTests {
+  @Test("all sizes are available")
+  func allSizesAvailable() {
+    let sizes = IronBadgeSize.allCases
+    #expect(sizes.count == 3)
+    #expect(sizes.contains(.small))
+    #expect(sizes.contains(.medium))
+    #expect(sizes.contains(.large))
+  }
+}
+
+// MARK: - IronBadgeTests
+
+@Suite("IronBadge")
+@MainActor
+struct IronBadgeTests {
+
+  @Test("can be created as dot")
+  func createAsDot() {
+    _ = IronBadge()
+    // Dot badge created successfully
+  }
+
+  @Test("can be created with text")
+  func createWithText() {
+    _ = IronBadge("New")
+    // Text badge created successfully
+  }
+
+  @Test("can be created with localized string key")
+  func createWithLocalizedStringKey() {
+    _ = IronBadge(LocalizedStringKey("badge.new"))
+    // Localized badge created successfully
+  }
+
+  @Test("can be created with count")
+  func createWithCount() {
+    _ = IronBadge(count: 5)
+    // Count badge created successfully
+  }
+
+  @Test("supports max count")
+  func supportsMaxCount() {
+    _ = IronBadge(count: 100, maxCount: 99)
+    // Max count badge created successfully
+  }
+
+  @Test("supports all styles", arguments: IronBadgeStyle.allCases)
+  func supportsStyle(style: IronBadgeStyle) {
+    _ = IronBadge(count: 3, style: style)
+    // Badge created with style
+  }
+
+  @Test("supports all sizes", arguments: IronBadgeSize.allCases)
+  func supportsSize(size: IronBadgeSize) {
+    _ = IronBadge(count: 3, size: size)
+    // Badge created with size
+  }
+
+  @Test("supports primary color")
+  func supportsPrimaryColor() {
+    _ = IronBadge(count: 3, color: .primary)
+    // Primary color badge created
+  }
+
+  @Test("supports semantic colors")
+  func supportsSemanticColors() {
+    _ = IronBadge(count: 1, color: .success)
+    _ = IronBadge(count: 2, color: .warning)
+    _ = IronBadge(count: 3, color: .error)
+    _ = IronBadge(count: 4, color: .info)
+    // All semantic colors work
+  }
+
+  @Test("supports custom color")
+  func supportsCustomColor() {
+    _ = IronBadge(count: 5, color: .custom(.purple))
+    // Custom color badge created
+  }
+
+  @Test("supports combined configuration")
+  func supportsCombinedConfiguration() {
+    _ = IronBadge(
+      count: 42,
+      maxCount: 99,
+      style: .soft,
+      color: .error,
+      size: .large,
+    )
+    // Combined configuration works
+  }
+}
