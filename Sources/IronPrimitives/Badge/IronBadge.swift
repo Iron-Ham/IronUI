@@ -391,7 +391,6 @@ extension View {
   ///
   /// - Parameters:
   ///   - count: The count to display.
-  ///   - alignment: Where to position the badge.
   ///   - hidesWhenZero: Whether to hide when count is zero.
   ///   - style: The visual style of the badge.
   ///   - color: The semantic color of the badge.
@@ -399,26 +398,20 @@ extension View {
   /// - Returns: The view with a badge overlay.
   public func ironBadge(
     count: Int,
-    alignment: Alignment = .topTrailing,
     hidesWhenZero: Bool = true,
     style: IronBadgeStyle = .filled,
     color: IronBadgeColor = .primary,
-    size: IronBadgeSize = .medium,
+    size: IronBadgeSize = .medium
   ) -> some View {
-    overlay(alignment: alignment) {
+    overlay(alignment: .topTrailing) {
       IronBadge.count(
         count,
         hidesWhenZero: hidesWhenZero,
         style: style,
         color: color,
-        size: size,
+        size: size
       )
-      .alignmentGuide(alignment.horizontal) { d in
-        alignment.horizontal == .trailing ? d.width * 0.3 : d.width * 0.7
-      }
-      .alignmentGuide(alignment.vertical) { d in
-        alignment.vertical == .top ? d.height * 0.7 : d.height * 0.3
-      }
+      .fixedSize()
     }
   }
 
@@ -431,25 +424,18 @@ extension View {
   ///
   /// - Parameters:
   ///   - isVisible: Whether the badge is visible.
-  ///   - alignment: Where to position the badge.
   ///   - color: The semantic color of the badge.
   ///   - size: The size of the badge.
   /// - Returns: The view with a dot badge overlay.
   public func ironBadge(
     isVisible: Bool,
-    alignment: Alignment = .topTrailing,
     color: IronBadgeColor = .error,
-    size: IronBadgeSize = .small,
+    size: IronBadgeSize = .small
   ) -> some View {
-    overlay(alignment: alignment) {
+    overlay(alignment: .topTrailing) {
       if isVisible {
         IronBadge(color: color, size: size)
-          .alignmentGuide(alignment.horizontal) { d in
-            alignment.horizontal == .trailing ? d.width * 0.3 : d.width * 0.7
-          }
-          .alignmentGuide(alignment.vertical) { d in
-            alignment.vertical == .top ? d.height * 0.7 : d.height * 0.3
-          }
+          .fixedSize()
       }
     }
   }
