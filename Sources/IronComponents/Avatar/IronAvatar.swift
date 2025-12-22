@@ -159,7 +159,6 @@ public struct IronAvatar<Badge: View>: View {
         badgeSize: badgeSize,
         cutoutPadding: badgeCutoutPadding,
       )
-      .fill(style: FillStyle(eoFill: true))
     } else {
       Circle()
     }
@@ -524,7 +523,10 @@ extension IronAvatar where Badge == IronAvatarStatusBadge {
 
 // MARK: - AvatarWithBadgeCutout
 
-/// A circle shape with a smooth cutout for a badge at the bottom-trailing corner.
+/// A circle shape with a smooth bezier-curved cutout for a badge at the bottom-trailing corner.
+///
+/// Unlike a simple circle intersection (which creates sharp points), this shape uses
+/// bezier curves that are tangent to the main circle, creating a smooth, organic notch.
 struct AvatarWithBadgeCutout: Shape {
   let avatarSize: CGFloat
   let badgeSize: CGFloat
@@ -541,25 +543,94 @@ struct AvatarWithBadgeCutout: Shape {
     let badgeCenter = CGPoint(x: badgeCenterX, y: badgeCenterY)
     let cutoutRadius = (badgeSize / 2) + cutoutPadding
 
+    // Calculate distance from avatar center to badge center
+    let dx = badgeCenter.x - center.x
+    let dy = badgeCenter.y - center.y
+    let distanceBetweenCenters = sqrt(dx * dx + dy * dy)
+
+    // Angle from avatar center to badge center
+    let angleToCenter = atan2(dy, dx)
+
+    // Calculate the angular span we need to cut out
+    // Using law of cosines: find angle at avatar center where the cutout circle intersects
+    // c² = a² + b² - 2ab·cos(C)
+    // Solving for C: cos(C) = (a² + b² - c²) / (2ab)
+    // where a = radius, b = distanceBetweenCenters, c = cutoutRadius
+    let cosHalfAngle = (radius * radius + distanceBetweenCenters * distanceBetweenCenters - cutoutRadius * cutoutRadius)
+      / (2 * radius * distanceBetweenCenters)
+    let halfAngle = acos(min(1, max(-1, cosHalfAngle)))
+
+    // The angles on the main circle where we transition to the cutout
+    let startCutoutAngle = angleToCenter - halfAngle
+    let endCutoutAngle = angleToCenter + halfAngle
+
+    // Points on the main circle where the cutout begins and ends
+    let startPoint = CGPoint(
+      x: center.x + radius * cos(startCutoutAngle),
+      y: center.y + radius * sin(startCutoutAngle),
+    )
+    let endPoint = CGPoint(
+      x: center.x + radius * cos(endCutoutAngle),
+      y: center.y + radius * sin(endCutoutAngle),
+    )
+
+    // Calculate tangent directions at start and end points (perpendicular to radius)
+    // For a circle, tangent at angle θ points in direction θ + π/2
+    let startTangent = CGPoint(
+      x: -sin(startCutoutAngle),
+      y: cos(startCutoutAngle),
+    )
+    let endTangent = CGPoint(
+      x: -sin(endCutoutAngle),
+      y: cos(endCutoutAngle),
+    )
+
+    // Calculate the deepest point of the notch (closest to badge center)
+    // Position it so there's proper clearance for the badge
+    let notchPoint = CGPoint(
+      x: center.x + (distanceBetweenCenters - cutoutRadius + cutoutPadding) * cos(angleToCenter),
+      y: center.y + (distanceBetweenCenters - cutoutRadius + cutoutPadding) * sin(angleToCenter),
+    )
+
+    // Control point distance - determines how smooth/sharp the curve is
+    let controlDistance = cutoutRadius * 1.1
+
+    // Control points for the bezier curves
+    // Start control: follows tangent direction from start point (into the cutout)
+    let startControl = CGPoint(
+      x: startPoint.x + startTangent.x * controlDistance,
+      y: startPoint.y + startTangent.y * controlDistance,
+    )
+
+    // End control: follows tangent direction from end point (back from cutout)
+    let endControl = CGPoint(
+      x: endPoint.x - endTangent.x * controlDistance,
+      y: endPoint.y - endTangent.y * controlDistance,
+    )
+
     var path = Path()
 
-    // Main circle
+    // Start from the end of the cutout and draw the main arc around
     path.addArc(
       center: center,
       radius: radius,
-      startAngle: .degrees(0),
-      endAngle: .degrees(360),
+      startAngle: .radians(endCutoutAngle),
+      endAngle: .radians(startCutoutAngle + 2 * .pi),
       clockwise: false,
     )
 
-    // Subtract the cutout circle using even-odd fill rule
-    path.addArc(
-      center: badgeCenter,
-      radius: cutoutRadius,
-      startAngle: .degrees(0),
-      endAngle: .degrees(360),
-      clockwise: false,
+    // Now draw the smooth cutout curve using a cubic bezier
+    // This creates a smooth "bay" that flows naturally from the circle
+    path.addQuadCurve(
+      to: notchPoint,
+      control: startControl,
     )
+    path.addQuadCurve(
+      to: endPoint,
+      control: endControl,
+    )
+
+    path.closeSubpath()
 
     return path
   }
@@ -581,6 +652,8 @@ extension AvatarWithBadgeCutout: InsettableShape {
 // MARK: - InsetAvatarWithBadgeCutout
 
 /// An inset version of `AvatarWithBadgeCutout` for stroke borders.
+///
+/// Uses the same smooth bezier-curve approach as `AvatarWithBadgeCutout`.
 struct InsetAvatarWithBadgeCutout: InsettableShape {
   let avatarSize: CGFloat
   let badgeSize: CGFloat
@@ -592,26 +665,30 @@ struct InsetAvatarWithBadgeCutout: InsettableShape {
     let center = CGPoint(x: insetRect.midX, y: insetRect.midY)
     let radius = min(insetRect.width, insetRect.height) / 2
 
-    // Badge position: bottom-trailing, slightly inset
+    // Badge position: bottom-trailing, slightly inset (same as non-inset version)
     let badgeInset = badgeSize * 0.15
     let badgeCenterX = rect.maxX - badgeSize / 2 - badgeInset
     let badgeCenterY = rect.maxY - badgeSize / 2 - badgeInset
     let badgeCenter = CGPoint(x: badgeCenterX, y: badgeCenterY)
     let cutoutRadius = (badgeSize / 2) + cutoutPadding - insetAmount
 
-    var path = Path()
-
-    // Calculate the angles where the main circle intersects with the cutout
+    // Calculate distance from avatar center to badge center
     let dx = badgeCenter.x - center.x
     let dy = badgeCenter.y - center.y
     let distanceBetweenCenters = sqrt(dx * dx + dy * dy)
 
-    // Check if circles actually intersect
+    // Angle from avatar center to badge center
+    let angleToCenter = atan2(dy, dx)
+
+    var path = Path()
+
+    // Check if cutout would be valid
     guard
+      cutoutRadius > 0,
       distanceBetweenCenters < radius + cutoutRadius,
       distanceBetweenCenters > abs(radius - cutoutRadius)
     else {
-      // No intersection, just draw the circle
+      // No valid cutout, just draw a circle
       path.addArc(
         center: center,
         radius: radius,
@@ -622,42 +699,71 @@ struct InsetAvatarWithBadgeCutout: InsettableShape {
       return path
     }
 
-    // Calculate intersection angles for main circle
-    let angleToCenter = atan2(dy, dx)
-
-    // Using law of cosines to find the angle
-    let cosAngle = (radius * radius + distanceBetweenCenters * distanceBetweenCenters - cutoutRadius * cutoutRadius)
+    // Calculate the angular span we need to cut out using law of cosines
+    let cosHalfAngle = (radius * radius + distanceBetweenCenters * distanceBetweenCenters - cutoutRadius * cutoutRadius)
       / (2 * radius * distanceBetweenCenters)
-    let halfAngle = acos(min(1, max(-1, cosAngle)))
+    let halfAngle = acos(min(1, max(-1, cosHalfAngle)))
 
-    let startAngle = angleToCenter - halfAngle
-    let endAngle = angleToCenter + halfAngle
+    // The angles on the main circle where we transition to the cutout
+    let startCutoutAngle = angleToCenter - halfAngle
+    let endCutoutAngle = angleToCenter + halfAngle
 
-    // Draw the main arc (the part not cut out)
+    // Points on the main circle where the cutout begins and ends
+    let startPoint = CGPoint(
+      x: center.x + radius * cos(startCutoutAngle),
+      y: center.y + radius * sin(startCutoutAngle),
+    )
+    let endPoint = CGPoint(
+      x: center.x + radius * cos(endCutoutAngle),
+      y: center.y + radius * sin(endCutoutAngle),
+    )
+
+    // Calculate tangent directions at start and end points
+    let startTangent = CGPoint(
+      x: -sin(startCutoutAngle),
+      y: cos(startCutoutAngle),
+    )
+    let endTangent = CGPoint(
+      x: -sin(endCutoutAngle),
+      y: cos(endCutoutAngle),
+    )
+
+    // Calculate the deepest point of the notch
+    let notchPoint = CGPoint(
+      x: center.x + (distanceBetweenCenters - cutoutRadius + (cutoutPadding - insetAmount)) * cos(angleToCenter),
+      y: center.y + (distanceBetweenCenters - cutoutRadius + (cutoutPadding - insetAmount)) * sin(angleToCenter),
+    )
+
+    // Control point distance
+    let controlDistance = cutoutRadius * 1.1
+
+    // Control points for the bezier curves
+    let startControl = CGPoint(
+      x: startPoint.x + startTangent.x * controlDistance,
+      y: startPoint.y + startTangent.y * controlDistance,
+    )
+    let endControl = CGPoint(
+      x: endPoint.x - endTangent.x * controlDistance,
+      y: endPoint.y - endTangent.y * controlDistance,
+    )
+
+    // Draw the main arc
     path.addArc(
       center: center,
       radius: radius,
-      startAngle: .radians(endAngle),
-      endAngle: .radians(startAngle + 2 * .pi),
+      startAngle: .radians(endCutoutAngle),
+      endAngle: .radians(startCutoutAngle + 2 * .pi),
       clockwise: false,
     )
 
-    // Calculate the reverse angles for cutout circle
-    let reverseAngle = atan2(-dy, -dx)
-    let cutoutCosAngle = (cutoutRadius * cutoutRadius + distanceBetweenCenters * distanceBetweenCenters - radius * radius)
-      / (2 * cutoutRadius * distanceBetweenCenters)
-    let cutoutHalfAngle = acos(min(1, max(-1, cutoutCosAngle)))
-
-    let cutoutStartAngle = reverseAngle - cutoutHalfAngle
-    let cutoutEndAngle = reverseAngle + cutoutHalfAngle
-
-    // Draw the cutout arc (curving inward)
-    path.addArc(
-      center: badgeCenter,
-      radius: cutoutRadius,
-      startAngle: .radians(cutoutStartAngle),
-      endAngle: .radians(cutoutEndAngle),
-      clockwise: false,
+    // Draw the smooth cutout curve using quadratic bezier curves
+    path.addQuadCurve(
+      to: notchPoint,
+      control: startControl,
+    )
+    path.addQuadCurve(
+      to: endPoint,
+      control: endControl,
     )
 
     path.closeSubpath()
