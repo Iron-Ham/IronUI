@@ -97,6 +97,70 @@ struct IronAvatarTests {
     _ = IronAvatar(name: "John Doe", size: .large, status: .online)
     // Avatar created successfully with all options
   }
+
+  @Test("supports custom badge")
+  func supportsCustomBadge() {
+    _ = IronAvatar(name: "Test", size: .large) {
+      Image(systemName: "checkmark.seal.fill")
+    }
+    // Avatar created successfully with custom badge
+  }
+
+  @Test("supports inner border solid")
+  func supportsInnerBorderSolid() {
+    _ = IronAvatar(name: "Test", innerBorder: .solid(color: .black))
+    // Avatar created successfully with solid inner border
+  }
+
+  @Test("supports inner border gradient")
+  func supportsInnerBorderGradient() {
+    _ = IronAvatar(name: "Test", innerBorder: .gradient(color: .black, opacity: 0.15))
+    // Avatar created successfully with gradient inner border
+  }
+
+  @Test("supports badge with inner border")
+  func supportsBadgeWithInnerBorder() {
+    _ = IronAvatar(name: "Test", innerBorder: .gradient(color: .black), status: .online)
+    // Avatar created successfully with both badge and inner border
+  }
+}
+
+// MARK: - IronAvatarInnerBorderTests
+
+@Suite("IronAvatarInnerBorder")
+struct IronAvatarInnerBorderTests {
+  @Test("none case exists")
+  func noneCaseExists() {
+    let border = IronAvatarInnerBorder.none
+    if case .none = border {
+      // Correctly matched
+    } else {
+      Issue.record("Expected none case")
+    }
+  }
+
+  @Test("solid case stores color and width")
+  func solidCaseStoresValues() {
+    let border = IronAvatarInnerBorder.solid(color: .red, width: 2)
+    if case .solid(let color, let width) = border {
+      #expect(color == .red)
+      #expect(width == 2)
+    } else {
+      Issue.record("Expected solid case")
+    }
+  }
+
+  @Test("gradient case stores color, opacity, and width")
+  func gradientCaseStoresValues() {
+    let border = IronAvatarInnerBorder.gradient(color: .blue, opacity: 0.2, width: 4)
+    if case .gradient(let color, let opacity, let width) = border {
+      #expect(color == .blue)
+      #expect(opacity == 0.2)
+      #expect(width == 4)
+    } else {
+      Issue.record("Expected gradient case")
+    }
+  }
 }
 
 // MARK: - IronChipVariantTests
