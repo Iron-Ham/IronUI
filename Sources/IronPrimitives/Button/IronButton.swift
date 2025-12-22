@@ -189,6 +189,8 @@ struct IronButtonStyleInternal: ButtonStyle {
   let theme: AnyIronTheme
 
   func makeBody(configuration: Configuration) -> some View {
+    let _ = logPressStateIfNeeded(configuration.isPressed)
+
     configuration.label
       .font(font)
       .fontWeight(.medium)
@@ -279,6 +281,21 @@ struct IronButtonStyleInternal: ButtonStyle {
     case .outlined, .ghost:
       0.98
     }
+  }
+
+  /// Logs press state changes for debugging.
+  private func logPressStateIfNeeded(_ isPressed: Bool) {
+    #if DEBUG
+    if isPressed {
+      IronLogger.ui.debug(
+        "Button pressed",
+        metadata: [
+          "variant": .string("\(variant)"),
+          "size": .string("\(size)"),
+        ],
+      )
+    }
+    #endif
   }
 
   private func background(isPressed: Bool) -> Color {
