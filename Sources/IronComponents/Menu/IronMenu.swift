@@ -141,6 +141,7 @@ public struct IronMenuLabel: View {
       IronText(title, style: .labelMedium, color: .primary)
 
       IronIcon(systemName: "chevron.down", size: .xSmall, color: .secondary)
+        .accessibilityHidden(true)
     }
     .padding(.horizontal, theme.spacing.md)
     .padding(.vertical, theme.spacing.sm)

@@ -73,11 +73,12 @@ public struct IronSegmentedControl<Option: Hashable, Label: View>: View {
       let segmentWidth = geometry.size.width / CGFloat(options.count)
 
       ZStack(alignment: .leading) {
-        // Background
+        // Background (decorative)
         RoundedRectangle(cornerRadius: cornerRadius)
           .fill(theme.colors.surface)
+          .accessibilityHidden(true)
 
-        // Selection indicator
+        // Selection indicator (decorative)
         RoundedRectangle(cornerRadius: innerCornerRadius)
           .fill(theme.colors.background)
           .shadow(color: theme.colors.primary.opacity(0.1), radius: 2, y: 1)
@@ -85,6 +86,7 @@ public struct IronSegmentedControl<Option: Hashable, Label: View>: View {
           .padding(indicatorPadding)
           .offset(x: selectedIndex * segmentWidth)
           .animation(theme.animation.bouncy, value: selection)
+          .accessibilityHidden(true)
 
         // Segments
         HStack(spacing: 0) {

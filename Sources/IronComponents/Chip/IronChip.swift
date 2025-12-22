@@ -179,6 +179,7 @@ public struct IronChip<LeadingIcon: View>: View {
       if let leadingIcon {
         leadingIcon
           .foregroundStyle(contentColor)
+          .accessibilityHidden(true)
       }
 
       IronText(title, style: textStyle, color: textColorToken)
@@ -193,7 +194,7 @@ public struct IronChip<LeadingIcon: View>: View {
           IronIcon(systemName: "xmark", size: dismissIconSize, color: .secondary)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Remove")
+        .accessibilityHidden(true) // Action exposed via parent's accessibilityAction
       }
     }
     .padding(.horizontal, horizontalPadding)
@@ -210,27 +211,46 @@ public struct IronChip<LeadingIcon: View>: View {
     .animation(theme.animation.snappy, value: isPressed)
     .animation(theme.animation.snappy, value: isSelected)
     .contentShape(Capsule())
-    .if(isSelectable) { view in
-      view
-        .onTapGesture {
-          withAnimation(theme.animation.bouncy) {
-            isSelected?.toggle()
-          }
-          IronLogger.ui.debug(
-            "IronChip selection toggled",
-            metadata: ["isSelected": .string("\(isSelected ?? false)")],
-          )
-        }
-        .simultaneousGesture(
-          DragGesture(minimumDistance: 0)
-            .onChanged { _ in isPressed = true }
-            .onEnded { _ in isPressed = false }
-        )
+    .onTapGesture {
+      guard isSelectable else { return }
+      withAnimation(theme.animation.bouncy) {
+        isSelected?.toggle()
+      }
+      IronLogger.ui.debug(
+        "IronChip selection toggled",
+        metadata: ["isSelected": .string("\(isSelected ?? false)")],
+      )
     }
-    .accessibilityElement(children: .ignore)
+    .simultaneousGesture(
+      DragGesture(minimumDistance: 0)
+        .onChanged { _ in
+          guard isSelectable else { return }
+          isPressed = true
+        }
+        .onEnded { _ in
+          guard isSelectable else { return }
+          isPressed = false
+        }
+    )
+    .accessibilityElement(children: .combine)
     .accessibilityLabel(Text(title))
-    .accessibilityAddTraits(isSelectable ? [.isButton] : [])
-    .accessibilityValue(isSelected == true ? "Selected" : isSelected == false ? "Not selected" : "")
+    .accessibilityAddTraits(isSelectable || onDismiss != nil ? [.isButton] : [])
+    .accessibilityValue(accessibilityValue)
+    .accessibilityAction(named: dismissActionLabel) {
+      onDismiss?()
+    }
+    .accessibilityAction {
+      if isSelectable {
+        isSelected?.toggle()
+      }
+    }
+  }
+
+  // MARK: Internal
+
+  /// Label for dismiss accessibility action; empty string effectively disables the action
+  var dismissActionLabel: String {
+    onDismiss != nil ? "Remove" : ""
   }
 
   // MARK: Private
@@ -325,27 +345,21 @@ public struct IronChip<LeadingIcon: View>: View {
     }
   }
 
+  private var accessibilityValue: String {
+    if let isSelected {
+      return isSelected ? "Selected" : "Not selected"
+    }
+    if onDismiss != nil {
+      return "Removable"
+    }
+    return ""
+  }
+
   private static func iconSize(for size: IronChipSize) -> IronIconSize {
     switch size {
     case .small: .xSmall
     case .medium: .small
     case .large: .medium
-    }
-  }
-}
-
-// MARK: - View+If
-
-extension View {
-  @ViewBuilder
-  private func `if`(
-    _ condition: Bool,
-    transform: (Self) -> some View,
-  ) -> some View {
-    if condition {
-      transform(self)
-    } else {
-      self
     }
   }
 }
