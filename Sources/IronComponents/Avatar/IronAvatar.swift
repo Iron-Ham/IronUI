@@ -324,15 +324,15 @@ public struct IronAvatar<Badge: View>: View {
   }
 
   /// Badge size proportional to avatar to match the PDF mask cutout.
-  /// Uses ~50% of avatar size for consistent visual weight across sizes.
+  /// The mask is designed for 62.5% badge-to-avatar ratio.
   private var badgeSize: CGFloat {
-    avatarSize * 0.5
+    avatarSize * 0.625
   }
 
   /// How far the badge bottom extends below the avatar's bottom edge.
-  /// Tuned to align with the mask cutout position.
+  /// The mask cutout is positioned at ~9.375% below the avatar edge.
   private var badgeBottomOffset: CGFloat {
-    avatarSize * 0.05
+    avatarSize * 0.09375
   }
 
   private var initialsStyle: IronTextStyle {
@@ -497,20 +497,14 @@ extension IronAvatar where Badge == IronAvatarStatusBadge {
 
 /// A circular badge container for avatar badges.
 ///
-/// `IronAvatarBadge` provides a standard circular container with a background
-/// and border for badge content. Use this to wrap custom badge content.
+/// `IronAvatarBadge` provides a clean circular container with a background
+/// color for badge content. Use this to wrap custom badge content.
 ///
 /// ## Basic Usage
 ///
 /// ```swift
 /// // Solid color badge (like status indicator)
 /// IronAvatarBadge(backgroundColor: .green)
-///
-/// // Badge with custom content
-/// IronAvatarBadge {
-///   Image(systemName: "star.fill")
-///     .foregroundStyle(.yellow)
-/// }
 ///
 /// // Badge with background and content
 /// IronAvatarBadge(backgroundColor: .blue) {
@@ -526,15 +520,12 @@ public struct IronAvatarBadge<Content: View>: View {
   ///
   /// - Parameters:
   ///   - backgroundColor: The background color of the badge.
-  ///   - borderColor: The border color (defaults to background color from theme).
   ///   - content: Optional content to display inside the badge.
   public init(
     backgroundColor: Color,
-    borderColor: Color? = nil,
     @ViewBuilder content: () -> Content = { EmptyView() as! Content },
   ) {
     self.backgroundColor = backgroundColor
-    self.borderColor = borderColor
     self.content = content()
   }
 
@@ -547,33 +538,20 @@ public struct IronAvatarBadge<Content: View>: View {
         content
           .padding(2)
       }
-      .overlay {
-        Circle()
-          .strokeBorder(borderColor ?? theme.colors.background, lineWidth: 2)
-      }
   }
 
   // MARK: Private
 
-  @Environment(\.ironTheme) private var theme
-
   private let backgroundColor: Color
-  private let borderColor: Color?
   private let content: Content
 }
 
 extension IronAvatarBadge where Content == EmptyView {
   /// Creates a solid color badge with no content.
   ///
-  /// - Parameters:
-  ///   - backgroundColor: The background color of the badge.
-  ///   - borderColor: The border color (defaults to background color from theme).
-  public init(
-    backgroundColor: Color,
-    borderColor: Color? = nil,
-  ) {
+  /// - Parameter backgroundColor: The background color of the badge.
+  public init(backgroundColor: Color) {
     self.backgroundColor = backgroundColor
-    self.borderColor = borderColor
     content = EmptyView()
   }
 }
