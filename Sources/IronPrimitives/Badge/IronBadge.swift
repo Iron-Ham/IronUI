@@ -379,13 +379,80 @@ extension IronBadge {
   }
 }
 
+// MARK: - CountBadgeOverlay
+
+/// Internal wrapper for count badge overlay with scaled offsets.
+private struct CountBadgeOverlay: View {
+
+  // MARK: Internal
+
+  let count: Int
+  let maxCount: Int
+  let hidesWhenZero: Bool
+  let style: IronBadgeStyle
+  let color: IronBadgeColor
+
+  var body: some View {
+    IronBadge.count(
+      count,
+      hidesWhenZero: hidesWhenZero,
+      maxCount: maxCount,
+      style: style,
+      color: color,
+      size: .small,
+    )
+    .fixedSize()
+    .offset(x: horizontalOffset, y: -baseOffset)
+  }
+
+  // MARK: Private
+
+  /// Base offset for single-digit badges, scales with Dynamic Type.
+  @ScaledMetric(relativeTo: .caption2)
+  private var baseOffset: CGFloat = 6
+
+  /// Extra offset per additional digit character.
+  @ScaledMetric(relativeTo: .caption2)
+  private var digitOffset: CGFloat = 4
+
+  /// Calculates horizontal offset based on digit count.
+  private var horizontalOffset: CGFloat {
+    let displayCount = min(count, maxCount)
+    let digitCount = displayCount == 0 ? 1 : String(displayCount).count
+    let hasPlus = count > maxCount
+
+    // Base offset + additional offset for each extra digit beyond the first
+    let extraDigits = max(0, digitCount - 1) + (hasPlus ? 1 : 0)
+    return baseOffset + (CGFloat(extraDigits) * digitOffset)
+  }
+}
+
+// MARK: - DotBadgeOverlay
+
+/// Internal wrapper for dot badge overlay with scaled offsets.
+private struct DotBadgeOverlay: View {
+  let color: IronBadgeColor
+
+  var body: some View {
+    IronBadge(color: color, size: .small)
+      .fixedSize()
+      .offset(x: offset, y: -offset)
+  }
+
+  /// Offset for dot badges, scales with Dynamic Type.
+  @ScaledMetric(relativeTo: .caption2)
+  private var offset: CGFloat = 3
+
+}
+
 // MARK: - View Extension for Badge Overlay
 
 extension View {
   /// Adds a badge overlay to the view.
   ///
   /// The badge is positioned at the top-trailing corner, offset outside
-  /// the view bounds so it doesn't obscure the content.
+  /// the view bounds so it doesn't obscure the content. The offset scales
+  /// automatically based on the badge content size and Dynamic Type settings.
   ///
   /// ```swift
   /// Image(systemName: "bell")
@@ -395,32 +462,33 @@ extension View {
   /// - Parameters:
   ///   - count: The count to display.
   ///   - hidesWhenZero: Whether to hide when count is zero.
+  ///   - maxCount: Maximum count before showing "+". Defaults to 99.
   ///   - style: The visual style of the badge.
   ///   - color: The semantic color of the badge.
   /// - Returns: The view with a badge overlay.
   public func ironBadge(
     count: Int,
     hidesWhenZero: Bool = true,
+    maxCount: Int = 99,
     style: IronBadgeStyle = .filled,
     color: IronBadgeColor = .error,
   ) -> some View {
     overlay(alignment: .topTrailing) {
-      IronBadge.count(
-        count,
+      CountBadgeOverlay(
+        count: count,
+        maxCount: maxCount,
         hidesWhenZero: hidesWhenZero,
         style: style,
         color: color,
-        size: .small,
       )
-      .fixedSize()
-      .offset(x: 6, y: -6)
     }
   }
 
   /// Adds a dot badge overlay to the view.
   ///
   /// The badge is positioned at the top-trailing corner, offset outside
-  /// the view bounds so it doesn't obscure the content.
+  /// the view bounds so it doesn't obscure the content. The offset scales
+  /// automatically with Dynamic Type settings.
   ///
   /// ```swift
   /// Image(systemName: "bell")
@@ -437,9 +505,7 @@ extension View {
   ) -> some View {
     overlay(alignment: .topTrailing) {
       if isVisible {
-        IronBadge(color: color, size: .small)
-          .fixedSize()
-          .offset(x: 4, y: -4)
+        DotBadgeOverlay(color: color)
       }
     }
   }

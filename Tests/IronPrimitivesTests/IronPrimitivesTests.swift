@@ -585,3 +585,123 @@ struct IronBadgeTests {
     // Combined configuration works
   }
 }
+
+// MARK: - IronCardStyleTests
+
+@Suite("IronCardStyle")
+struct IronCardStyleTests {
+  @Test("all styles are available")
+  func allStylesAvailable() {
+    let styles = IronCardStyle.allCases
+    #expect(styles.count == 3)
+    #expect(styles.contains(.elevated))
+    #expect(styles.contains(.filled))
+    #expect(styles.contains(.outlined))
+  }
+}
+
+// MARK: - IronCardPaddingTests
+
+@Suite("IronCardPadding")
+struct IronCardPaddingTests {
+  @Test("all padding options are available")
+  func allPaddingOptionsAvailable() {
+    let options = IronCardPadding.allCases
+    #expect(options.count == 4)
+    #expect(options.contains(.none))
+    #expect(options.contains(.compact))
+    #expect(options.contains(.standard))
+    #expect(options.contains(.spacious))
+  }
+}
+
+// MARK: - IronCardTests
+
+@Suite("IronCard")
+@MainActor
+struct IronCardTests {
+
+  @Test("can be created with content only")
+  func createWithContentOnly() {
+    _ = IronCard {
+      Text("Card content")
+    }
+    // Card created successfully
+  }
+
+  @Test("can be created as tappable")
+  func createAsTappable() {
+    _ = IronCard {
+      Text("Tappable card")
+    } action: {
+      // Action
+    }
+    // Tappable card created successfully
+  }
+
+  @Test("can be created with header and content")
+  func createWithHeaderAndContent() {
+    _ = IronCard {
+      Text("Content")
+    } header: {
+      Text("Header")
+    }
+    // Card with header created successfully
+  }
+
+  @Test("can be created with content and footer")
+  func createWithContentAndFooter() {
+    _ = IronCard {
+      Text("Content")
+    } footer: {
+      Text("Footer")
+    }
+    // Card with footer created successfully
+  }
+
+  @Test("can be created with header, content, and footer")
+  func createWithHeaderContentAndFooter() {
+    _ = IronCard {
+      Text("Content")
+    } header: {
+      Text("Header")
+    } footer: {
+      Text("Footer")
+    }
+    // Card with header and footer created successfully
+  }
+
+  @Test("supports all styles", arguments: IronCardStyle.allCases)
+  func supportsStyle(style: IronCardStyle) {
+    _ = IronCard(style: style) {
+      Text("Styled card")
+    }
+    // Card created with style
+  }
+
+  @Test("supports all padding options", arguments: IronCardPadding.allCases)
+  func supportsPadding(padding: IronCardPadding) {
+    _ = IronCard(padding: padding) {
+      Text("Padded card")
+    }
+    // Card created with padding
+  }
+
+  @Test("supports combined configuration")
+  func supportsCombinedConfiguration() {
+    _ = IronCard(
+      style: .elevated,
+      padding: .spacious,
+    ) {
+      VStack {
+        Text("Title")
+        Text("Description")
+      }
+    } header: {
+      Label("Settings", systemImage: "gear")
+    } footer: {
+      Button("Save") { }
+    }
+    // Combined configuration works
+  }
+}
