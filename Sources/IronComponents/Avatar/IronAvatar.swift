@@ -493,9 +493,134 @@ extension IronAvatar where Badge == IronAvatarStatusBadge {
   }
 }
 
+// MARK: - IronAvatarBadge
+
+/// A circular badge container for avatar badges.
+///
+/// `IronAvatarBadge` provides a standard circular container with a background
+/// and border for badge content. Use this to wrap custom badge content.
+///
+/// ## Basic Usage
+///
+/// ```swift
+/// // Solid color badge (like status indicator)
+/// IronAvatarBadge(backgroundColor: .green)
+///
+/// // Badge with custom content
+/// IronAvatarBadge {
+///   Image(systemName: "star.fill")
+///     .foregroundStyle(.yellow)
+/// }
+///
+/// // Badge with background and content
+/// IronAvatarBadge(backgroundColor: .blue) {
+///   Image(systemName: "checkmark")
+///     .foregroundStyle(.white)
+/// }
+/// ```
+public struct IronAvatarBadge<Content: View>: View {
+
+  // MARK: Lifecycle
+
+  /// Creates a badge with a background color and optional content.
+  ///
+  /// - Parameters:
+  ///   - backgroundColor: The background color of the badge.
+  ///   - borderColor: The border color (defaults to background color from theme).
+  ///   - content: Optional content to display inside the badge.
+  public init(
+    backgroundColor: Color,
+    borderColor: Color? = nil,
+    @ViewBuilder content: () -> Content = { EmptyView() as! Content },
+  ) {
+    self.backgroundColor = backgroundColor
+    self.borderColor = borderColor
+    self.content = content()
+  }
+
+  // MARK: Public
+
+  public var body: some View {
+    Circle()
+      .fill(backgroundColor)
+      .overlay {
+        content
+          .padding(2)
+      }
+      .overlay {
+        Circle()
+          .strokeBorder(borderColor ?? theme.colors.background, lineWidth: 2)
+      }
+  }
+
+  // MARK: Private
+
+  @Environment(\.ironTheme) private var theme
+
+  private let backgroundColor: Color
+  private let borderColor: Color?
+  private let content: Content
+}
+
+extension IronAvatarBadge where Content == EmptyView {
+  /// Creates a solid color badge with no content.
+  ///
+  /// - Parameters:
+  ///   - backgroundColor: The background color of the badge.
+  ///   - borderColor: The border color (defaults to background color from theme).
+  public init(
+    backgroundColor: Color,
+    borderColor: Color? = nil,
+  ) {
+    self.backgroundColor = backgroundColor
+    self.borderColor = borderColor
+    content = EmptyView()
+  }
+}
+
+// MARK: - IronAvatarImageBadge
+
+/// A badge that displays an image within the avatar's badge slot.
+///
+/// Use this when you want to display a full-bleed image or SF Symbol
+/// as a badge without a circular container.
+///
+/// ```swift
+/// IronAvatar(name: "Verified") {
+///   IronAvatarImageBadge {
+///     Image(systemName: "checkmark.seal.fill")
+///       .foregroundStyle(.blue)
+///   }
+/// }
+/// ```
+public struct IronAvatarImageBadge<Content: View>: View {
+
+  // MARK: Lifecycle
+
+  /// Creates an image badge with custom content.
+  ///
+  /// - Parameter content: The content to display as the badge.
+  public init(@ViewBuilder content: () -> Content) {
+    self.content = content()
+  }
+
+  // MARK: Public
+
+  public var body: some View {
+    content
+      .scaledToFit()
+  }
+
+  // MARK: Private
+
+  private let content: Content
+}
+
 // MARK: - IronAvatarStatusBadge
 
 /// A status indicator badge for avatars.
+///
+/// This is a convenience wrapper around `IronAvatarBadge` for common status indicators.
 public struct IronAvatarStatusBadge: View {
 
   // MARK: Lifecycle
@@ -507,12 +632,7 @@ public struct IronAvatarStatusBadge: View {
   // MARK: Public
 
   public var body: some View {
-    Circle()
-      .fill(statusColor)
-      .overlay {
-        Circle()
-          .strokeBorder(theme.colors.background, lineWidth: 2)
-      }
+    IronAvatarBadge(backgroundColor: statusColor)
   }
 
   // MARK: Private
@@ -617,26 +737,31 @@ public enum IronAvatarInnerBorder: Sendable {
 
 #Preview("IronAvatar - Custom Badge") {
   HStack(spacing: 16) {
+    // Full-bleed SF Symbol badge
     IronAvatar(name: "Verified", size: .large) {
-      Image(systemName: "checkmark.seal.fill")
-        .resizable()
-        .foregroundStyle(.blue)
+      IronAvatarImageBadge {
+        Image(systemName: "checkmark.seal.fill")
+          .resizable()
+          .foregroundStyle(.blue)
+      }
     }
 
+    // Badge with colored background and icon
     IronAvatar(name: "Pro User", size: .large) {
-      Image(systemName: "star.fill")
-        .resizable()
-        .foregroundStyle(.yellow)
+      IronAvatarBadge(backgroundColor: .yellow) {
+        Image(systemName: "star.fill")
+          .resizable()
+          .foregroundStyle(.white)
+      }
     }
 
+    // Badge with notification count
     IronAvatar(name: "New", size: .large) {
-      Circle()
-        .fill(.red)
-        .overlay {
-          Text("3")
-            .font(.system(size: 10, weight: .bold))
-            .foregroundStyle(.white)
-        }
+      IronAvatarBadge(backgroundColor: .red) {
+        Text("3")
+          .font(.system(size: 10, weight: .bold))
+          .foregroundStyle(.white)
+      }
     }
   }
   .padding()
@@ -653,9 +778,11 @@ public enum IronAvatarInnerBorder: Sendable {
     HStack(spacing: 16) {
       IronAvatar(name: "With Badge", size: .large, innerBorder: .gradient(color: .black, opacity: 0.15), status: .online)
       IronAvatar(name: "Custom", size: .large, innerBorder: .gradient(color: .black, opacity: 0.15)) {
-        Image(systemName: "checkmark.seal.fill")
-          .resizable()
-          .foregroundStyle(.blue)
+        IronAvatarImageBadge {
+          Image(systemName: "checkmark.seal.fill")
+            .resizable()
+            .foregroundStyle(.blue)
+        }
       }
     }
   }
