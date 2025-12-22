@@ -139,9 +139,6 @@ public struct IronMenuLabel: View {
       }
 
       IronText(title, style: .labelMedium, color: .primary)
-
-      IronIcon(systemName: "chevron.down", size: .xSmall, color: .secondary)
-        .accessibilityHidden(true)
     }
     .padding(.horizontal, theme.spacing.md)
     .padding(.vertical, theme.spacing.sm)
@@ -401,7 +398,6 @@ public struct IronMenuPicker<Option: Hashable, Label: View>: View {
     HStack(spacing: 8) {
       IronAvatar(name: "John Doe", size: .small)
       IronText("John Doe", style: .labelMedium, color: .primary)
-      IronIcon(systemName: "chevron.down", size: .xSmall, color: .secondary)
     }
     .padding(8)
     .background(Color.gray.opacity(0.1))
