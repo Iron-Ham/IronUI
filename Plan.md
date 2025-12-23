@@ -148,12 +148,31 @@ Sources/IronCore/Interactions/
 - [x] `.ironBounce()` - Scale bounce effect
 - [x] `IronHaptics` - Impact, notification, selection feedback
 
-### Phase 5: IronForms - Form Container
+### Phase 5: IronForms - Form Container ✅
 **Priority: LOW** - After navigation is solid
 
-- [ ] `IronForm` - Form container with sections
-- [ ] `IronFormField` - Label + input + error wrapper
-- [ ] `IronDatePicker` - Themed date picker
+```
+Sources/IronForms/
+├── Form/
+│   └── IronForm.swift          # Form, FormSection, FormRow, FormDivider
+├── FormField/
+│   └── IronFormField.swift     # Label + hint + error wrapper
+├── DatePicker/
+│   └── IronDatePicker.swift    # Themed date & time pickers
+└── Validation/
+    └── IronValidation.swift    # Validators & ValidatedField wrapper
+```
+
+**Completed:**
+- [x] `IronForm` - Scrollable form container with themed styling
+- [x] `IronFormSection` - Groups fields with header/footer
+- [x] `IronFormRow` - Horizontal side-by-side fields
+- [x] `IronFormDivider` - Visual separator within sections
+- [x] `IronFormField` - Label + hint + error display wrapper
+- [x] `IronDatePicker` - Themed date picker (automatic, compact, graphical, wheel)
+- [x] `IronTimePicker` - Convenience wrapper for time selection
+- [x] `IronValidator` - Composable validation (required, email, minLength, maxLength, pattern, url, range)
+- [x] `IronValidatedField` - Property wrapper with automatic validation
 
 ---
 
@@ -167,7 +186,7 @@ Sources/IronCore/Interactions/
 
 ## Next Action
 
-Phases 1-4 complete. Options:
-- **Phase 5: IronForms** - Form container, validation, date picker
-- **Merge branch** - `feat/iron-navigation` → `main`
+Phases 1-5 complete. Options:
+- **Merge branch** - `feat/iron-forms` → `main`
 - **Family Values demo** - Build showcase app with all components
+- **IronDataDisplay** - Table, DataGrid, Timeline components
