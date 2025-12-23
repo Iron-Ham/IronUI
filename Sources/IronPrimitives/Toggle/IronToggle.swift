@@ -305,11 +305,11 @@ public struct IronToggle<Label: View>: View {
 
   private var trackColor: Color {
     if !isEnabled {
-      return theme.colors.border.opacity(0.5)
+      return theme.colors.onSurface.opacity(0.15)
     }
 
     // Interpolate between off and on colors based on thumb position
-    let offColor = theme.colors.border
+    let offColor = theme.colors.onSurface.opacity(0.3)
     let onColor = toggleColor
 
     // Use overlay blending for smooth color transition
