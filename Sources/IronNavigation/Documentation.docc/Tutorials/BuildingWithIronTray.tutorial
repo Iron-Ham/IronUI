@@ -4,6 +4,8 @@
 
     IronTray implements the Family-style tray pattern where the tray sizes itself to fit
     its content, animating height changes to signal progression through sequential flows.
+
+    @Image(source: "iron-tray.svg", alt: "IronTray preview")
   }
 
   @Section(title: "Creating a Basic Tray") {

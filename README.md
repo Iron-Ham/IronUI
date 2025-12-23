@@ -177,7 +177,6 @@ Full documentation is available at [iron-ham.github.io/IronUI](https://iron-ham.
 | [IronForms](https://iron-ham.github.io/IronUI/documentation/ironforms/) | Form components |
 | [IronDataDisplay](https://iron-ham.github.io/IronUI/documentation/irondatadisplay/) | Data visualization |
 | [IronNavigation](https://iron-ham.github.io/IronUI/documentation/ironnavigation/) | Navigation & presentation |
-| [IronKitBridge](https://iron-ham.github.io/IronUI/documentation/ironkitbridge/) | UIKit/AppKit bridges |
 
 ## Requirements
 

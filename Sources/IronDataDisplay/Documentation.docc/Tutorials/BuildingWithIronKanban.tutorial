@@ -5,6 +5,8 @@
 
     IronKanban provides a flexible column-based layout with drag-and-drop
     support, custom cards, and priority indicators.
+
+    @Image(source: "iron-kanban.png", alt: "IronKanban preview")
   }
 
   @Section(title: "Creating a Basic Kanban Board") {

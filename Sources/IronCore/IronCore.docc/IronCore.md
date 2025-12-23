@@ -57,12 +57,6 @@ Duration and spring animation presets.
 - ``IronAnimationTokens``
 - ``IronDefaultAnimationTokens``
 
-### Accessibility
-
-Utilities for building accessible interfaces.
-
-- ``Accessibility``
-
 ### Logging
 
 Structured logging for debugging.

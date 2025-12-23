@@ -13,6 +13,5 @@ struct IronUIIntegrationTests {
     #expect(!IronNavigation.version.isEmpty)
     #expect(!IronForms.version.isEmpty)
     #expect(!IronDataDisplay.version.isEmpty)
-    #expect(!IronKitBridge.version.isEmpty)
   }
 }

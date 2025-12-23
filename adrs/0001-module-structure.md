@@ -44,9 +44,6 @@ IronUI (Umbrella)
     |
     +-- IronDataDisplay (Depends on IronCore, IronPrimitives, IronComponents)
     |       |-- Table, DataGrid, Timeline
-    |
-    +-- IronKitBridge (Depends on IronCore)
-            |-- UIKit/AppKit representables
 ```
 
 ## Consequences

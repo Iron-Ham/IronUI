@@ -11,3 +11,6 @@ DerivedData/
 CLAUDE.md
 .claude
 .swiftpm
+
+# Local planning and issue drafts
+/Issues

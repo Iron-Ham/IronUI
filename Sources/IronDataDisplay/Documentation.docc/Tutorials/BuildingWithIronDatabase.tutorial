@@ -5,6 +5,8 @@
 
     IronDatabase provides a flexible data model with runtime column management,
     type-safe cell values, and a ready-to-use table view.
+
+    @Image(source: "iron-database.png", alt: "IronDatabase preview")
   }
 
   @Section(title: "Understanding the Data Model") {
