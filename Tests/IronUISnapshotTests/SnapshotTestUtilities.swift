@@ -437,9 +437,10 @@ private func systemBackground(for colorScheme: SnapshotColorScheme) -> Color {
 /// Set `IRONUI_RECORD_SNAPSHOTS` in the environment to a truthy value (1/true/yes/record)
 /// to record snapshots instead of validating existing ones.
 private let isRecordingSnapshots: Bool = {
-  guard let value = ProcessInfo.processInfo.environment["IRONUI_RECORD_SNAPSHOTS"]?
-    .trimmingCharacters(in: .whitespacesAndNewlines)
-    .lowercased()
+  guard
+    let value = ProcessInfo.processInfo.environment["IRONUI_RECORD_SNAPSHOTS"]?
+      .trimmingCharacters(in: .whitespacesAndNewlines)
+      .lowercased()
   else {
     return false
   }

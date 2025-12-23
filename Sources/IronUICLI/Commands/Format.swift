@@ -12,13 +12,14 @@ extension IronUICLI {
 
     @Flag(
       name: .long,
-      help: "Show what would be changed without making changes."
+      help: "Show what would be changed without making changes.",
     )
     var dryRun = false
 
     func run() async throws {
       var arguments = [
-        "swift", "package",
+        "swift",
+        "package",
         "--allow-writing-to-package-directory",
         "format",
       ]
@@ -31,7 +32,7 @@ extension IronUICLI {
       try await runner.runTask(
         dryRun ? "Checking formatting" : "Formatting Swift files",
         command: "/usr/bin/env",
-        arguments: arguments
+        arguments: arguments,
       )
 
       noora.success(dryRun ? "Formatting check complete" : "Formatting complete")

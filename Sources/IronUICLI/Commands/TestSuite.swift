@@ -6,20 +6,22 @@ import Noora
 extension IronUICLI {
   struct TestSuite: AsyncParsableCommand, IronUICommand {
 
+    // MARK: Internal
+
     static let configuration = CommandConfiguration(
       commandName: "test",
-      abstract: "Runs the full IronUI test suite."
+      abstract: "Runs the full IronUI test suite.",
     )
 
     @Flag(
       name: .long,
-      help: "Enable parallel test execution."
+      help: "Enable parallel test execution.",
     )
     var parallel = false
 
     @Flag(
       name: .long,
-      help: "Show verbose test output."
+      help: "Show verbose test output.",
     )
     var verbose = false
 
@@ -38,11 +40,13 @@ extension IronUICLI {
       try await runner.runTask(
         description,
         command: "/usr/bin/env",
-        arguments: arguments
+        arguments: arguments,
       )
 
       noora.success(.alert("Tests passed", takeaways: ["\(description)"]))
     }
+
+    // MARK: Private
 
     private func buildDescription() -> String {
       var parts = ["Running all tests"]

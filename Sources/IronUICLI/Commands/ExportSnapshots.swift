@@ -6,26 +6,18 @@ import Noora
 extension IronUICLI {
   struct ExportSnapshots: AsyncParsableCommand, IronUICommand {
 
+    // MARK: Internal
+
     static let configuration = CommandConfiguration(
       commandName: "export-snapshots",
-      abstract: "Exports snapshots for documentation usage."
+      abstract: "Exports snapshots for documentation usage.",
     )
 
     @Flag(
       name: .long,
-      help: "Show what would be copied without making changes."
+      help: "Show what would be copied without making changes.",
     )
     var dryRun = false
-
-    /// Module configuration mapping snapshot subdirectories to source module paths.
-    private static let moduleConfig: [(snapshotSubdir: String, sourceModule: String)] = [
-      ("Primitives", "IronPrimitives"),
-      ("Components", "IronComponents"),
-      ("Layouts", "IronLayouts"),
-      ("Forms", "IronForms"),
-      ("DataDisplay", "IronDataDisplay"),
-      ("Navigation", "IronNavigation"),
-    ]
 
     func run() async throws {
       let fileManager = FileManager.default
@@ -52,7 +44,7 @@ extension IronUICLI {
           from: sourceDir,
           to: resourcesDir,
           modulePrefix: snapshotSubdir,
-          fileManager: fileManager
+          fileManager: fileManager,
         )
         totalCopied += copied
       }
@@ -64,23 +56,35 @@ extension IronUICLI {
             "\(totalCopied) images \(dryRun ? "would be" : "") copied",
             "Format: ComponentName-testName.png (light)",
             "Format: ComponentName-testName~dark.png (dark)",
-          ]
+          ],
         ))
       } else {
         noora.warning(.alert(
           "No snapshots found",
-          takeaway: "Run snapshot tests first to generate images"
+          takeaway: "Run snapshot tests first to generate images",
         ))
       }
     }
+
+    // MARK: Private
+
+    /// Module configuration mapping snapshot subdirectories to source module paths.
+    private static let moduleConfig: [(snapshotSubdir: String, sourceModule: String)] = [
+      ("Primitives", "IronPrimitives"),
+      ("Components", "IronComponents"),
+      ("Layouts", "IronLayouts"),
+      ("Forms", "IronForms"),
+      ("DataDisplay", "IronDataDisplay"),
+      ("Navigation", "IronNavigation"),
+    ]
 
     /// Exports snapshots from a source directory to a resources directory.
     /// - Returns: The number of files copied.
     private func exportSnapshots(
       from sourceDir: String,
       to resourcesDir: String,
-      modulePrefix: String,
-      fileManager: FileManager
+      modulePrefix _: String,
+      fileManager: FileManager,
     ) throws -> Int {
       var copiedCount = 0
 
@@ -91,8 +95,9 @@ extension IronUICLI {
         let testPath = (sourceDir as NSString).appendingPathComponent(testDir)
 
         var isDirectory: ObjCBool = false
-        guard fileManager.fileExists(atPath: testPath, isDirectory: &isDirectory),
-              isDirectory.boolValue
+        guard
+          fileManager.fileExists(atPath: testPath, isDirectory: &isDirectory),
+          isDirectory.boolValue
         else {
           continue
         }
@@ -108,14 +113,14 @@ extension IronUICLI {
           // Extract test name (e.g., "buttonVariants" from "buttonVariants.iPhone17Pro-standard-light.png")
           let testName = lightSnapshot.replacingOccurrences(
             of: ".iPhone17Pro-standard-light.png",
-            with: ""
+            with: "",
           )
 
           // Create destination directory if needed
           if !dryRun {
             try fileManager.createDirectory(
               atPath: resourcesDir,
-              withIntermediateDirectories: true
+              withIntermediateDirectories: true,
             )
           }
 
@@ -136,7 +141,7 @@ extension IronUICLI {
           // Copy dark version if it exists
           let darkSnapshot = lightSnapshot.replacingOccurrences(
             of: "-light",
-            with: "-dark"
+            with: "-dark",
           )
           let darkSource = (testPath as NSString).appendingPathComponent(darkSnapshot)
 
@@ -158,7 +163,7 @@ extension IronUICLI {
         if !lightSnapshots.isEmpty {
           noora.info(.alert(
             "\(dryRun ? "Would copy" : "Copied") \(componentName) snapshots",
-            takeaways: ["\(lightSnapshots.count) test cases"]
+            takeaways: ["\(lightSnapshots.count) test cases"],
           ))
         }
       }

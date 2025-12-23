@@ -17,12 +17,12 @@ struct IronUICLI: AsyncParsableCommand {
       Format.self,
       Snapshots.self,
       TestSuite.self,
-    ]
+    ],
   )
 }
 
 /// Protocol for IronUI CLI commands with shared Noora integration.
-protocol IronUICommand: AsyncParsableCommand {}
+protocol IronUICommand: AsyncParsableCommand { }
 
 extension IronUICommand {
   var noora: Noora {
@@ -34,7 +34,7 @@ extension IronUICommand {
   }
 }
 #else
-// Stub for non-macOS platforms (CLI is only available on macOS)
+/// Stub for non-macOS platforms (CLI is only available on macOS)
 @main
 struct IronUICLI {
   static func main() {

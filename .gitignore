@@ -8,9 +8,11 @@ DerivedData/
 .netrc
 
 # Project-specific
-CLAUDE.md
-.claude
 .swiftpm
+
+# Claude Code - track shared configs, ignore personal ones
+CLAUDE.local.md
+.claude/settings.json
 
 # Local planning and issue drafts
 /Issues

@@ -12,13 +12,13 @@ extension IronUICLI {
 
     @Flag(
       name: .long,
-      help: "Also remove derived data and package caches."
+      help: "Also remove derived data and package caches.",
     )
     var all = false
 
     @Flag(
       name: .long,
-      help: "Show what would be removed without making changes."
+      help: "Show what would be removed without making changes.",
     )
     var dryRun = false
 
@@ -28,7 +28,7 @@ extension IronUICLI {
         noora.info(.alert("Dry run mode", takeaways: ["No files will be removed"]))
       }
 
-      var removedItems: [String] = []
+      var removedItems = [String]()
 
       // Always clean .build directory
       let buildDir = ".build"
@@ -58,7 +58,7 @@ extension IronUICLI {
         if fileManager.fileExists(atPath: xcodeProject) {
           noora.info(.alert(
             "Note: Xcode derived data",
-            takeaways: ["Clean manually via Xcode or remove ~/Library/Developer/Xcode/DerivedData"]
+            takeaways: ["Clean manually via Xcode or remove ~/Library/Developer/Xcode/DerivedData"],
           ))
         }
       }
@@ -69,14 +69,14 @@ extension IronUICLI {
         let takeaways: [TerminalText] = removedItems.map { "Removed \($0)" }
         noora.success(.alert(
           dryRun ? "Would clean" : "Cleaned",
-          takeaways: takeaways
+          takeaways: takeaways,
         ))
       }
 
       if !all {
         noora.info(.alert(
           "Tip",
-          takeaways: ["Use --all to also remove Package.resolved"]
+          takeaways: ["Use --all to also remove Package.resolved"],
         ))
       }
     }

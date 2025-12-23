@@ -27,13 +27,13 @@ struct CommandRunner {
     _ description: String,
     command: String,
     arguments: [String] = [],
-    environment: [String: String] = [:]
+    environment: [String: String] = [:],
   ) async throws {
     try await noora.progressStep(
       message: description,
       successMessage: "\(description) completed",
       errorMessage: "\(description) failed",
-      showSpinner: true
+      showSpinner: true,
     ) { _ in
       let process = Process()
       process.executableURL = URL(fileURLWithPath: command)
@@ -69,14 +69,14 @@ struct CommandRunner {
   func runScript(_ relativePath: String, environment: [String: String] = [:]) async throws {
     let scriptURL = URL(
       fileURLWithPath: relativePath,
-      relativeTo: URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+      relativeTo: URL(fileURLWithPath: FileManager.default.currentDirectoryPath),
     )
 
     try await runTask(
       "Running \(relativePath)",
       command: "/usr/bin/env",
       arguments: ["bash", scriptURL.path],
-      environment: environment
+      environment: environment,
     )
   }
 
