@@ -126,8 +126,8 @@ public struct IronCheckbox<Label: View>: View {
   // MARK: Public
 
   public var body: some View {
-    Button {
-      withAnimation(theme.animation.bouncy) {
+    let button = Button {
+      withAnimation(reduceMotion ? nil : theme.animation.bouncy) {
         isChecked.toggle()
       }
       IronLogger.ui.debug(
@@ -143,15 +143,27 @@ public struct IronCheckbox<Label: View>: View {
             .opacity(isEnabled ? 1.0 : 0.5)
         }
       }
+      .frame(minWidth: label == nil ? minTouchTarget : nil)
+      .frame(minHeight: minTouchTarget)
     }
     .buttonStyle(.plain)
     .disabled(!isEnabled)
+    .accessibilityElement(children: .combine)
+    .accessibilityValue(isChecked ? "Checked" : "Unchecked")
+    .accessibilityAddTraits(.isButton)
+
+    if label == nil {
+      button.accessibilityLabel("Checkbox")
+    } else {
+      button
+    }
   }
 
   // MARK: Private
 
   @Environment(\.ironTheme) private var theme
   @Environment(\.isEnabled) private var isEnabled
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
   @Binding private var isChecked: Bool
 
@@ -163,6 +175,9 @@ public struct IronCheckbox<Label: View>: View {
 
   @ScaledMetric(relativeTo: .title3)
   private var largeSize: CGFloat = 24
+
+  /// Minimum touch target size per Apple HIG (44pt).
+  private let minTouchTarget: CGFloat = 44
 
   private let size: IronCheckboxSize
   private let color: IronCheckboxColor
@@ -187,15 +202,12 @@ public struct IronCheckbox<Label: View>: View {
       if isChecked {
         Image(systemName: "checkmark")
           .font(.system(size: checkmarkSize, weight: .bold))
-          .foregroundStyle(.white)
+          .foregroundStyle(theme.colors.onPrimary)
           .transition(.scale.combined(with: .opacity))
       }
     }
     .scaleEffect(isChecked ? 1.0 : 0.95)
-    .accessibilityElement(children: .ignore)
-    .accessibilityLabel(label != nil ? "" : "Checkbox")
-    .accessibilityValue(isChecked ? "Checked" : "Unchecked")
-    .accessibilityAddTraits(.isButton)
+    .accessibilityHidden(true)
   }
 
   private var boxSize: CGFloat {

@@ -216,7 +216,7 @@ struct IronButtonStyleInternal: ButtonStyle {
         y: shadowY(isPressed: configuration.isPressed),
       )
       .scaleEffect(configuration.isPressed ? pressedScale : 1.0)
-      .animation(theme.animation.snappy, value: configuration.isPressed)
+      .accessibleAnimation(theme.animation.snappy, value: configuration.isPressed)
   }
 
   // MARK: Private

@@ -282,7 +282,7 @@ public struct IronAlert<Icon: View, Actions: View>: View {
   // MARK: Public
 
   public var body: some View {
-    HStack(alignment: .top, spacing: theme.spacing.sm) {
+    let alertView = HStack(alignment: .top, spacing: theme.spacing.sm) {
       // Icon
       iconView
         .padding(.top, 2)
@@ -308,16 +308,15 @@ public struct IronAlert<Icon: View, Actions: View>: View {
       // Dismiss button
       if let onDismiss {
         Button {
-          withAnimation(theme.animation.snappy) {
+          withAnimation(reduceMotion ? nil : theme.animation.snappy) {
             onDismiss()
           }
           IronLogger.ui.debug("IronAlert dismissed", metadata: ["variant": .string("\(variant)")])
         } label: {
-          Image(systemName: "xmark")
-            .font(.system(size: 10, weight: .bold))
-            .foregroundStyle(theme.colors.onSurface.opacity(0.5))
+          IronIcon(systemName: "xmark", size: .xSmall, color: .secondary)
             .frame(width: 20, height: 20)
             .background(theme.colors.onSurface.opacity(0.08), in: Circle())
+            .frame(width: minTouchTarget, height: minTouchTarget)
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Dismiss")
@@ -341,12 +340,20 @@ public struct IronAlert<Icon: View, Actions: View>: View {
         .strokeBorder(borderColor, lineWidth: 1)
     }
     .accessibilityElement(children: .combine)
-    .accessibilityLabel(accessibilityMessage)
+    .accessibilityLabel(accessibilityPrimaryLabel)
+    .accessibilityValue(accessibilitySecondaryValue)
+
+    if title != nil {
+      alertView.accessibilityHint(Text(accessibilityMessage))
+    } else {
+      alertView
+    }
   }
 
   // MARK: Private
 
   @Environment(\.ironTheme) private var theme
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
   private let title: LocalizedStringKey?
   private let message: LocalizedStringKey
@@ -354,6 +361,9 @@ public struct IronAlert<Icon: View, Actions: View>: View {
   private let customIcon: Icon?
   private let onDismiss: (() -> Void)?
   private let actions: Actions?
+
+  /// Minimum touch target size per Apple HIG (44pt).
+  private let minTouchTarget: CGFloat = 44
 
   @ViewBuilder
   private var iconView: some View {
@@ -406,6 +416,20 @@ public struct IronAlert<Icon: View, Actions: View>: View {
     case .warning: "Warning"
     case .error: "Error"
     }
+  }
+
+  private var accessibilityPrimaryLabel: Text {
+    if let title {
+      return Text(title)
+    }
+    return Text(message)
+  }
+
+  private var accessibilitySecondaryValue: Text {
+    if title != nil {
+      return Text(message)
+    }
+    return Text(accessibilityMessage)
   }
 }
 

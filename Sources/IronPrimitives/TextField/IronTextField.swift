@@ -284,7 +284,7 @@ public struct IronTextField<Leading: View, Trailing: View>: View {
       }
     }
     .scaleEffect(isFocused ? 1.01 : 1.0)
-    .animation(theme.animation.snappy, value: isFocused)
+    .accessibleAnimation(theme.animation.snappy, value: isFocused)
   }
 
   @ViewBuilder
