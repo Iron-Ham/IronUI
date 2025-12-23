@@ -21,6 +21,7 @@
 // and renders the view within it. This provides more accurate rendering than
 // the default layer-based capture, particularly for SwiftUI content.
 
+import Foundation
 import SnapshotTesting
 import SwiftUI
 import Testing
@@ -433,7 +434,18 @@ private func systemBackground(for colorScheme: SnapshotColorScheme) -> Color {
 ///   - line: The line where the assertion is made.
 /// Set to true to record new reference snapshots, false to verify against existing ones.
 /// Change this to `true` when you need to update or create new reference images.
-private let isRecordingSnapshots = true
+/// Set `IRONUI_RECORD_SNAPSHOTS` in the environment to a truthy value (1/true/yes/record)
+/// to record snapshots instead of validating existing ones.
+private let isRecordingSnapshots: Bool = {
+  guard let value = ProcessInfo.processInfo.environment["IRONUI_RECORD_SNAPSHOTS"]?
+    .trimmingCharacters(in: .whitespacesAndNewlines)
+    .lowercased()
+  else {
+    return false
+  }
+
+  return ["1", "true", "yes", "record"].contains(value)
+}()
 
 @MainActor
 func ironAssertSnapshots(

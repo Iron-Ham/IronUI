@@ -219,6 +219,51 @@ Full documentation is available at [iron-ham.github.io/IronUI](https://iron-ham.
 | [IronDataDisplay](https://iron-ham.github.io/IronUI/documentation/irondatadisplay/) | Data visualization |
 | [IronNavigation](https://iron-ham.github.io/IronUI/documentation/ironnavigation/) | Navigation & presentation |
 
+## Developer CLI
+
+IronUI includes a developer CLI (`ironui`) for common development tasks. All commands use native Swift—no shell scripts required.
+
+```bash
+swift run ironui-cli <command> [options]
+```
+
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `build` | Build the package (`--config release` for release builds) |
+| `clean` | Remove build artifacts (`--all` to include Package.resolved) |
+| `docs` | Generate DocC documentation (`--preview` for live preview server) |
+| `export-snapshots` | Export snapshots to DocC Resources (`--dry-run` to preview) |
+| `format` | Format Swift sources with Airbnb style (`--dry-run` to check only) |
+| `snapshots` | Run snapshot tests on macOS + iOS (`--record`, `--platform`, `--simulator`) |
+| `test` | Run tests (`--filter`, `--test-target`, `--parallel`, `--verbose`) |
+
+### Examples
+
+```bash
+# Build for release
+swift run ironui-cli build --config release
+
+# Format and check without modifying
+swift run ironui-cli format --dry-run
+
+# Run specific tests in parallel
+swift run ironui-cli test --filter Button --parallel
+
+# Record new snapshot baselines (macOS + iOS)
+swift run ironui-cli snapshots --record
+
+# Run iOS snapshots only on a specific simulator
+swift run ironui-cli snapshots --platform ios --simulator "iPhone 17 Pro Max"
+
+# Preview documentation locally
+swift run ironui-cli docs --preview
+
+# Clean everything and rebuild
+swift run ironui-cli clean --all && swift run ironui-cli build
+```
+
 ## Requirements
 
 - iOS 26.0+

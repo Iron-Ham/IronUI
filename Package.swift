@@ -43,6 +43,10 @@ let package = Package(
       name: "IronDataDisplay",
       targets: ["IronDataDisplay"],
     ),
+    .executable(
+      name: "ironui-cli",
+      targets: ["IronUICLI"],
+    ),
   ],
   dependencies: [
     // Documentation
@@ -59,6 +63,16 @@ let package = Package(
     .package(
       url: "https://github.com/pointfreeco/swift-snapshot-testing",
       from: "1.18.0",
+    ),
+    // CLI
+    .package(
+      url: "https://github.com/apple/swift-argument-parser",
+      from: "1.7.0",
+    ),
+    // Styled console output
+    .package(
+      url: "https://github.com/tuist/Noora",
+      branch: "main"
     ),
   ],
   targets: [
@@ -159,6 +173,19 @@ let package = Package(
       name: "IronUIIntegrationTests",
       dependencies: ["IronUI"],
       path: "Tests/IronUIIntegrationTests",
+    ),
+    .executableTarget(
+      name: "IronUICLI",
+      dependencies: [
+        .target(name: "IronUI", condition: .when(platforms: [.macOS])),
+        .product(name: "Noora", package: "Noora", condition: .when(platforms: [.macOS])),
+        .product(name: "ArgumentParser", package: "swift-argument-parser", condition: .when(platforms: [.macOS])),
+      ],
+      path: "Sources/IronUICLI",
+      resources: [],
+      swiftSettings: [
+        .define("IRONUI_CLI_ENABLED", .when(platforms: [.macOS])),
+      ]
     ),
   ],
   swiftLanguageModes: [.v6],
