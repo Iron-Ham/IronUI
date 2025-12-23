@@ -279,7 +279,7 @@ public struct IronOSLogHandler: IronLogHandler {
 
 // MARK: - IronPrintHandler
 
-/// A simple log handler that prints to standard output.
+/// A simple log handler that writes to the system log using `NSLog`.
 ///
 /// Useful for debugging in Xcode or when OSLog is not available.
 /// Includes timestamps, levels, and source information.
@@ -345,8 +345,7 @@ public struct IronPrintHandler: IronLogHandler {
       components.append(metadata.description)
     }
 
-    // swiftlint:disable:next no_direct_standard_out_logs
-    print(components.joined(separator: " "))
+    NSLog("%@", components.joined(separator: " "))
   }
 
   // MARK: Private
