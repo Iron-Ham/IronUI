@@ -165,6 +165,20 @@ theme.animation.snappy
 
 Full documentation is available at [iron-ham.github.io/IronUI](https://iron-ham.github.io/IronUI/documentation/ironui/)
 
+### Module Documentation
+
+| Module | Description |
+|--------|-------------|
+| [IronUI](https://iron-ham.github.io/IronUI/documentation/ironui/) | Umbrella module (re-exports all) |
+| [IronCore](https://iron-ham.github.io/IronUI/documentation/ironcore/) | Theming, tokens, accessibility |
+| [IronPrimitives](https://iron-ham.github.io/IronUI/documentation/ironprimitives/) | Basic components |
+| [IronComponents](https://iron-ham.github.io/IronUI/documentation/ironcomponents/) | Composed components |
+| [IronLayouts](https://iron-ham.github.io/IronUI/documentation/ironlayouts/) | Layout helpers |
+| [IronForms](https://iron-ham.github.io/IronUI/documentation/ironforms/) | Form components |
+| [IronDataDisplay](https://iron-ham.github.io/IronUI/documentation/irondatadisplay/) | Data visualization |
+| [IronNavigation](https://iron-ham.github.io/IronUI/documentation/ironnavigation/) | Navigation & presentation |
+| [IronKitBridge](https://iron-ham.github.io/IronUI/documentation/ironkitbridge/) | UIKit/AppKit bridges |
+
 ## Requirements
 
 - iOS 26.0+
