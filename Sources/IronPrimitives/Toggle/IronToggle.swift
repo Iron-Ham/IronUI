@@ -285,16 +285,27 @@ public struct IronToggle<Label: View>: View {
     }
   }
 
+  /// Progress from off (0) to on (1) based on thumb position
+  private var visualProgress: CGFloat {
+    guard maxThumbTravel > 0 else { return isOn ? 1 : 0 }
+    return thumbOffset / maxThumbTravel
+  }
+
   private var trackColor: Color {
     if !isEnabled {
       return theme.colors.border.opacity(0.5)
     }
 
-    if isOn {
-      return toggleColor
-    } else {
-      return theme.colors.border
-    }
+    // Interpolate between off and on colors based on thumb position
+    let offColor = theme.colors.border
+    let onColor = toggleColor
+
+    // Use overlay blending for smooth color transition
+    return Color(
+      red: lerp(offColor.components.red, onColor.components.red, visualProgress),
+      green: lerp(offColor.components.green, onColor.components.green, visualProgress),
+      blue: lerp(offColor.components.blue, onColor.components.blue, visualProgress),
+    )
   }
 
   private var thumbColor: Color {
@@ -310,6 +321,11 @@ public struct IronToggle<Label: View>: View {
     case .error: theme.colors.error
     case .custom(let customColor): customColor
     }
+  }
+
+  /// Linear interpolation between two values
+  private func lerp(_ a: CGFloat, _ b: CGFloat, _ t: CGFloat) -> CGFloat {
+    a + (b - a) * t
   }
 
   /// Toggles the state with animation and logging
@@ -549,4 +565,30 @@ public enum IronToggleColor: Sendable {
   }
 
   return Demo()
+}
+
+// MARK: - Color Components Extension
+
+extension Color {
+  /// RGB components of the color (approximated via UIColor/NSColor conversion)
+  fileprivate var components: (red: CGFloat, green: CGFloat, blue: CGFloat, alpha: CGFloat) {
+    #if canImport(UIKit)
+    var red: CGFloat = 0
+    var green: CGFloat = 0
+    var blue: CGFloat = 0
+    var alpha: CGFloat = 0
+    UIColor(self).getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+    return (red, green, blue, alpha)
+    #elseif canImport(AppKit)
+    let nsColor = NSColor(self).usingColorSpace(.deviceRGB) ?? NSColor(self)
+    var red: CGFloat = 0
+    var green: CGFloat = 0
+    var blue: CGFloat = 0
+    var alpha: CGFloat = 0
+    nsColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+    return (red, green, blue, alpha)
+    #else
+    return (0.5, 0.5, 0.5, 1.0)
+    #endif
+  }
 }
