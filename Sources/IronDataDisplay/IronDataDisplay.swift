@@ -1,17 +1,16 @@
 // IronDataDisplay - Data display components
-// Contains: Table, DataGrid, Timeline, Tree
+// Contains: Timeline, Kanban, Database
 
-import IronComponents
-import IronCore
-import IronPrimitives
+@_exported import IronComponents
+@_exported import IronCore
+@_exported import IronPrimitives
 
 /// The IronDataDisplay module provides data visualization components.
 ///
 /// Includes:
-/// - IronTable
-/// - IronDataGrid
-/// - IronTimeline
-/// - IronTree
+/// - ``IronTimeline`` - Vertical event timeline
+/// - ``IronKanban`` - Project management board (coming soon)
+/// - ``IronDatabase`` - Notion-style inline database (coming soon)
 public enum IronDataDisplay {
   /// The current version of IronDataDisplay.
   public static let version = "0.1.0"

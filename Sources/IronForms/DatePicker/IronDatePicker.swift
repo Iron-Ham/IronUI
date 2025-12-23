@@ -171,7 +171,12 @@ private struct DatePickerStyleModifier: ViewModifier {
     case .graphical:
       content.datePickerStyle(.graphical)
     case .wheel:
+      #if os(iOS)
       content.datePickerStyle(.wheel)
+      #else
+      // Wheel style not available on macOS, fall back to graphical
+      content.datePickerStyle(.graphical)
+      #endif
     }
   }
 }
