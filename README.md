@@ -214,7 +214,7 @@ swift run ironui-cli test --filter Button --parallel
 swift run ironui-cli snapshots --record
 
 # Run iOS snapshots only on a specific simulator
-swift run ironui-cli snapshots --platform ios --simulator "iPhone 16 Pro Max"
+swift run ironui-cli snapshots --platform ios --simulator "iPhone 17 Pro Max"
 
 # Preview documentation locally
 swift run ironui-cli docs --preview

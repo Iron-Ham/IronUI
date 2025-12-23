@@ -35,9 +35,9 @@ extension IronUICLI {
 
     @Option(
       name: .long,
-      help: "iOS Simulator device name (default: iPhone 16 Pro)."
+      help: "iOS Simulator device name (default: iPhone 17 Pro)."
     )
-    var simulator: String = "iPhone 16 Pro"
+    var simulator: String = "iPhone 17 Pro"
 
     func run() async throws {
       var environment: [String: String] = [:]
