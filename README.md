@@ -1,6 +1,6 @@
 # IronUI
 
-A modern SwiftUI component library for iOS 26+ and macOS 26+, designed for the Liquid Glass aesthetic.
+A modern, playful SwiftUI component library for iOS 26+ and macOS 26+, inspired by Family/Honkish and the Liquid Glass aesthetic.
 
 [![Swift 6](https://img.shields.io/badge/Swift-6.0-orange.svg)](https://swift.org)
 [![iOS 26+](https://img.shields.io/badge/iOS-26+-blue.svg)](https://developer.apple.com/ios/)
@@ -65,6 +65,7 @@ struct ContentView: View {
 ```
 
 ## Components
+Complete list of public views and data models; configuration enums and style options are documented in DocC.
 
 ### Primitives
 Basic building blocks for constructing interfaces.
@@ -79,12 +80,15 @@ Basic building blocks for constructing interfaces.
 | `IronCheckbox` | Checkbox with label |
 | `IronToggle` | Switch control |
 | `IronRadio` | Radio button for single selection |
+| `IronRadioGroup` | Grouped radio selection container |
 | `IronProgress` | Linear and circular progress indicators |
 | `IronSpinner` | Loading spinner |
 | `IronAlert` | Contextual alert messages |
 | `IronBadge` | Count and status badges |
 | `IronCard` | Container with elevation styles |
 | `IronDivider` | Visual separator |
+| `IronContextLine` | Context line for grouped content |
+| `IronContextGroup` | Groups multiple context lines |
 
 ### Components
 Composed elements for common UI patterns.
@@ -92,10 +96,22 @@ Composed elements for common UI patterns.
 | Component | Description |
 |-----------|-------------|
 | `IronAvatar` | User profile image with status badges |
+| `IronAvatarBadge` | Custom badge overlay for avatars |
+| `IronAvatarImageBadge` | Image-based avatar badge |
+| `IronAvatarStatusBadge` | Status dot badge for avatars |
 | `IronChip` | Tags, filters, and selections |
 | `IronSegmentedControl` | Tabbed selection control |
 | `IronMenu` | Dropdown menu with sections |
+| `IronMenuLabel` | Consistent menu trigger label |
+| `IronMenuItem` | Menu row with actions and shortcuts |
+| `IronMenuSection` | Grouped menu section |
+| `IronMenuDivider` | Menu separator |
+| `IronMenuPicker` | Picker inside a menu |
 | `IronSkeleton` | Loading placeholders |
+| `IronSkeletonText` | Skeleton text lines |
+| `IronSkeletonCard` | Skeleton card layout |
+| `IronSkeletonList` | Skeleton list layout |
+| `IronSkeletonListItem` | Skeleton list row |
 
 ### Layouts
 Responsive layout components.
@@ -116,8 +132,12 @@ Form building with validation.
 | `IronForm` | Scrollable form container |
 | `IronFormSection` | Grouped form fields |
 | `IronFormField` | Field with label, hint, and error |
+| `IronFormRow` | Row layout for grouped form fields |
+| `IronFormDivider` | Divider styled for forms |
 | `IronDatePicker` | Themed date selection |
+| `IronTimePicker` | Themed time selection |
 | `IronValidator` | Composable validation rules |
+| `IronValidatedField` | Property wrapper for field validation |
 
 ### Data Display
 Components for visualizing structured data.
@@ -125,8 +145,29 @@ Components for visualizing structured data.
 | Component | Description |
 |-----------|-------------|
 | `IronTimeline` | Vertical event timeline |
+| `IronTimelineEntry` | Standard timeline entry view |
+| `IronTimelineDefaultContent` | Default timeline content layout |
 | `IronKanban` | Kanban board with drag support |
-| `IronDatabase` | Notion-style database tables |
+| `IronKanbanCard` | Kanban card content container |
+| `IronKanbanDefaultEmptyState` | Default empty state for columns |
+| `IronDatabase` | Database model for tables |
+| `IronDatabaseTable` | Notion-style database tables |
+| `IronDatabaseCell` | Database cell renderer |
+| `IronColumn` | Database column model |
+| `IronRow` | Database row model |
+| `IronPerson` | Database person value |
+| `IronSelectOption` | Database select option |
+
+### Navigation
+Navigation and presentation components.
+
+| Component | Description |
+|-----------|-------------|
+| `IronTray` | Content-sized tray presentation |
+| `IronTrayHeader` | Header with close/back control |
+| `IronTrayStack` | Multi-step tray navigation |
+| `IronTrayNavigator` | Environment-backed tray navigation |
+| `View.ironTray` | View modifier for tray presentation |
 
 ## Theming
 
