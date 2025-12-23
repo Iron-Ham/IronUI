@@ -167,8 +167,8 @@ private struct TimelineRow<Entry: Identifiable, Content: View>: View {
 
   @ScaledMetric(relativeTo: .body)
   private var connectorWidth: CGFloat = 2
-  @ScaledMetric(relativeTo: .body)
-  private var nodeSize: CGFloat = 12
+  @ScaledMetric(relativeTo: .headline)
+  private var nodeContainerSize: CGFloat = 24 // All nodes use same container for alignment
 
   private var connectorColumn: some View {
     VStack(spacing: 0) {
@@ -179,7 +179,7 @@ private struct TimelineRow<Entry: Identifiable, Content: View>: View {
       }
     }
     .frame(width: connectorWidth)
-    .padding(.top, theme.spacing.sm + (nodeSize / 2)) // Align with center of entry's node
+    .padding(.top, theme.spacing.sm + (nodeContainerSize / 2)) // Align with center of node container
   }
 
   @ViewBuilder
@@ -306,9 +306,14 @@ public struct IronTimelineEntry<Content: View>: View {
   // MARK: Public
 
   public var body: some View {
-    HStack(alignment: .top, spacing: theme.spacing.md) {
+    HStack(alignment: .firstTextBaseline, spacing: theme.spacing.md) {
       if nodePosition == .leading {
         nodeIndicator
+          // Align node center with the first text baseline, offset up to center with text
+          // The baseline is typically ~70% down from text top, so offset by ~20% of node height
+          .alignmentGuide(.firstTextBaseline) { d in
+            d[VerticalAlignment.center] + (d.height * 0.2)
+          }
           .accessibilityHidden(true)
       }
 
@@ -321,6 +326,10 @@ public struct IronTimelineEntry<Content: View>: View {
 
       if nodePosition == .trailing {
         nodeIndicator
+          // Align node center with the first text baseline, offset up to center with text
+          .alignmentGuide(.firstTextBaseline) { d in
+            d[VerticalAlignment.center] + (d.height * 0.2)
+          }
           .accessibilityHidden(true)
       }
     }
@@ -333,9 +342,9 @@ public struct IronTimelineEntry<Content: View>: View {
   @Environment(\.timelineNodePosition) private var nodePosition
 
   @ScaledMetric(relativeTo: .body)
-  private var nodeSize: CGFloat = 12
+  private var smallNodeSize: CGFloat = 12
   @ScaledMetric(relativeTo: .headline)
-  private var largeNodeSize: CGFloat = 24
+  private var nodeContainerSize: CGFloat = 24 // All nodes use same container for alignment
 
   private let node: IronTimelineNode
   private let timestamp: Date?
@@ -346,22 +355,28 @@ public struct IronTimelineEntry<Content: View>: View {
     nodePosition == .leading ? .leading : .trailing
   }
 
-  @ViewBuilder
   private var nodeIndicator: some View {
+    // All nodes render within a consistent container size for proper alignment
+    nodeContent
+      .frame(width: nodeContainerSize, height: nodeContainerSize)
+  }
+
+  @ViewBuilder
+  private var nodeContent: some View {
     switch node {
     case .default:
       Circle()
         .fill(theme.colors.primary)
-        .frame(width: nodeSize, height: nodeSize)
+        .frame(width: smallNodeSize, height: smallNodeSize)
 
     case .dot(let color):
       Circle()
         .fill(resolveColor(color))
-        .frame(width: nodeSize, height: nodeSize)
+        .frame(width: smallNodeSize, height: smallNodeSize)
 
     case .icon(let systemName, let color):
       IronIcon(systemName: systemName, size: .small, color: iconColor(for: color))
-        .frame(width: largeNodeSize, height: largeNodeSize)
+        .frame(width: nodeContainerSize, height: nodeContainerSize)
         .background(resolveColor(color).opacity(0.15))
         .clipShape(Circle())
 
@@ -435,20 +450,32 @@ public struct IronTimelineDefaultContent: View {
   // MARK: Public
 
   public var body: some View {
-    VStack(alignment: .leading, spacing: theme.spacing.xxs) {
+    VStack(alignment: textAlignment, spacing: theme.spacing.xxs) {
       IronText(title, style: .bodyLarge, color: .primary)
       if let subtitle {
         IronText(subtitle, style: .bodyMedium, color: .secondary)
       }
     }
+    .frame(maxWidth: .infinity, alignment: frameAlignment)
   }
 
   // MARK: Private
+
+  @Environment(\.timelineNodePosition) private var nodePosition
 
   @Environment(\.ironTheme) private var theme
 
   private let title: LocalizedStringKey
   private let subtitle: LocalizedStringKey?
+
+  private var textAlignment: HorizontalAlignment {
+    nodePosition == .trailing ? .trailing : .leading
+  }
+
+  private var frameAlignment: Alignment {
+    nodePosition == .trailing ? .trailing : .leading
+  }
+
 }
 
 // MARK: - IronTimelineLayout

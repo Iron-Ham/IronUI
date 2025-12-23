@@ -18,8 +18,24 @@ import SwiftUI
 /// // With initials fallback
 /// IronAvatar(name: "John Doe")
 ///
-/// // With AsyncImage
-/// IronAvatar(url: URL(string: "https://example.com/avatar.jpg")!)
+/// // With remote URL
+/// IronAvatar(url: URL(string: "https://github.com/iron-ham.png")!)
+///
+/// // With URL and fallback name
+/// IronAvatar(
+///   url: URL(string: "https://example.com/avatar.jpg")!,
+///   name: "John Doe"
+/// )
+/// ```
+///
+/// ## Custom Background Color
+///
+/// ```swift
+/// // Explicit color for initials background
+/// IronAvatar(name: "John Doe", backgroundColor: .purple)
+///
+/// // Custom color palette for automatic selection
+/// IronAvatar(name: "John Doe", backgroundColors: [.red, .blue, .green])
 /// ```
 ///
 /// ## Sizes
@@ -73,6 +89,8 @@ public struct IronAvatar<Badge: View>: View {
   ) {
     imageSource = .image(image)
     self.size = size
+    explicitBackgroundColor = nil
+    customBackgroundColors = nil
     self.innerBorder = innerBorder
     self.badge = badge()
     name = nil
@@ -85,17 +103,23 @@ public struct IronAvatar<Badge: View>: View {
   ///   - url: The URL of the image to load.
   ///   - name: Fallback name for initials if image fails to load.
   ///   - size: The size of the avatar.
+  ///   - backgroundColor: Optional explicit background color for fallback initials.
+  ///   - backgroundColors: Optional custom color palette for fallback initials.
   ///   - innerBorder: Optional inner border style.
   ///   - badge: A view builder for the badge.
   public init(
     url: URL,
     name: String? = nil,
     size: IronAvatarSize = .medium,
+    backgroundColor: Color? = nil,
+    backgroundColors: [Color]? = nil,
     innerBorder: IronAvatarInnerBorder = .none,
     @ViewBuilder badge: () -> Badge,
   ) {
     imageSource = .url(url)
     self.size = size
+    explicitBackgroundColor = backgroundColor
+    customBackgroundColors = backgroundColors
     self.innerBorder = innerBorder
     self.badge = badge()
     self.name = name
@@ -107,16 +131,22 @@ public struct IronAvatar<Badge: View>: View {
   /// - Parameters:
   ///   - name: The name to extract initials from.
   ///   - size: The size of the avatar.
+  ///   - backgroundColor: Optional explicit background color for initials. If nil, color is derived from name.
+  ///   - backgroundColors: Optional custom color palette for automatic selection. If nil, uses theme colors.
   ///   - innerBorder: Optional inner border style.
   ///   - badge: A view builder for the badge.
   public init(
     name: String,
     size: IronAvatarSize = .medium,
+    backgroundColor: Color? = nil,
+    backgroundColors: [Color]? = nil,
     innerBorder: IronAvatarInnerBorder = .none,
     @ViewBuilder badge: () -> Badge,
   ) {
     imageSource = nil
     self.size = size
+    explicitBackgroundColor = backgroundColor
+    customBackgroundColors = backgroundColors
     self.innerBorder = innerBorder
     self.badge = badge()
     self.name = name
@@ -187,6 +217,8 @@ public struct IronAvatar<Badge: View>: View {
 
   private let imageSource: ImageSource?
   private let size: IronAvatarSize
+  private let explicitBackgroundColor: Color?
+  private let customBackgroundColors: [Color]?
   private let innerBorder: IronAvatarInnerBorder
   private let badge: Badge
   private let name: String?
@@ -300,17 +332,24 @@ public struct IronAvatar<Badge: View>: View {
   }
 
   private var backgroundColor: Color {
+    // Use explicit color if provided
+    if let explicitBackgroundColor {
+      return explicitBackgroundColor
+    }
+
     guard let name, !name.isEmpty else { return theme.colors.primary }
 
-    // Generate consistent color based on name hash
-    let hash = abs(name.hashValue)
-    let colors: [Color] = [
+    // Use custom palette or default theme colors
+    let colors: [Color] = customBackgroundColors ?? [
       theme.colors.primary,
       theme.colors.secondary,
       theme.colors.success,
       theme.colors.warning,
       theme.colors.info,
     ]
+
+    // Use stable hash (djb2 algorithm) instead of Swift's randomized hashValue
+    let hash = Self.stableHash(name)
     return colors[hash % colors.count]
   }
 
@@ -358,6 +397,17 @@ public struct IronAvatar<Badge: View>: View {
     }
     return label
   }
+
+  /// Computes a stable hash for a string using the djb2 algorithm.
+  /// Unlike Swift's `hashValue`, this produces consistent results across runs.
+  private static func stableHash(_ string: String) -> Int {
+    var hash: UInt64 = 5381
+    for char in string.utf8 {
+      hash = ((hash << 5) &+ hash) &+ UInt64(char)
+    }
+    return Int(hash % UInt64(Int.max))
+  }
+
 }
 
 // MARK: - Convenience initializers without badge
@@ -376,6 +426,8 @@ extension IronAvatar where Badge == EmptyView {
   ) {
     imageSource = .image(image)
     self.size = size
+    explicitBackgroundColor = nil
+    customBackgroundColors = nil
     self.innerBorder = innerBorder
     badge = EmptyView()
     name = nil
@@ -388,15 +440,21 @@ extension IronAvatar where Badge == EmptyView {
   ///   - url: The URL of the image to load.
   ///   - name: Fallback name for initials if image fails to load.
   ///   - size: The size of the avatar.
+  ///   - backgroundColor: Optional explicit background color for fallback initials.
+  ///   - backgroundColors: Optional custom color palette for fallback initials.
   ///   - innerBorder: Optional inner border style.
   public init(
     url: URL,
     name: String? = nil,
     size: IronAvatarSize = .medium,
+    backgroundColor: Color? = nil,
+    backgroundColors: [Color]? = nil,
     innerBorder: IronAvatarInnerBorder = .none,
   ) {
     imageSource = .url(url)
     self.size = size
+    explicitBackgroundColor = backgroundColor
+    customBackgroundColors = backgroundColors
     self.innerBorder = innerBorder
     badge = EmptyView()
     self.name = name
@@ -408,14 +466,20 @@ extension IronAvatar where Badge == EmptyView {
   /// - Parameters:
   ///   - name: The name to extract initials from.
   ///   - size: The size of the avatar.
+  ///   - backgroundColor: Optional explicit background color. If nil, color is derived from name.
+  ///   - backgroundColors: Optional custom color palette for automatic selection. If nil, uses theme colors.
   ///   - innerBorder: Optional inner border style.
   public init(
     name: String,
     size: IronAvatarSize = .medium,
+    backgroundColor: Color? = nil,
+    backgroundColors: [Color]? = nil,
     innerBorder: IronAvatarInnerBorder = .none,
   ) {
     imageSource = nil
     self.size = size
+    explicitBackgroundColor = backgroundColor
+    customBackgroundColors = backgroundColors
     self.innerBorder = innerBorder
     badge = EmptyView()
     self.name = name
@@ -441,6 +505,8 @@ extension IronAvatar where Badge == IronAvatarStatusBadge {
   ) {
     imageSource = .image(image)
     self.size = size
+    explicitBackgroundColor = nil
+    customBackgroundColors = nil
     self.innerBorder = innerBorder
     badge = IronAvatarStatusBadge(status: status)
     name = nil
@@ -453,17 +519,23 @@ extension IronAvatar where Badge == IronAvatarStatusBadge {
   ///   - url: The URL of the image to load.
   ///   - name: Fallback name for initials if image fails to load.
   ///   - size: The size of the avatar.
+  ///   - backgroundColor: Optional explicit background color for fallback initials.
+  ///   - backgroundColors: Optional custom color palette for fallback initials.
   ///   - innerBorder: Optional inner border style.
   ///   - status: The status to display.
   public init(
     url: URL,
     name: String? = nil,
     size: IronAvatarSize = .medium,
+    backgroundColor: Color? = nil,
+    backgroundColors: [Color]? = nil,
     innerBorder: IronAvatarInnerBorder = .none,
     status: IronAvatarStatus,
   ) {
     imageSource = .url(url)
     self.size = size
+    explicitBackgroundColor = backgroundColor
+    customBackgroundColors = backgroundColors
     self.innerBorder = innerBorder
     badge = IronAvatarStatusBadge(status: status)
     self.name = name
@@ -475,16 +547,22 @@ extension IronAvatar where Badge == IronAvatarStatusBadge {
   /// - Parameters:
   ///   - name: The name to extract initials from.
   ///   - size: The size of the avatar.
+  ///   - backgroundColor: Optional explicit background color. If nil, color is derived from name.
+  ///   - backgroundColors: Optional custom color palette for automatic selection. If nil, uses theme colors.
   ///   - innerBorder: Optional inner border style.
   ///   - status: The status to display.
   public init(
     name: String,
     size: IronAvatarSize = .medium,
+    backgroundColor: Color? = nil,
+    backgroundColors: [Color]? = nil,
     innerBorder: IronAvatarInnerBorder = .none,
     status: IronAvatarStatus,
   ) {
     imageSource = nil
     self.size = size
+    explicitBackgroundColor = backgroundColor
+    customBackgroundColors = backgroundColors
     self.innerBorder = innerBorder
     badge = IronAvatarStatusBadge(status: status)
     self.name = name
@@ -676,6 +754,50 @@ public enum IronAvatarInnerBorder: Sendable {
     IronAvatar(name: "Alice Smith")
     IronAvatar(name: "Bob")
     IronAvatar(name: "")
+  }
+  .padding()
+}
+
+#Preview("IronAvatar - Custom Colors") {
+  VStack(spacing: 16) {
+    HStack(spacing: 16) {
+      IronAvatar(name: "JD", size: .large, backgroundColor: .purple)
+      IronAvatar(name: "AS", size: .large, backgroundColor: .orange)
+      IronAvatar(name: "BW", size: .large, backgroundColor: .pink)
+    }
+    HStack(spacing: 16) {
+      // Custom palette - colors will be selected based on name hash
+      IronAvatar(name: "Alice", size: .large, backgroundColors: [.red, .blue, .green])
+      IronAvatar(name: "Bob", size: .large, backgroundColors: [.red, .blue, .green])
+      IronAvatar(name: "Charlie", size: .large, backgroundColors: [.red, .blue, .green])
+    }
+  }
+  .padding()
+}
+
+#Preview("IronAvatar - Remote URL") {
+  HStack(spacing: 16) {
+    // Load from GitHub
+    IronAvatar(
+      url: URL(string: "https://github.com/iron-ham.png")!,
+      name: "Hesham Salman",
+      size: .large,
+    )
+
+    // With status badge
+    IronAvatar(
+      url: URL(string: "https://github.com/iron-ham.png")!,
+      name: "Hesham Salman",
+      size: .large,
+      status: .online,
+    )
+
+    // Fallback when URL fails (invalid URL)
+    IronAvatar(
+      url: URL(string: "https://invalid-url-that-will-fail.example")!,
+      name: "Fallback User",
+      size: .large,
+    )
   }
   .padding()
 }

@@ -1,0 +1,108 @@
+@Tutorial(time: 20) {
+  @Intro(title: "Building with IronDatabase") {
+    Learn how to create Notion-style inline databases with dynamic columns,
+    multiple cell types, and real-time editing.
+
+    IronDatabase provides a flexible data model with runtime column management,
+    type-safe cell values, and a ready-to-use table view.
+  }
+
+  @Section(title: "Understanding the Data Model") {
+    @ContentAndMedia {
+      IronDatabase uses a structured data model with:
+      - **IronDatabase**: The container holding columns and rows
+      - **IronColumn**: Defines column name, type, and options
+      - **IronRow**: Holds cell values keyed by column ID
+      - **IronCellValue**: Type-safe value for each cell
+    }
+
+    @Steps {
+      @Step {
+        Create a new database with a name.
+
+        @Code(name: "Database.swift", file: "database-01-create.swift")
+      }
+
+      @Step {
+        Add columns with different types.
+
+        @Code(name: "Database.swift", file: "database-02-columns.swift")
+      }
+
+      @Step {
+        Add rows and set cell values.
+
+        @Code(name: "Database.swift", file: "database-03-rows.swift")
+      }
+    }
+  }
+
+  @Section(title: "Column Types") {
+    @ContentAndMedia {
+      IronDatabase supports multiple column types to handle different
+      kinds of data. Each type has its own editing interface and display.
+    }
+
+    @Steps {
+      @Step {
+        Use basic types: text, number, checkbox, and date.
+
+        @Code(name: "Database.swift", file: "database-04-basic-types.swift")
+      }
+
+      @Step {
+        Use select and multi-select for categorization with colored options.
+
+        @Code(name: "Database.swift", file: "database-05-select-types.swift")
+      }
+
+      @Step {
+        Use link types: URL, email, phone, and person.
+
+        @Code(name: "Database.swift", file: "database-06-link-types.swift")
+      }
+    }
+  }
+
+  @Section(title: "Rendering with IronDatabaseTable") {
+    @ContentAndMedia {
+      Use `IronDatabaseTable` to display your database with a full-featured
+      table view including inline editing, column management, and row actions.
+    }
+
+    @Steps {
+      @Step {
+        Create a basic table view from your database.
+
+        @Code(name: "ContentView.swift", file: "database-07-table.swift")
+      }
+
+      @Step {
+        Handle row and column addition actions.
+
+        @Code(name: "ContentView.swift", file: "database-08-actions.swift")
+      }
+
+      @Step {
+        Customize the table appearance.
+
+        @Code(name: "ContentView.swift", file: "database-09-custom.swift")
+      }
+    }
+  }
+
+  @Section(title: "Building a Task Tracker") {
+    @ContentAndMedia {
+      Combine all the concepts to build a complete task tracking
+      database with multiple column types and real-time editing.
+    }
+
+    @Steps {
+      @Step {
+        Create a comprehensive task tracker database.
+
+        @Code(name: "TaskTracker.swift", file: "database-10-complete.swift")
+      }
+    }
+  }
+}

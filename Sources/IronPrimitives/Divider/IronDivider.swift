@@ -159,12 +159,16 @@ public struct IronDivider<Label: View>: View {
       Rectangle()
         .fill(dividerColor)
         .frame(height: thickness)
+        .frame(maxWidth: .infinity)
       label
         .font(theme.typography.caption)
         .foregroundStyle(theme.colors.textSecondary)
+        .multilineTextAlignment(.center)
+        .fixedSize(horizontal: true, vertical: false) // Prevent label from expanding
       Rectangle()
         .fill(dividerColor)
         .frame(height: thickness)
+        .frame(maxWidth: .infinity)
     }
   }
 }

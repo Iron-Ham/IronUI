@@ -1,0 +1,90 @@
+@Tutorial(time: 15) {
+  @Intro(title: "Building with IronTray") {
+    Learn how to create content-sized trays for progressive disclosure and multi-step flows.
+
+    IronTray implements the Family-style tray pattern where the tray sizes itself to fit
+    its content, animating height changes to signal progression through sequential flows.
+  }
+
+  @Section(title: "Creating a Basic Tray") {
+    @ContentAndMedia {
+      Start by presenting a simple tray with a header and content.
+
+      The tray automatically sizes to fit its content and provides
+      gesture-based dismissal with a drag indicator.
+    }
+
+    @Steps {
+      @Step {
+        Create a state variable to control tray presentation.
+
+        @Code(name: "ContentView.swift", file: "tray-01-state.swift")
+      }
+
+      @Step {
+        Add a button to show the tray using the `.ironTray` modifier.
+
+        @Code(name: "ContentView.swift", file: "tray-02-modifier.swift")
+      }
+
+      @Step {
+        Add content to the tray with an `IronTrayHeader` for the title and dismiss action.
+
+        @Code(name: "ContentView.swift", file: "tray-03-content.swift")
+      }
+    }
+  }
+
+  @Section(title: "Multi-Step Flows with IronTrayStack") {
+    @ContentAndMedia {
+      Use `IronTrayStack` for sequential flows where each step should
+      animate with a height change to signal progression.
+
+      The tray navigator provides `push`, `pop`, and `popToRoot` actions
+      for controlling navigation within the tray.
+    }
+
+    @Steps {
+      @Step {
+        Wrap your tray content in an `IronTrayStack` to enable navigation.
+
+        @Code(name: "ContentView.swift", file: "tray-04-stack.swift")
+      }
+
+      @Step {
+        Use the navigator's `push` method to navigate to the next step.
+        The tray height animates smoothly to fit the new content.
+
+        @Code(name: "ContentView.swift", file: "tray-05-push.swift")
+      }
+
+      @Step {
+        Use `showsBackButton: true` on nested headers to show a back chevron
+        instead of the close button, and call `navigator.pop()` to go back.
+
+        @Code(name: "ContentView.swift", file: "tray-06-back.swift")
+      }
+    }
+  }
+
+  @Section(title: "Customizing Tray Behavior") {
+    @ContentAndMedia {
+      IronTray supports customization of the drag indicator, dismiss behavior,
+      and animations through environment values.
+    }
+
+    @Steps {
+      @Step {
+        Hide the drag indicator when you want a cleaner appearance.
+
+        @Code(name: "ContentView.swift", file: "tray-07-nodrag.swift")
+      }
+
+      @Step {
+        Handle tray dismissal to perform cleanup or state updates.
+
+        @Code(name: "ContentView.swift", file: "tray-08-dismiss.swift")
+      }
+    }
+  }
+}

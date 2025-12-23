@@ -140,19 +140,20 @@ public struct IronBadge: View {
       .padding(.horizontal, horizontalPadding)
       .padding(.vertical, verticalPadding)
       .frame(minWidth: minSize, minHeight: minSize)
-      .background {
-        Capsule()
-          .fill(backgroundColor)
-      }
+      // Use ContainerRelativeShape with containerShape for consistent shape rendering
+      .background(backgroundColor)
       .overlay {
         if style == .outlined {
-          Capsule()
+          ContainerRelativeShape()
             .strokeBorder(badgeColor, lineWidth: borderWidth)
         }
       }
+      .containerShape(Capsule())
+      .clipShape(Capsule())
       // Delightful entrance animation - badge pops in with spring
-      .scaleEffect(hasAppeared ? 1.0 : 0.0)
-      .animation(.spring(response: 0.35, dampingFraction: 0.6), value: hasAppeared)
+      // Respects reduced motion preference and skip animations flag
+      .scaleEffect(shouldSkipAnimation || hasAppeared ? 1.0 : 0.0)
+      .animation(shouldSkipAnimation ? nil : .spring(response: 0.35, dampingFraction: 0.6), value: hasAppeared)
       .onAppear { hasAppeared = true }
       .accessibilityElement(children: .combine)
       .accessibilityLabel(accessibilityLabelText)
@@ -161,6 +162,8 @@ public struct IronBadge: View {
   // MARK: Private
 
   @Environment(\.ironTheme) private var theme
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+  @Environment(\.ironSkipEntranceAnimations) private var skipEntranceAnimations
 
   /// Tracks whether the badge has appeared for entrance animation.
   @State private var hasAppeared = false
@@ -185,6 +188,11 @@ public struct IronBadge: View {
   private let color: IronBadgeColor
   private let size: IronBadgeSize
   private let maxCount: Int?
+
+  /// Whether to skip entrance animations (for accessibility or testing).
+  private var shouldSkipAnimation: Bool {
+    reduceMotion || skipEntranceAnimations
+  }
 
   /// Accessibility label for the badge based on content type
   private var accessibilityLabelText: String {

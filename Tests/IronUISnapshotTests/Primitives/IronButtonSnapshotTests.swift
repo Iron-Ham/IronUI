@@ -48,7 +48,8 @@ struct IronButtonSnapshotTests {
     }
     .padding()
 
-    ironAssertSnapshots(of: view, configurations: SnapshotConfiguration.quick)
+    // Use fixed width to prevent text truncation
+    ironAssertSnapshots(of: view, configurations: SnapshotConfiguration.quick, width: 280)
   }
 
   @Test("Button - Full Width")

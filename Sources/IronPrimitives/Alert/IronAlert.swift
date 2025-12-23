@@ -282,59 +282,60 @@ public struct IronAlert<Icon: View, Actions: View>: View {
   // MARK: Public
 
   public var body: some View {
-    HStack(alignment: .top, spacing: 0) {
-      // Leading accent bar
-      RoundedRectangle(cornerRadius: 2)
-        .fill(foregroundColor)
-        .frame(width: 4)
-        .padding(.vertical, 4)
+    HStack(alignment: .top, spacing: theme.spacing.sm) {
+      // Icon
+      iconView
+        .padding(.top, 2)
 
-      HStack(alignment: .top, spacing: theme.spacing.sm) {
-        // Icon
-        iconView
-          .padding(.top, 2)
-
-        // Content
-        VStack(alignment: .leading, spacing: theme.spacing.xs) {
-          if let title {
-            IronText(title, style: .labelLarge, color: .onSurface)
-              .fontWeight(.semibold)
-          }
-
-          IronText(message, style: .bodyMedium, color: .secondary)
-
-          if let actions {
-            HStack(spacing: theme.spacing.sm) {
-              actions
-            }
-            .padding(.top, theme.spacing.xs)
-          }
+      // Content
+      VStack(alignment: .leading, spacing: theme.spacing.xs) {
+        if let title {
+          IronText(title, style: .labelLarge, color: .onSurface)
+            .fontWeight(.semibold)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
 
-        // Dismiss button
-        if let onDismiss {
-          Button {
-            withAnimation(theme.animation.snappy) {
-              onDismiss()
-            }
-            IronLogger.ui.debug("IronAlert dismissed", metadata: ["variant": .string("\(variant)")])
-          } label: {
-            Image(systemName: "xmark")
-              .font(.system(size: 10, weight: .bold))
-              .foregroundStyle(theme.colors.onSurface.opacity(0.5))
-              .frame(width: 20, height: 20)
-              .background(theme.colors.onSurface.opacity(0.08), in: Circle())
+        IronText(message, style: .bodyMedium, color: .secondary)
+
+        if let actions {
+          HStack(spacing: theme.spacing.sm) {
+            actions
           }
-          .buttonStyle(.plain)
-          .accessibilityLabel("Dismiss")
+          .padding(.top, theme.spacing.xs)
         }
       }
-      .padding(.leading, theme.spacing.sm)
-      .padding(.trailing, theme.spacing.md)
-      .padding(.vertical, theme.spacing.md)
+      .frame(maxWidth: .infinity, alignment: .leading)
+
+      // Dismiss button
+      if let onDismiss {
+        Button {
+          withAnimation(theme.animation.snappy) {
+            onDismiss()
+          }
+          IronLogger.ui.debug("IronAlert dismissed", metadata: ["variant": .string("\(variant)")])
+        } label: {
+          Image(systemName: "xmark")
+            .font(.system(size: 10, weight: .bold))
+            .foregroundStyle(theme.colors.onSurface.opacity(0.5))
+            .frame(width: 20, height: 20)
+            .background(theme.colors.onSurface.opacity(0.08), in: Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Dismiss")
+      }
     }
-    .background(backgroundColor, in: RoundedRectangle(cornerRadius: theme.radii.md))
+    .padding(.leading, theme.spacing.sm)
+    .padding(.trailing, theme.spacing.md)
+    .padding(.vertical, theme.spacing.md)
+    .background {
+      // Use ZStack with alignment to place accent bar on leading edge
+      // The clipShape ensures the bar curves with the container
+      ZStack(alignment: .leading) {
+        backgroundColor
+        foregroundColor
+          .frame(width: 4)
+      }
+    }
+    .clipShape(RoundedRectangle(cornerRadius: theme.radii.md))
     .overlay {
       RoundedRectangle(cornerRadius: theme.radii.md)
         .strokeBorder(borderColor, lineWidth: 1)

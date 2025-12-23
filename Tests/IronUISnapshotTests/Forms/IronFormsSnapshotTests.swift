@@ -3,6 +3,85 @@ import SwiftUI
 import Testing
 @testable import IronUI
 
+// MARK: - IronFormSnapshotTests
+
+@Suite("IronForm Snapshots")
+struct IronFormSnapshotTests {
+
+  @Test("Form - Basic")
+  @MainActor
+  func formBasic() {
+    let view = IronForm {
+      IronFormSection("Account") {
+        IronFormField("Email") {
+          IronTextField("Enter email", text: .constant("user@example.com"))
+        }
+        IronFormField("Password", isRequired: true) {
+          IronSecureField("Enter password", text: .constant("secret"))
+        }
+      }
+    }
+    .frame(height: 300)
+
+    ironAssertSnapshots(of: view, configurations: SnapshotConfiguration.quick, width: 350)
+  }
+
+  @Test("Form - Multiple Sections")
+  @MainActor
+  func formMultipleSections() {
+    let view = IronForm {
+      IronFormSection("Personal Info") {
+        IronFormField("Name") {
+          IronTextField("Enter name", text: .constant("John Doe"))
+        }
+      }
+
+      IronFormSection("Preferences", footer: "These settings control your experience") {
+        IronFormField("Notifications") {
+          IronToggle("Enable notifications", isOn: .constant(true))
+        }
+        IronFormField("Dark Mode") {
+          IronToggle("Use dark mode", isOn: .constant(false))
+        }
+      }
+    }
+    .frame(height: 450)
+
+    ironAssertSnapshots(of: view, configurations: SnapshotConfiguration.quick, width: 350)
+  }
+}
+
+// MARK: - IronFormDividerSnapshotTests
+
+@Suite("IronFormDivider Snapshots")
+struct IronFormDividerSnapshotTests {
+
+  @Test("FormDivider - In Context")
+  @MainActor
+  func formDividerInContext() {
+    let view = IronFormSection("Settings") {
+      IronFormField("Option A") {
+        IronToggle("First option", isOn: .constant(true))
+      }
+
+      IronFormDivider()
+
+      IronFormField("Option B") {
+        IronToggle("Second option", isOn: .constant(false))
+      }
+
+      IronFormDivider()
+
+      IronFormField("Option C") {
+        IronToggle("Third option", isOn: .constant(true))
+      }
+    }
+    .padding()
+
+    ironAssertSnapshots(of: view, configurations: SnapshotConfiguration.quick, width: 350)
+  }
+}
+
 // MARK: - IronFormFieldSnapshotTests
 
 @Suite("IronFormField Snapshots")

@@ -75,10 +75,24 @@ public struct IronText: View {
   public var body: some View {
     textView
       .font(font)
-      .foregroundStyle(foregroundColor)
+      .modifier(ForegroundStyleModifier(color: color, foregroundColor: foregroundColor))
   }
 
   // MARK: Private
+
+  /// Applies foreground color only when not inherited.
+  private struct ForegroundStyleModifier: ViewModifier {
+    let color: IronTextColor
+    let foregroundColor: Color?
+
+    func body(content: Content) -> some View {
+      if let foregroundColor {
+        content.foregroundStyle(foregroundColor)
+      } else {
+        content
+      }
+    }
+  }
 
   @Environment(\.ironTheme) private var theme
 
@@ -116,7 +130,7 @@ public struct IronText: View {
     }
   }
 
-  private var foregroundColor: Color {
+  private var foregroundColor: Color? {
     switch color {
     case .primary: theme.colors.textPrimary
     case .secondary: theme.colors.textSecondary
@@ -130,6 +144,7 @@ public struct IronText: View {
     case .error: theme.colors.error
     case .info: theme.colors.info
     case .custom(let customColor): customColor
+    case .inherited: nil
     }
   }
 }
@@ -218,6 +233,8 @@ public enum IronTextColor: Sendable {
   case info
   /// Custom color override.
   case custom(Color)
+  /// Inherit color from parent's foregroundStyle (useful in buttons/labels).
+  case inherited
 }
 
 // MARK: - Previews

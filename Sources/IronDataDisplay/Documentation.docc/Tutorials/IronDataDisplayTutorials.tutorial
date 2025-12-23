@@ -1,0 +1,24 @@
+@Tutorials(name: "IronDataDisplay") {
+  @Intro(title: "Building with IronDataDisplay") {
+    Learn how to visualize structured data with IronDataDisplay's rich
+    components for timelines, kanban boards, and database tables.
+  }
+
+  @Chapter(name: "Timeline Visualization") {
+    Create chronological visualizations with customizable layouts and styles.
+
+    @TutorialReference(tutorial: "doc:BuildingWithIronTimeline")
+  }
+
+  @Chapter(name: "Kanban Boards") {
+    Build interactive task boards with drag-and-drop columns.
+
+    @TutorialReference(tutorial: "doc:BuildingWithIronKanban")
+  }
+
+  @Chapter(name: "Database Tables") {
+    Create Notion-style database views with multiple column types.
+
+    @TutorialReference(tutorial: "doc:BuildingWithIronDatabase")
+  }
+}

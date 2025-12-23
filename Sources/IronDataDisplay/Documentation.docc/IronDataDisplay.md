@@ -17,6 +17,12 @@ IronDataDisplay provides rich components for presenting complex data in intuitiv
 
 ## Topics
 
+### Essentials
+
+- <doc:BuildingWithIronTimeline>
+- <doc:BuildingWithIronKanban>
+- <doc:BuildingWithIronDatabase>
+
 ### Timeline
 
 Display chronological events with customizable layouts.

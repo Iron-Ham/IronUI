@@ -12,7 +12,6 @@ MODULES=(
     "IronNavigation"
     "IronForms"
     "IronDataDisplay"
-    "IronKitBridge"
     "IronUI"
 )
 
@@ -57,6 +56,18 @@ for module in "${MODULES[@]}"; do
             mkdir -p "$OUTPUT_DIR/images/"
             cp -r "$archive/images/$module" "$OUTPUT_DIR/images/"
             echo "  Copied images for $module"
+        fi
+
+        # Copy tutorials data and HTML pages
+        if [ -d "$archive/data/tutorials" ]; then
+            mkdir -p "$OUTPUT_DIR/data/tutorials"
+            cp -r "$archive/data/tutorials"/* "$OUTPUT_DIR/data/tutorials/" 2>/dev/null || true
+            echo "  Copied tutorial data for $module"
+        fi
+        if [ -d "$archive/tutorials" ]; then
+            mkdir -p "$OUTPUT_DIR/tutorials"
+            cp -r "$archive/tutorials"/* "$OUTPUT_DIR/tutorials/" 2>/dev/null || true
+            echo "  Copied tutorial pages for $module"
         fi
 
         # Copy index data for this module (for sidebar navigation)

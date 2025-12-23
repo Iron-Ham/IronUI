@@ -1,0 +1,109 @@
+@Tutorial(time: 12) {
+  @Intro(title: "Building with IronTimeline") {
+    Learn how to create beautiful timeline visualizations for activity feeds,
+    project roadmaps, and historical event displays.
+
+    IronTimeline provides a flexible vertical timeline with multiple layout modes,
+    connector styles, and custom node indicators.
+  }
+
+  @Section(title: "Creating a Basic Timeline") {
+    @ContentAndMedia {
+      Start by creating a simple timeline with basic entries showing
+      chronological events.
+    }
+
+    @Steps {
+      @Step {
+        Define your data model that conforms to `Identifiable`.
+
+        @Code(name: "Event.swift", file: "timeline-01-model.swift")
+      }
+
+      @Step {
+        Create the timeline with your entries and a content builder.
+
+        @Code(name: "ContentView.swift", file: "timeline-02-basic.swift")
+      }
+
+      @Step {
+        Add timestamps and subtitles to your entries for more context.
+
+        @Code(name: "ContentView.swift", file: "timeline-03-detailed.swift")
+      }
+    }
+  }
+
+  @Section(title: "Layout Modes") {
+    @ContentAndMedia {
+      IronTimeline supports three layout modes:
+      - **Leading**: Timeline on the left, content on the right (default)
+      - **Trailing**: Content on the left, timeline on the right
+      - **Alternating**: Content alternates sides
+
+      Choose the layout that best fits your content and design.
+    }
+
+    @Steps {
+      @Step {
+        Use the `.leading` layout for standard activity feeds.
+
+        @Code(name: "ContentView.swift", file: "timeline-04-leading.swift")
+      }
+
+      @Step {
+        Use the `.alternating` layout for project roadmaps and historical timelines.
+
+        @Code(name: "ContentView.swift", file: "timeline-05-alternating.swift")
+      }
+
+      @Step {
+        Use the `.trailing` layout when content should be on the left.
+
+        @Code(name: "ContentView.swift", file: "timeline-06-trailing.swift")
+      }
+    }
+  }
+
+  @Section(title: "Connector Styles and Node Indicators") {
+    @ContentAndMedia {
+      Customize the visual appearance with different connector styles
+      and node indicators to convey meaning through visuals.
+    }
+
+    @Steps {
+      @Step {
+        Use different connector styles: `.solid`, `.dashed`, or `.dotted`.
+
+        @Code(name: "ContentView.swift", file: "timeline-07-connectors.swift")
+      }
+
+      @Step {
+        Use colored dots to indicate status or category.
+
+        @Code(name: "ContentView.swift", file: "timeline-08-dots.swift")
+      }
+
+      @Step {
+        Use SF Symbols icons for semantic meaning.
+
+        @Code(name: "ContentView.swift", file: "timeline-09-icons.swift")
+      }
+    }
+  }
+
+  @Section(title: "Building an Activity Feed") {
+    @ContentAndMedia {
+      Combine all the concepts to build a real-world activity feed
+      with multiple event types and status indicators.
+    }
+
+    @Steps {
+      @Step {
+        Create a comprehensive activity feed with different event types.
+
+        @Code(name: "ActivityFeed.swift", file: "timeline-10-feed.swift")
+      }
+    }
+  }
+}

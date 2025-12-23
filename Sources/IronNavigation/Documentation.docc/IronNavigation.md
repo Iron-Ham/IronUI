@@ -8,6 +8,15 @@ IronNavigation provides custom navigation patterns and presentation styles that 
 
 ## Topics
 
+### Essentials
+
+- <doc:BuildingWithIronTray>
+
 ### Bottom Sheets
 
+Content-sized trays for progressive disclosure and multi-step flows.
+
 - ``IronTray``
+- ``IronTrayHeader``
+- ``IronTrayStack``
+- ``IronTrayNavigator``

@@ -43,10 +43,6 @@ let package = Package(
       name: "IronDataDisplay",
       targets: ["IronDataDisplay"],
     ),
-    .library(
-      name: "IronKitBridge",
-      targets: ["IronKitBridge"],
-    ),
   ],
   dependencies: [
     // Documentation
@@ -133,13 +129,6 @@ let package = Package(
       path: "Sources/IronDataDisplay",
     ),
 
-    // MARK: - Kit Bridge Module
-    .target(
-      name: "IronKitBridge",
-      dependencies: ["IronCore"],
-      path: "Sources/IronKitBridge",
-    ),
-
     // MARK: - Umbrella Module
     .target(
       name: "IronUI",
@@ -151,7 +140,6 @@ let package = Package(
         "IronNavigation",
         "IronForms",
         "IronDataDisplay",
-        "IronKitBridge",
       ],
       path: "Sources/IronUI",
     ),

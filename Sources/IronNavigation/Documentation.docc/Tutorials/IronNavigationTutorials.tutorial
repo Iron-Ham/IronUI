@@ -1,0 +1,13 @@
+@Tutorials(name: "IronNavigation") {
+  @Intro(title: "Building with IronNavigation") {
+    Learn how to create rich navigation experiences with IronNavigation's
+    presentation components.
+  }
+
+  @Chapter(name: "Bottom Sheets") {
+    Master IronTray for creating content-sized bottom sheets with
+    multi-step flows and custom interactions.
+
+    @TutorialReference(tutorial: "doc:BuildingWithIronTray")
+  }
+}

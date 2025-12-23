@@ -1,6 +1,7 @@
 import SnapshotTesting
 import SwiftUI
 import Testing
+@testable import IronCore
 
 #if canImport(UIKit)
 import UIKit
@@ -325,6 +326,7 @@ func ironAssertSnapshots(
     let configured = view
       .environment(\.dynamicTypeSize, configuration.dynamicType.dynamicTypeSize)
       .environment(\.colorScheme, configuration.colorScheme.colorScheme)
+      .environment(\.ironSkipEntranceAnimations, true) // Skip entrance animations for consistent snapshots
       .fixedSize()
       .padding(1) // Minimal padding to ensure content isn't clipped
       .background(systemBackground(for: configuration.colorScheme))

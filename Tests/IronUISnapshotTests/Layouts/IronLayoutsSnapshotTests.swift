@@ -198,3 +198,58 @@ struct IronAdaptiveStackSnapshotTests {
     ironAssertSnapshots(of: view, configurations: SnapshotConfiguration.quick)
   }
 }
+
+// MARK: - IronSizeClassStackSnapshotTests
+
+@Suite("IronSizeClassStack Snapshots")
+struct IronSizeClassStackSnapshotTests {
+
+  @Test("SizeClassStack - Regular Layout")
+  @MainActor
+  func sizeClassStackRegular() {
+    // On macOS and regular width iOS, uses horizontal layout by default
+    let view = IronSizeClassStack {
+      IronCard {
+        VStack(alignment: .leading, spacing: 4) {
+          IronText("Sidebar", style: .titleSmall, color: .primary)
+          IronText("Navigation", style: .bodySmall, color: .secondary)
+        }
+        .padding()
+      }
+      IronCard {
+        VStack(alignment: .leading, spacing: 4) {
+          IronText("Main Content", style: .titleSmall, color: .primary)
+          IronText("Detail view", style: .bodySmall, color: .secondary)
+        }
+        .padding()
+      }
+    }
+    .frame(height: 100)
+    .padding()
+
+    ironAssertSnapshots(of: view, configurations: SnapshotConfiguration.quick, width: 500)
+  }
+
+  @Test("SizeClassStack - Custom Layouts")
+  @MainActor
+  func sizeClassStackCustom() {
+    // Both compact and regular use vertical
+    let view = IronSizeClassStack(
+      compactLayout: .vertical,
+      regularLayout: .vertical,
+      verticalSpacing: 12,
+    ) {
+      IronCard {
+        IronText("Top Section", style: .bodyMedium, color: .primary)
+          .padding()
+      }
+      IronCard {
+        IronText("Bottom Section", style: .bodyMedium, color: .primary)
+          .padding()
+      }
+    }
+    .padding()
+
+    ironAssertSnapshots(of: view, configurations: SnapshotConfiguration.quick, width: 300)
+  }
+}

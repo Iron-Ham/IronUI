@@ -127,7 +127,7 @@ extension IronButton where Label == IronText {
     self.size = size
     self.isFullWidth = isFullWidth
     self.action = action
-    label = IronText(title, style: .labelLarge, color: .onPrimary)
+    label = IronText(title, style: .labelLarge, color: .inherited)
   }
 
   /// Creates a button with a text label from a string.
@@ -149,7 +149,7 @@ extension IronButton where Label == IronText {
     self.size = size
     self.isFullWidth = isFullWidth
     self.action = action
-    label = IronText(title, style: .labelLarge, color: .onPrimary)
+    label = IronText(title, style: .labelLarge, color: .inherited)
   }
 }
 

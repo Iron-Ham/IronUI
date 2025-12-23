@@ -147,7 +147,7 @@ public struct IronSkeleton: View {
     height: CGFloat?,
   ) -> some View {
     shape
-      .fill(theme.colors.surface)
+      .fill(theme.colors.border.opacity(0.5))
       .frame(width: width, height: height)
       .overlay {
         if animated {

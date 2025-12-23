@@ -1,0 +1,99 @@
+@Tutorial(time: 15) {
+  @Intro(title: "Building with IronKanban") {
+    Learn how to create drag-and-drop Kanban boards for task management,
+    project planning, and workflow visualization.
+
+    IronKanban provides a flexible column-based layout with drag-and-drop
+    support, custom cards, and priority indicators.
+  }
+
+  @Section(title: "Creating a Basic Kanban Board") {
+    @ContentAndMedia {
+      Start by setting up columns and items for your Kanban board.
+      Each item belongs to a column based on a key path.
+    }
+
+    @Steps {
+      @Step {
+        Define your column type (typically an enum) and item model.
+
+        @Code(name: "Models.swift", file: "kanban-01-models.swift")
+      }
+
+      @Step {
+        Create the Kanban board with columns, items, and a content builder.
+
+        @Code(name: "ContentView.swift", file: "kanban-02-basic.swift")
+      }
+
+      @Step {
+        Add custom headers to show column titles and item counts.
+
+        @Code(name: "ContentView.swift", file: "kanban-03-headers.swift")
+      }
+    }
+  }
+
+  @Section(title: "Custom Cards with Priority Indicators") {
+    @ContentAndMedia {
+      Use `IronKanbanCard` for pre-styled cards with priority indicators.
+      Priority levels include: urgent, high, medium, low, and none.
+    }
+
+    @Steps {
+      @Step {
+        Add priority to your task model.
+
+        @Code(name: "Models.swift", file: "kanban-04-priority-model.swift")
+      }
+
+      @Step {
+        Use `IronKanbanCard` with the priority property for visual indicators.
+
+        @Code(name: "ContentView.swift", file: "kanban-05-priority-cards.swift")
+      }
+
+      @Step {
+        Create rich card content with due dates, assignees, and tags.
+
+        @Code(name: "ContentView.swift", file: "kanban-06-rich-cards.swift")
+      }
+    }
+  }
+
+  @Section(title: "Empty States and Customization") {
+    @ContentAndMedia {
+      Customize the appearance of empty columns and adjust spacing
+      for compact or spacious layouts.
+    }
+
+    @Steps {
+      @Step {
+        Provide a custom empty state view for columns with no items.
+
+        @Code(name: "ContentView.swift", file: "kanban-07-empty.swift")
+      }
+
+      @Step {
+        Use compact spacing for dense boards or standard spacing for readability.
+
+        @Code(name: "ContentView.swift", file: "kanban-08-spacing.swift")
+      }
+    }
+  }
+
+  @Section(title: "Building a Task Manager") {
+    @ContentAndMedia {
+      Combine all the concepts to build a complete task management
+      board with drag-and-drop functionality.
+    }
+
+    @Steps {
+      @Step {
+        Create a complete task manager with all features.
+
+        @Code(name: "TaskManager.swift", file: "kanban-09-complete.swift")
+      }
+    }
+  }
+}

@@ -4,7 +4,6 @@
 @_exported import IronCore
 @_exported import IronDataDisplay
 @_exported import IronForms
-@_exported import IronKitBridge
 @_exported import IronLayouts
 @_exported import IronNavigation
 @_exported import IronPrimitives
@@ -37,7 +36,6 @@
 /// - `IronNavigation` - Navigation and presentation
 /// - `IronForms` - Form components with validation
 /// - `IronDataDisplay` - Data visualization (Timeline, Kanban, Database)
-/// - `IronKitBridge` - UIKit/AppKit interop
 public enum IronUI {
   /// The current version of IronUI.
   public static let version = "0.1.0"
