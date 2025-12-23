@@ -243,7 +243,7 @@ public struct IronCheckbox<Label: View>: View {
   }
 
   private var borderColor: Color {
-    isEnabled ? theme.colors.border : theme.colors.border.opacity(0.5)
+    isEnabled ? theme.colors.onSurface.opacity(0.3) : theme.colors.onSurface.opacity(0.15)
   }
 
   private var checkboxColor: Color {

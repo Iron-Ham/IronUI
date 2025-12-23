@@ -149,7 +149,7 @@ public struct IronMenuLabel: View {
     .clipShape(RoundedRectangle(cornerRadius: theme.radii.md))
     .overlay {
       RoundedRectangle(cornerRadius: theme.radii.md)
-        .strokeBorder(theme.colors.border, lineWidth: 1)
+        .strokeBorder(theme.colors.onSurface.opacity(0.3), lineWidth: 1)
     }
     .accessibilityElement(children: .combine)
     .accessibilityHint("Opens menu")

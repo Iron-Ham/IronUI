@@ -51,6 +51,8 @@ Exceptions: preview-only code for brevity.
 - Unit tests: Swift Testing (not XCTestCase).
 - Snapshot tests: PointFree `swift-snapshot-testing`.
 - Add/maintain accessibility audits for interactive components.
+- For snapshot/visual changes, always re-record snapshots for both iOS and macOS
+  and visually inspect the results.
 
 ## Documentation
 
