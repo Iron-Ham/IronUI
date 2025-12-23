@@ -139,6 +139,8 @@ public struct IronMenuLabel: View {
       }
 
       IronText(title, style: .labelMedium, color: .primary)
+
+      IronIcon(systemName: "chevron.down", size: .small, color: .secondary)
     }
     .padding(.horizontal, theme.spacing.md)
     .padding(.vertical, theme.spacing.sm)
@@ -148,6 +150,9 @@ public struct IronMenuLabel: View {
       RoundedRectangle(cornerRadius: theme.radii.md)
         .strokeBorder(theme.colors.border, lineWidth: 1)
     }
+    .accessibilityElement(children: .combine)
+    .accessibilityHint("Opens menu")
+    .accessibilityAddTraits(.isButton)
   }
 
   // MARK: Private

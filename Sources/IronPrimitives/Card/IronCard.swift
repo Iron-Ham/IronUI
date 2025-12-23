@@ -171,6 +171,7 @@ public struct IronCard<Content: View, Header: View, Footer: View>: View {
           cardContent
         }
         .buttonStyle(IronCardButtonStyle(style: style, isPressed: false))
+        .accessibilityHint("Double tap to activate")
       } else {
         cardContent
           .background(backgroundColor, in: cardShape)
