@@ -159,9 +159,13 @@ private struct AccessibleAnimationModifier<V: Equatable>: ViewModifier {
   let value: V
 
   func body(content: Content) -> some View {
-    content.animation(reduceMotion ? nil : animation, value: value)
+    content.animation(shouldSkipAnimation ? nil : animation, value: value)
   }
 
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
+  @Environment(\.ironSkipEntranceAnimations) private var skipEntranceAnimations
 
+  private var shouldSkipAnimation: Bool {
+    reduceMotion || skipEntranceAnimations
+  }
 }
