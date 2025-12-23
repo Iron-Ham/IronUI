@@ -1,8 +1,9 @@
 import ArgumentParser
 import Foundation
+import Noora
 
 extension IronUICLI {
-  struct Snapshots: ParsableCommand, IronUICommand {
+  struct Snapshots: AsyncParsableCommand, IronUICommand {
 
     static let configuration = CommandConfiguration(
       abstract: "Runs snapshot tests, optionally recording new baselines."
@@ -20,7 +21,7 @@ extension IronUICLI {
     )
     var filterPattern: String?
 
-    func run() throws {
+    func run() async throws {
       var arguments = [
         "swift",
         "test",
@@ -35,15 +36,31 @@ extension IronUICLI {
       var environment: [String: String] = [:]
       if record {
         environment["IRONUI_RECORD_SNAPSHOTS"] = "1"
-        printer.info("IRONUI_RECORD_SNAPSHOTS enabled; snapshots will be re-recorded.")
+        noora.warning(.alert(
+          "Recording mode enabled",
+          takeaway: "Snapshots will be re-recorded, not validated"
+        ))
       }
 
-      try runner.runTask(
-        record ? "Recording snapshots" : "Verifying snapshots",
+      let taskDescription = record ? "Recording snapshots" : "Verifying snapshots"
+      try await runner.runTask(
+        taskDescription,
         command: "/usr/bin/env",
         arguments: arguments,
         environment: environment
       )
+
+      if record {
+        noora.success(.alert(
+          "Snapshots recorded",
+          takeaways: ["New reference images have been saved"]
+        ))
+      } else {
+        noora.success(.alert(
+          "Snapshot tests passed",
+          takeaways: ["All snapshots match reference images"]
+        ))
+      }
     }
   }
 }

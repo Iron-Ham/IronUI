@@ -1,15 +1,17 @@
 import ArgumentParser
 import Foundation
+import Noora
 
 extension IronUICLI {
-  struct Format: ParsableCommand, IronUICommand {
+  struct Format: AsyncParsableCommand, IronUICommand {
 
     static let configuration = CommandConfiguration(
       abstract: "Formats Swift sources using the Airbnb Swift Style Guide."
     )
 
-    func run() throws {
-      try runner.runScript("Scripts/format.sh")
+    func run() async throws {
+      try await runner.runScript("Scripts/format.sh")
+      noora.success("Formatting complete")
     }
   }
 }

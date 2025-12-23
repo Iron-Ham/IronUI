@@ -182,7 +182,7 @@ Full documentation is available at [iron-ham.github.io/IronUI](https://iron-ham.
 
 Use the `ironui-cli` executable (command name `ironui`) for common development tasks:
 
-- `swift run ironui-cli build [--configuration release]` – Build the package.
+- `swift run ironui-cli build [--config release]` – Build the package.
 - `swift run ironui-cli format` – Run the Airbnb Swift style formatter.
 - `swift run ironui-cli test` – Execute the full test suite.
 - `swift run ironui-cli snapshots [--record] [--filter <pattern>]` – Run snapshot tests (set `--record` or `IRONUI_RECORD_SNAPSHOTS=1` to update baselines).

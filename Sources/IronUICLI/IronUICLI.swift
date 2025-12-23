@@ -3,7 +3,7 @@ import Foundation
 import Noora
 
 @main
-struct IronUICLI: ParsableCommand {
+struct IronUICLI: AsyncParsableCommand {
   static let configuration = CommandConfiguration(
     commandName: "ironui",
     abstract: "Automation toolkit for IronUI development workflows.",
@@ -18,14 +18,15 @@ struct IronUICLI: ParsableCommand {
   )
 }
 
-protocol IronUICommand: ParsableCommand {}
+/// Protocol for IronUI CLI commands with shared Noora integration.
+protocol IronUICommand: AsyncParsableCommand {}
 
 extension IronUICommand {
-  var printer: Noora.Printer {
-    Noora.Printer()
+  var noora: Noora {
+    Noora()
   }
 
   var runner: CommandRunner {
-    CommandRunner(printer: printer)
+    CommandRunner(noora: noora)
   }
 }

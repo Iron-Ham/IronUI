@@ -1,16 +1,18 @@
 import ArgumentParser
 import Foundation
+import Noora
 
 extension IronUICLI {
-  struct TestSuite: ParsableCommand, IronUICommand {
+  struct TestSuite: AsyncParsableCommand, IronUICommand {
 
     static let configuration = CommandConfiguration(
       commandName: "test",
       abstract: "Runs the full IronUI test suite."
     )
 
-    func run() throws {
-      try runner.runScript("Scripts/run-tests.sh")
+    func run() async throws {
+      try await runner.runScript("Scripts/run-tests.sh")
+      noora.success("All tests passed")
     }
   }
 }

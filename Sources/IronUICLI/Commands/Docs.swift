@@ -1,15 +1,17 @@
 import ArgumentParser
 import Foundation
+import Noora
 
 extension IronUICLI {
-  struct Docs: ParsableCommand, IronUICommand {
+  struct Docs: AsyncParsableCommand, IronUICommand {
 
     static let configuration = CommandConfiguration(
       abstract: "Generates DocC documentation for IronUI."
     )
 
-    func run() throws {
-      try runner.runScript("Scripts/generate-docs.sh")
+    func run() async throws {
+      try await runner.runScript("Scripts/generate-docs.sh")
+      noora.success("Documentation generated successfully")
     }
   }
 }

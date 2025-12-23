@@ -1,8 +1,9 @@
 import ArgumentParser
 import Foundation
+import Noora
 
 extension IronUICLI {
-  struct Build: ParsableCommand, IronUICommand {
+  struct Build: AsyncParsableCommand, IronUICommand {
 
     static let configuration = CommandConfiguration(
       abstract: "Builds the IronUI package."
@@ -12,21 +13,26 @@ extension IronUICLI {
       name: [.short, .long],
       help: "Build configuration to use (debug or release)."
     )
-    var configuration: String = "debug"
+    var config: String = "debug"
 
-    func run() throws {
-      let configuration = configuration.lowercased() == "release" ? "release" : "debug"
+    func run() async throws {
+      let buildConfig = config.lowercased() == "release" ? "release" : "debug"
 
-      try runner.runTask(
-        "Building IronUI (\(configuration))",
+      try await runner.runTask(
+        "Building IronUI (\(buildConfig))",
         command: "/usr/bin/env",
         arguments: [
           "swift",
           "build",
           "--configuration",
-          configuration,
+          buildConfig,
         ]
       )
+
+      noora.success(.alert(
+        "Build successful",
+        takeaways: ["Configuration: \(buildConfig)"]
+      ))
     }
   }
 }
