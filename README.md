@@ -178,16 +178,47 @@ Full documentation is available at [iron-ham.github.io/IronUI](https://iron-ham.
 | [IronDataDisplay](https://iron-ham.github.io/IronUI/documentation/irondatadisplay/) | Data visualization |
 | [IronNavigation](https://iron-ham.github.io/IronUI/documentation/ironnavigation/) | Navigation & presentation |
 
-## Tooling
+## Developer CLI
 
-Use the `ironui-cli` executable (command name `ironui`) for common development tasks:
+IronUI includes a developer CLI (`ironui`) for common development tasks. All commands use native Swift—no shell scripts required.
 
-- `swift run ironui-cli build [--config release]` – Build the package.
-- `swift run ironui-cli format` – Run the Airbnb Swift style formatter.
-- `swift run ironui-cli test` – Execute the full test suite.
-- `swift run ironui-cli snapshots [--record] [--filter <pattern>]` – Run snapshot tests (set `--record` or `IRONUI_RECORD_SNAPSHOTS=1` to update baselines).
-- `swift run ironui-cli docs` – Regenerate DocC documentation.
-- `swift run ironui-cli export-snapshots` – Export documentation-ready snapshots.
+```bash
+swift run ironui-cli <command> [options]
+```
+
+### Commands
+
+| Command | Description |
+|---------|-------------|
+| `build` | Build the package (`--config release` for release builds) |
+| `clean` | Remove build artifacts (`--all` to include Package.resolved) |
+| `docs` | Generate DocC documentation (`--preview` for live preview server) |
+| `export-snapshots` | Export snapshots to DocC Resources (`--dry-run` to preview) |
+| `format` | Format Swift sources with Airbnb style (`--dry-run` to check only) |
+| `snapshots` | Run snapshot tests (`--record` to update baselines, `--filter` to filter) |
+| `test` | Run tests (`--filter`, `--test-target`, `--parallel`, `--verbose`) |
+
+### Examples
+
+```bash
+# Build for release
+swift run ironui-cli build --config release
+
+# Format and check without modifying
+swift run ironui-cli format --dry-run
+
+# Run specific tests in parallel
+swift run ironui-cli test --filter Button --parallel
+
+# Record new snapshot baselines
+swift run ironui-cli snapshots --record
+
+# Preview documentation locally
+swift run ironui-cli docs --preview
+
+# Clean everything and rebuild
+swift run ironui-cli clean --all && swift run ironui-cli build
+```
 
 ## Requirements
 

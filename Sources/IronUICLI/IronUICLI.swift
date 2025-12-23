@@ -9,11 +9,12 @@ struct IronUICLI: AsyncParsableCommand {
     abstract: "Automation toolkit for IronUI development workflows.",
     subcommands: [
       Build.self,
-      Format.self,
-      TestSuite.self,
-      Snapshots.self,
+      Clean.self,
       Docs.self,
       ExportSnapshots.self,
+      Format.self,
+      Snapshots.self,
+      TestSuite.self,
     ]
   )
 }
