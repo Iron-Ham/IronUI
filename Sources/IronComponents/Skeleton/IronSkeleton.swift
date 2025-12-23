@@ -66,6 +66,8 @@ public struct IronSkeleton: View {
   // MARK: Private
 
   @Environment(\.ironTheme) private var theme
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+  @Environment(\.ironSkipEntranceAnimations) private var skipEntranceAnimations
 
   @State private var shimmerOffset: CGFloat = -1
 
@@ -141,6 +143,10 @@ public struct IronSkeleton: View {
     }
   }
 
+  private var shouldAnimate: Bool {
+    animated && !reduceMotion && !skipEntranceAnimations
+  }
+
   private func skeletonView(
     shape: some Shape,
     width: CGFloat?,
@@ -150,7 +156,7 @@ public struct IronSkeleton: View {
       .fill(theme.colors.border.opacity(0.5))
       .frame(width: width, height: height)
       .overlay {
-        if animated {
+        if shouldAnimate {
           shimmerOverlay
             .clipShape(shape)
         }

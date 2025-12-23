@@ -93,11 +93,13 @@ extension IronUICLI {
     }
 
     private func runiOSTests(action: String, environment: [String: String]) async throws {
+      // iOS tests must run through Sample.xcodeproj because drawHierarchyInKeyWindow
+      // requires a host application. The SampleTests target includes IronUISnapshotTests.
       let arguments = [
         "xcodebuild", "test",
-        "-scheme", "IronUI-Package",
+        "-project", "Sample/Sample.xcodeproj",
+        "-scheme", "Sample",
         "-destination", "platform=iOS Simulator,name=\(simulator)",
-        "-only-testing", "IronUISnapshotTests",
       ]
 
       try await runner.runTask(

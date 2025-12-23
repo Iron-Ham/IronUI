@@ -26,19 +26,11 @@
 			remoteGlobalIDString = DCF8DE512EFA295200CEB77B;
 			remoteInfo = Sample;
 		};
-		DCF8DE6A2EFA295300CEB77B /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = DCF8DE4A2EFA295200CEB77B /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = DCF8DE512EFA295200CEB77B;
-			remoteInfo = Sample;
-		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		DCF8DE522EFA295200CEB77B /* Sample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Sample.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		DCF8DE5F2EFA295300CEB77B /* SampleTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SampleTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		DCF8DE692EFA295300CEB77B /* SampleUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SampleUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -52,9 +44,9 @@
 			path = SampleTests;
 			sourceTree = "<group>";
 		};
-		DCF8DE6C2EFA295300CEB77B /* SampleUITests */ = {
+		DCSNAP0012EFA300000000010 /* IronUISnapshotTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = SampleUITests;
+			path = ../Tests/IronUISnapshotTests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -83,13 +75,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		DCF8DE662EFA295300CEB77B /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -98,7 +83,7 @@
 			children = (
 				DCF8DE542EFA295200CEB77B /* Sample */,
 				DCF8DE622EFA295300CEB77B /* SampleTests */,
-				DCF8DE6C2EFA295300CEB77B /* SampleUITests */,
+				DCSNAP0012EFA300000000010 /* IronUISnapshotTests */,
 				DCF8DE532EFA295200CEB77B /* Products */,
 			);
 			sourceTree = "<group>";
@@ -108,7 +93,6 @@
 			children = (
 				DCF8DE522EFA295200CEB77B /* Sample.app */,
 				DCF8DE5F2EFA295300CEB77B /* SampleTests.xctest */,
-				DCF8DE692EFA295300CEB77B /* SampleUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -162,36 +146,17 @@
 			);
 			fileSystemSynchronizedGroups = (
 				DCF8DE622EFA295300CEB77B /* SampleTests */,
+				DCSNAP0012EFA300000000010 /* IronUISnapshotTests */,
 			);
 			name = SampleTests;
 			packageProductDependencies = (
+				DCSNAP0012EFA300000000002 /* SnapshotTesting */,
+				DCSNAP0012EFA300000000003 /* IronUI */,
+				DCSNAP0012EFA300000000004 /* IronCore */,
 			);
 			productName = SampleTests;
 			productReference = DCF8DE5F2EFA295300CEB77B /* SampleTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
-		};
-		DCF8DE682EFA295300CEB77B /* SampleUITests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = DCF8DE792EFA295300CEB77B /* Build configuration list for PBXNativeTarget "SampleUITests" */;
-			buildPhases = (
-				DCF8DE652EFA295300CEB77B /* Sources */,
-				DCF8DE662EFA295300CEB77B /* Frameworks */,
-				DCF8DE672EFA295300CEB77B /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				DCF8DE6B2EFA295300CEB77B /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				DCF8DE6C2EFA295300CEB77B /* SampleUITests */,
-			);
-			name = SampleUITests;
-			packageProductDependencies = (
-			);
-			productName = SampleUITests;
-			productReference = DCF8DE692EFA295300CEB77B /* SampleUITests.xctest */;
-			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
 
@@ -210,10 +175,6 @@
 						CreatedOnToolsVersion = 26.2;
 						TestTargetID = DCF8DE512EFA295200CEB77B;
 					};
-					DCF8DE682EFA295300CEB77B = {
-						CreatedOnToolsVersion = 26.2;
-						TestTargetID = DCF8DE512EFA295200CEB77B;
-					};
 				};
 			};
 			buildConfigurationList = DCF8DE4D2EFA295200CEB77B /* Build configuration list for PBXProject "Sample" */;
@@ -228,6 +189,7 @@
 			packageReferences = (
 				DCF8DE7C2EFA29AC00CEB77B /* XCRemoteSwiftPackageReference "SnapshotPreviews" */,
 				DCF8DE7F2EFA29DA00CEB77B /* XCLocalSwiftPackageReference "../../IronUI" */,
+				DCSNAP0012EFA300000000001 /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = DCF8DE532EFA295200CEB77B /* Products */;
@@ -236,7 +198,6 @@
 			targets = (
 				DCF8DE512EFA295200CEB77B /* Sample */,
 				DCF8DE5E2EFA295300CEB77B /* SampleTests */,
-				DCF8DE682EFA295300CEB77B /* SampleUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -250,13 +211,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		DCF8DE5D2EFA295300CEB77B /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		DCF8DE672EFA295300CEB77B /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -280,13 +234,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		DCF8DE652EFA295300CEB77B /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -294,11 +241,6 @@
 			isa = PBXTargetDependency;
 			target = DCF8DE512EFA295200CEB77B /* Sample */;
 			targetProxy = DCF8DE602EFA295300CEB77B /* PBXContainerItemProxy */;
-		};
-		DCF8DE6B2EFA295300CEB77B /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = DCF8DE512EFA295200CEB77B /* Sample */;
-			targetProxy = DCF8DE6A2EFA295300CEB77B /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -540,46 +482,6 @@
 			};
 			name = Release;
 		};
-		DCF8DE7A2EFA295300CEB77B /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = F4H8GRP7M4;
-				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "Iron-Ham-Industries.SampleUITests";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				STRING_CATALOG_GENERATE_SYMBOLS = NO;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = Sample;
-			};
-			name = Debug;
-		};
-		DCF8DE7B2EFA295300CEB77B /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = F4H8GRP7M4;
-				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "Iron-Ham-Industries.SampleUITests";
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				STRING_CATALOG_GENERATE_SYMBOLS = NO;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-				TEST_TARGET_NAME = Sample;
-			};
-			name = Release;
-		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -610,15 +512,6 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		DCF8DE792EFA295300CEB77B /* Build configuration list for PBXNativeTarget "SampleUITests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				DCF8DE7A2EFA295300CEB77B /* Debug */,
-				DCF8DE7B2EFA295300CEB77B /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
@@ -635,6 +528,14 @@
 			requirement = {
 				kind = upToNextMinorVersion;
 				minimumVersion = 0.11.0;
+			};
+		};
+		DCSNAP0012EFA300000000001 /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/pointfreeco/swift-snapshot-testing";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 1.18.0;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -676,6 +577,19 @@
 		DCF8DE902EFA29DA00CEB77B /* IronUI */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = IronUI;
+		};
+		DCSNAP0012EFA300000000002 /* SnapshotTesting */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = DCSNAP0012EFA300000000001 /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */;
+			productName = SnapshotTesting;
+		};
+		DCSNAP0012EFA300000000003 /* IronUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = IronUI;
+		};
+		DCSNAP0012EFA300000000004 /* IronCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = IronCore;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

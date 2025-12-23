@@ -1,3 +1,26 @@
+// MARK: - Snapshot Testing Utilities
+//
+// This file provides cross-platform snapshot testing utilities for IronUI.
+//
+// ## Platform-Specific Rendering
+//
+// ### iOS (`drawHierarchyInKeyWindow: true`)
+// Requires tests to run in a host application to work correctly.
+// This enables accurate rendering of:
+// - UIAppearance styles
+// - UIVisualEffects (blur, vibrancy)
+// - RoundedRectangle with `.continuous` corner style
+// - System materials and effects
+//
+// To run iOS snapshot tests with a host application, use Xcode's test runner
+// with a configured test host, or create an xcscheme that specifies a test host.
+// SPM's `swift test` alone does not provide a host application context.
+//
+// ### macOS (Custom Window-Based Rendering)
+// We provide a custom snapshotting extension that creates an offscreen window
+// and renders the view within it. This provides more accurate rendering than
+// the default layer-based capture, particularly for SwiftUI content.
+
 import Foundation
 import SnapshotTesting
 import SwiftUI
@@ -10,6 +33,105 @@ import UIKit
 
 #if canImport(AppKit)
 import AppKit
+
+// MARK: - macOS Window-Based Snapshotting
+
+/// Custom snapshotting strategy for macOS that renders views in an actual window.
+/// This is the macOS equivalent of iOS's `drawHierarchyInKeyWindow`, providing
+/// more accurate rendering of effects like shadows, vibrancy, and continuous corners.
+extension Snapshotting where Value == NSView, Format == NSImage {
+
+  // MARK: Internal
+
+  /// Creates an image snapshot strategy that renders the view in an actual window context.
+  ///
+  /// Unlike the default `cacheDisplay` approach, this strategy:
+  /// - Puts the view in a real NSWindow
+  /// - Forces display and layout updates
+  /// - Captures the rendered output more accurately
+  ///
+  /// - Parameters:
+  ///   - drawHierarchyInKeyWindow: When true, renders in a window context for accurate effects.
+  ///   - precision: Pixel-level precision for comparison (0-1, default 1).
+  ///   - perceptualPrecision: Human-perceivable precision (0-1, default 1).
+  ///   - size: Optional explicit size for the snapshot.
+  /// - Returns: A snapshotting strategy for NSView to NSImage.
+  static func image(
+    drawHierarchyInKeyWindow: Bool,
+    precision: Float = 1,
+    perceptualPrecision: Float = 1,
+    size: CGSize? = nil,
+  ) -> Snapshotting {
+    if drawHierarchyInKeyWindow {
+      Snapshotting(
+        pathExtension: "png",
+        diffing: .image(precision: precision, perceptualPrecision: perceptualPrecision),
+      ) { view in
+        // Snapshot tests run on main thread, so we can assume main actor isolation
+        MainActor.assumeIsolated {
+          renderViewInWindow(view, size: size)
+        }
+      }
+    } else {
+      .image(precision: precision, perceptualPrecision: perceptualPrecision, size: size)
+    }
+  }
+
+  // MARK: Private
+
+  /// Renders a view in an offscreen window and captures it as an image.
+  @MainActor
+  private static func renderViewInWindow(_ view: NSView, size: CGSize?) -> NSImage {
+    // Determine the effective size
+    let effectiveSize: CGSize
+    if let size {
+      effectiveSize = size
+    } else if view.bounds.size != .zero {
+      effectiveSize = view.bounds.size
+    } else {
+      view.layoutSubtreeIfNeeded()
+      effectiveSize = view.fittingSize
+    }
+
+    // Create an offscreen window for accurate rendering
+    let window = NSWindow(
+      contentRect: NSRect(origin: .zero, size: effectiveSize),
+      styleMask: [.borderless],
+      backing: .buffered,
+      defer: false,
+    )
+    window.isReleasedWhenClosed = false
+    window.contentView = view
+    view.frame = NSRect(origin: .zero, size: effectiveSize)
+
+    // Position offscreen and order front to trigger rendering pipeline
+    window.setFrameOrigin(NSPoint(x: -10000, y: -10000))
+    window.orderFront(nil)
+
+    // Force complete layout and display cycle
+    view.layoutSubtreeIfNeeded()
+    view.displayIfNeeded()
+    window.displayIfNeeded()
+
+    // Allow the run loop to process any pending display updates
+    RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.01))
+
+    // Capture the view using bitmap representation
+    guard let bitmapRep = view.bitmapImageRepForCachingDisplay(in: view.bounds) else {
+      fatalError("Could not create bitmap representation for view")
+    }
+    view.cacheDisplay(in: view.bounds, to: bitmapRep)
+
+    let image = NSImage(size: effectiveSize)
+    image.addRepresentation(bitmapRep)
+
+    // Clean up the window
+    window.orderOut(nil)
+
+    return image
+  }
+}
+
 #endif
 
 // MARK: - SnapshotDevice
@@ -348,6 +470,7 @@ func ironAssertSnapshots(
       assertSnapshot(
         of: configured,
         as: .image(
+          drawHierarchyInKeyWindow: true,
           precision: 0.99,
           perceptualPrecision: 0.98,
           traits: UITraitCollection(traitsFrom: [
@@ -373,14 +496,14 @@ func ironAssertSnapshots(
       let fittingSize = hostingController.view.fittingSize
       hostingController.view.frame = CGRect(origin: .zero, size: fittingSize)
 
-      let snapshotting = Snapshotting<NSView, NSImage>.image(
-        precision: 0.99,
-        perceptualPrecision: 0.98,
-        size: fittingSize,
-      )
       assertSnapshot(
         of: hostingController.view,
-        as: snapshotting,
+        as: .image(
+          drawHierarchyInKeyWindow: true,
+          precision: 0.99,
+          perceptualPrecision: 0.98,
+          size: fittingSize,
+        ),
         named: configuration.name,
         record: record,
         file: file,
@@ -429,6 +552,7 @@ func ironAssertSnapshots(
       assertSnapshot(
         of: configured,
         as: .image(
+          drawHierarchyInKeyWindow: true,
           precision: 0.99,
           perceptualPrecision: 0.98,
           traits: UITraitCollection(traitsFrom: [
@@ -453,14 +577,14 @@ func ironAssertSnapshots(
       let fittingSize = hostingController.view.fittingSize
       hostingController.view.frame = CGRect(origin: .zero, size: fittingSize)
 
-      let snapshotting = Snapshotting<NSView, NSImage>.image(
-        precision: 0.99,
-        perceptualPrecision: 0.98,
-        size: fittingSize,
-      )
       assertSnapshot(
         of: hostingController.view,
-        as: snapshotting,
+        as: .image(
+          drawHierarchyInKeyWindow: true,
+          precision: 0.99,
+          perceptualPrecision: 0.98,
+          size: fittingSize,
+        ),
         named: configuration.name,
         record: record,
         file: file,
@@ -506,6 +630,7 @@ func ironAssertSnapshot(
   assertSnapshot(
     of: wrapped,
     as: .image(
+      drawHierarchyInKeyWindow: true,
       precision: 0.99,
       perceptualPrecision: 0.98,
       traits: UITraitCollection(userInterfaceStyle: colorScheme == .light ? .light : .dark),
@@ -524,14 +649,14 @@ func ironAssertSnapshot(
   let fittingSize = hostingController.view.fittingSize
   hostingController.view.frame = CGRect(origin: .zero, size: fittingSize)
 
-  let snapshotting = Snapshotting<NSView, NSImage>.image(
-    precision: 0.99,
-    perceptualPrecision: 0.98,
-    size: fittingSize,
-  )
   assertSnapshot(
     of: hostingController.view,
-    as: snapshotting,
+    as: .image(
+      drawHierarchyInKeyWindow: true,
+      precision: 0.99,
+      perceptualPrecision: 0.98,
+      size: fittingSize,
+    ),
     named: name,
     record: record,
     file: file,

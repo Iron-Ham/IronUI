@@ -68,6 +68,8 @@ Use `swift run ironui-cli <command>` for all development tasks. Prefer the CLI o
 - Use `swift run ironui-cli test` for running tests.
 - Use `swift run ironui-cli snapshots` for snapshot tests (runs both macOS and iOS by default).
 - Use `swift run ironui-cli snapshots --record` to update snapshot baselines.
+- For snapshot/visual changes, always re-record snapshots for both iOS and macOS
+  and visually inspect the results.
 
 ## Documentation
 

@@ -144,11 +144,12 @@ public struct IronMenuLabel: View {
     }
     .padding(.horizontal, theme.spacing.md)
     .padding(.vertical, theme.spacing.sm)
+    .frame(minHeight: minTouchTarget)
     .background(theme.colors.surface)
     .clipShape(RoundedRectangle(cornerRadius: theme.radii.md))
     .overlay {
       RoundedRectangle(cornerRadius: theme.radii.md)
-        .strokeBorder(theme.colors.border, lineWidth: 1)
+        .strokeBorder(theme.colors.onSurface.opacity(0.3), lineWidth: 1)
     }
     .accessibilityElement(children: .combine)
     .accessibilityHint("Opens menu")
@@ -161,6 +162,9 @@ public struct IronMenuLabel: View {
 
   private let title: LocalizedStringKey
   private let icon: String?
+
+  /// Minimum touch target size per Apple HIG (44pt).
+  private let minTouchTarget: CGFloat = 44
 }
 
 // MARK: - IronMenuItem
@@ -220,12 +224,12 @@ public struct IronMenuItem: View {
     } label: {
       if let icon {
         Label {
-          Text(title)
+          IronText(title, style: .bodyMedium, color: .primary)
         } icon: {
-          Image(systemName: icon)
+          IronIcon(systemName: icon, size: .small, color: .primary)
         }
       } else {
-        Text(title)
+        IronText(title, style: .bodyMedium, color: .primary)
       }
     }
   }
