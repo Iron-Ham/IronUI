@@ -4,133 +4,106 @@ import SwiftUI
 
 // MARK: - IronTray
 
-/// A dynamic bottom sheet that overlays content with configurable heights.
+/// A dynamic content-sized card that overlays the current interface.
 ///
-/// `IronTray` provides a Family-style tray presentation with:
-/// - Multiple height detents for progressive disclosure
-/// - Drag-to-dismiss with velocity detection
-/// - Optional navigation header with dismiss/back actions
-/// - Background dimming with tap-to-dismiss
-/// - Adaptive theming support
+/// `IronTray` implements the Family-style tray pattern where:
+/// - The tray **sizes itself to fit its content** (not fixed detents)
+/// - Height changes animate smoothly to signal progression
+/// - Sequential flows use a navigation stack within the tray
+/// - Each tray focuses on a single piece of content or action
 ///
 /// ## Basic Usage
 ///
 /// ```swift
 /// @State private var showTray = false
 ///
-/// Button("Show Tray") { showTray = true }
+/// Button("Show") { showTray = true }
 ///   .ironTray(isPresented: $showTray) {
-///     Text("Tray Content")
+///     VStack {
+///       Text("Welcome!")
+///       Button("Continue") { /* next step */ }
+///     }
 ///   }
 /// ```
 ///
-/// ## Multiple Detents
+/// ## Sequential Flows
 ///
-/// ```swift
-/// .ironTray(
-///   isPresented: $showTray,
-///   detents: [.medium, .large],
-///   selectedDetent: $currentDetent
-/// ) {
-///   ScrollView { /* ... */ }
-/// }
-/// ```
-///
-/// ## With Navigation Header
+/// For multi-step flows, use `IronTrayStack` to manage navigation:
 ///
 /// ```swift
 /// .ironTray(isPresented: $showTray) {
-///   TrayContent()
-/// } header: {
-///   IronTrayHeader(title: "Settings") {
-///     showTray = false
+///   IronTrayStack {
+///     StepOne()
 ///   }
 /// }
 /// ```
-public struct IronTray<Content: View, Header: View>: View {
+public struct IronTray<Content: View>: View {
 
   // MARK: Lifecycle
 
-  /// Creates a tray with custom header.
+  /// Creates a content-sized tray.
   ///
   /// - Parameters:
-  ///   - detents: The available height detents.
-  ///   - selectedDetent: Binding to the current detent.
   ///   - showsDragIndicator: Whether to show the drag handle.
-  ///   - onDismiss: Called when the tray is dismissed via drag or background tap.
-  ///   - content: The tray content.
-  ///   - header: The header view.
+  ///   - onDismiss: Called when the tray is dismissed.
+  ///   - content: The tray content - height is determined by this content.
   public init(
-    detents: Set<IronTrayDetent> = [.medium],
-    selectedDetent: Binding<IronTrayDetent>? = nil,
     showsDragIndicator: Bool = true,
     onDismiss: (() -> Void)? = nil,
-    @ViewBuilder content: () -> Content,
-    @ViewBuilder header: () -> Header,
+    @ViewBuilder content: () -> Content
   ) {
-    self.detents = detents.isEmpty ? [.medium] : detents
-    _externalSelectedDetent = selectedDetent ?? .constant(.medium)
     self.showsDragIndicator = showsDragIndicator
     self.onDismiss = onDismiss
     self.content = content()
-    self.header = header()
   }
 
   // MARK: Public
 
   public var body: some View {
     GeometryReader { geometry in
-      let availableHeight = geometry.size.height
-
       ZStack(alignment: .bottom) {
         // Background dimming
         Color.black
-          .opacity(dimOpacity)
+          .opacity(isVisible ? 0.4 : 0)
           .ignoresSafeArea()
           .onTapGesture {
             dismissTray()
           }
           .accessibilityHidden(true)
 
-        // Tray container
+        // Tray card
         VStack(spacing: 0) {
           // Drag indicator
           if showsDragIndicator {
             dragIndicator
           }
 
-          // Header
-          header
-
-          // Content
+          // Content - sizes the tray
           content
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .frame(maxWidth: .infinity)
         }
-        .frame(height: currentHeight + dragOffset)
-        .frame(maxWidth: .infinity)
+        .padding(.bottom, geometry.safeAreaInsets.bottom)
         .background(trayBackground)
         .clipShape(
           UnevenRoundedRectangle(
             topLeadingRadius: theme.radii.xl,
-            topTrailingRadius: theme.radii.xl,
+            topTrailingRadius: theme.radii.xl
           )
         )
-        .ignoresSafeArea(edges: .bottom)
-        .ironShadow(theme.shadows.lg)
-        .offset(y: max(0, -dragOffset))
-        .gesture(dragGesture(availableHeight: availableHeight))
-        .onAppear {
-          measureAndSetInitialDetent(availableHeight: availableHeight)
-        }
-        .onChange(of: intrinsicHeight) {
-          updateCurrentHeight(availableHeight: availableHeight)
-        }
+        .ironShadow(theme.shadows.xl)
+        .offset(y: dragOffset + (isVisible ? 0 : 500))
+        .gesture(dragGesture)
         .accessibilityElement(children: .contain)
         .accessibilityAddTraits(.isModal)
         .accessibilityLabel("Tray")
       }
-      .animation(animation, value: currentHeight)
+      .animation(animation, value: isVisible)
       .animation(animation, value: dragOffset)
+      .onAppear {
+        withAnimation(animation) {
+          isVisible = true
+        }
+      }
     }
   }
 
@@ -138,28 +111,16 @@ public struct IronTray<Content: View, Header: View>: View {
 
   @Environment(\.ironTheme) private var theme
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
-  @Environment(\.dismiss) private var dismiss
 
-  @Binding private var externalSelectedDetent: IronTrayDetent
-  @State private var currentHeight: CGFloat = 0
-  @State private var dragOffset: CGFloat = 0
-  @State private var intrinsicHeight: CGFloat = 300
-  @State private var isDragging = false
-
-  private let detents: Set<IronTrayDetent>
   private let showsDragIndicator: Bool
   private let onDismiss: (() -> Void)?
   private let content: Content
-  private let header: Header
+
+  @State private var isVisible = false
+  @State private var dragOffset: CGFloat = 0
 
   private var animation: Animation {
     reduceMotion ? .linear(duration: 0) : theme.animation.smooth
-  }
-
-  private var dimOpacity: Double {
-    let maxOpacity = 0.4
-    let progress = min(currentHeight / 500, 1.0)
-    return maxOpacity * progress
   }
 
   private var trayBackground: some View {
@@ -167,7 +128,7 @@ public struct IronTray<Content: View, Header: View>: View {
       .fill(.ultraThinMaterial)
       .overlay {
         theme.colors.surface
-          .opacity(0.8)
+          .opacity(0.85)
       }
   }
 
@@ -179,132 +140,51 @@ public struct IronTray<Content: View, Header: View>: View {
       .padding(.bottom, theme.spacing.xs)
   }
 
-  private func dragGesture(availableHeight: CGFloat) -> some Gesture {
+  private var dragGesture: some Gesture {
     DragGesture()
       .onChanged { value in
-        isDragging = true
-        dragOffset = -value.translation.height
+        // Only allow dragging down
+        dragOffset = max(0, value.translation.height)
       }
       .onEnded { value in
-        isDragging = false
-        handleDragEnd(
-          translation: value.translation.height,
-          velocity: value.predictedEndTranslation.height - value.translation.height,
-          availableHeight: availableHeight,
-        )
+        let velocity = value.predictedEndTranslation.height - value.translation.height
+
+        // Dismiss if dragged down significantly with downward velocity
+        if value.translation.height > 100 || velocity > 500 {
+          dismissTray()
+        } else {
+          withAnimation(animation) {
+            dragOffset = 0
+          }
+        }
       }
-  }
-
-  private func handleDragEnd(
-    translation: CGFloat,
-    velocity: CGFloat,
-    availableHeight: CGFloat,
-  ) {
-    let projectedHeight = currentHeight - translation - velocity * 0.3
-
-    // Dismiss threshold: dragged down past 30% of current height with downward velocity
-    if translation > currentHeight * 0.3, velocity > 0 {
-      dismissTray()
-      return
-    }
-
-    // Find the nearest detent
-    let sortedDetents = detents.sorted()
-    var nearestDetent = sortedDetents.first ?? .medium
-
-    for detent in sortedDetents {
-      let detentHeight = detent.resolvedHeight(
-        availableHeight: availableHeight,
-        intrinsicHeight: intrinsicHeight,
-      )
-      let nearestHeight = nearestDetent.resolvedHeight(
-        availableHeight: availableHeight,
-        intrinsicHeight: intrinsicHeight,
-      )
-
-      if abs(projectedHeight - detentHeight) < abs(projectedHeight - nearestHeight) {
-        nearestDetent = detent
-      }
-    }
-
-    withAnimation(animation) {
-      dragOffset = 0
-      externalSelectedDetent = nearestDetent
-      currentHeight = nearestDetent.resolvedHeight(
-        availableHeight: availableHeight,
-        intrinsicHeight: intrinsicHeight,
-      )
-    }
   }
 
   private func dismissTray() {
     withAnimation(animation) {
-      currentHeight = 0
+      isVisible = false
+      dragOffset = 0
     }
     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
       onDismiss?()
-      dismiss()
     }
-  }
-
-  private func measureAndSetInitialDetent(availableHeight: CGFloat) {
-    let initialDetent = detents.sorted().first ?? .medium
-    externalSelectedDetent = initialDetent
-    currentHeight = initialDetent.resolvedHeight(
-      availableHeight: availableHeight,
-      intrinsicHeight: intrinsicHeight,
-    )
-  }
-
-  private func updateCurrentHeight(availableHeight: CGFloat) {
-    currentHeight = externalSelectedDetent.resolvedHeight(
-      availableHeight: availableHeight,
-      intrinsicHeight: intrinsicHeight,
-    )
-  }
-}
-
-// MARK: - Convenience Initializer (No Header)
-
-extension IronTray where Header == EmptyView {
-  /// Creates a tray without a header.
-  ///
-  /// - Parameters:
-  ///   - detents: The available height detents.
-  ///   - selectedDetent: Binding to the current detent.
-  ///   - showsDragIndicator: Whether to show the drag handle.
-  ///   - onDismiss: Called when the tray is dismissed via drag or background tap.
-  ///   - content: The tray content.
-  public init(
-    detents: Set<IronTrayDetent> = [.medium],
-    selectedDetent: Binding<IronTrayDetent>? = nil,
-    showsDragIndicator: Bool = true,
-    onDismiss: (() -> Void)? = nil,
-    @ViewBuilder content: () -> Content,
-  ) {
-    self.init(
-      detents: detents,
-      selectedDetent: selectedDetent,
-      showsDragIndicator: showsDragIndicator,
-      onDismiss: onDismiss,
-      content: content,
-      header: { EmptyView() },
-    )
   }
 }
 
 // MARK: - IronTrayHeader
 
-/// A standard header for `IronTray` with title and dismiss/back action.
+/// A header for `IronTray` with title and dismiss/back action.
+///
+/// The icon adapts based on navigation depth:
+/// - First tray: Shows close (X) icon
+/// - Subsequent trays: Shows back (chevron) icon
 ///
 /// ```swift
-/// IronTrayHeader(title: "Settings") {
-///   dismiss()
-/// }
-///
-/// // With back navigation
-/// IronTrayHeader(title: "Details", isBackNavigation: true) {
-///   navigateBack()
+/// IronTray {
+///   VStack {
+///     IronTrayHeader("Settings", onDismiss: { showTray = false })
+///     // Content...
+///   }
 /// }
 /// ```
 public struct IronTrayHeader: View {
@@ -315,16 +195,16 @@ public struct IronTrayHeader: View {
   ///
   /// - Parameters:
   ///   - title: The header title.
-  ///   - isBackNavigation: If true, shows a back arrow instead of close icon.
-  ///   - action: The action when the icon is tapped.
+  ///   - showsBackButton: If true, shows back arrow instead of close.
+  ///   - onDismiss: Action when the button is tapped.
   public init(
-    title: LocalizedStringKey,
-    isBackNavigation: Bool = false,
-    action: @escaping () -> Void,
+    _ title: LocalizedStringKey,
+    showsBackButton: Bool = false,
+    onDismiss: @escaping () -> Void
   ) {
     self.title = title
-    self.isBackNavigation = isBackNavigation
-    self.action = action
+    self.showsBackButton = showsBackButton
+    self.onDismiss = onDismiss
   }
 
   // MARK: Public
@@ -333,15 +213,15 @@ public struct IronTrayHeader: View {
     HStack {
       Button {
         IronLogger.ui.debug(
-          "IronTrayHeader action",
-          metadata: ["isBack": .string("\(isBackNavigation)")],
+          "IronTrayHeader tapped",
+          metadata: ["isBack": .string("\(showsBackButton)")]
         )
-        action()
+        onDismiss()
       } label: {
         IronIcon(
-          systemName: isBackNavigation ? "chevron.left" : "xmark",
+          systemName: showsBackButton ? "chevron.left" : "xmark",
           size: .small,
-          color: .secondary,
+          color: .secondary
         )
         .fontWeight(.semibold)
         .frame(width: 32, height: 32)
@@ -351,7 +231,7 @@ public struct IronTrayHeader: View {
         }
       }
       .buttonStyle(.plain)
-      .accessibilityLabel(isBackNavigation ? "Back" : "Close")
+      .accessibilityLabel(showsBackButton ? "Back" : "Close")
 
       Spacer()
 
@@ -372,8 +252,143 @@ public struct IronTrayHeader: View {
   @Environment(\.ironTheme) private var theme
 
   private let title: LocalizedStringKey
-  private let isBackNavigation: Bool
-  private let action: () -> Void
+  private let showsBackButton: Bool
+  private let onDismiss: () -> Void
+}
+
+// MARK: - IronTrayStack
+
+/// Manages sequential navigation within a tray.
+///
+/// Use `IronTrayStack` for multi-step flows where each step
+/// should animate with a height change to signal progression.
+///
+/// ```swift
+/// struct OnboardingTray: View {
+///   var body: some View {
+///     IronTrayStack { navigator in
+///       WelcomeStep(onContinue: {
+///         navigator.push { DetailsStep() }
+///       })
+///     }
+///   }
+/// }
+/// ```
+public struct IronTrayStack<Root: View>: View {
+
+  // MARK: Lifecycle
+
+  /// Creates a tray navigation stack.
+  ///
+  /// - Parameter root: The initial view, receiving a navigator for pushing new views.
+  public init(@ViewBuilder root: @escaping (IronTrayNavigator) -> Root) {
+    self.root = root
+  }
+
+  // MARK: Public
+
+  public var body: some View {
+    ZStack {
+      // Show current view from stack
+      if let current = stack.last {
+        current.view
+          .transition(.asymmetric(
+            insertion: .move(edge: .trailing).combined(with: .opacity),
+            removal: .move(edge: .leading).combined(with: .opacity)
+          ))
+      } else {
+        root(navigator)
+          .transition(.opacity)
+      }
+    }
+    .animation(animation, value: stack.count)
+  }
+
+  // MARK: Private
+
+  private struct StackEntry: Identifiable {
+    let id = UUID()
+    let view: AnyView
+  }
+
+  @Environment(\.ironTheme) private var theme
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+  private let root: (IronTrayNavigator) -> Root
+
+  @State private var stack: [StackEntry] = []
+
+  private var animation: Animation {
+    reduceMotion ? .linear(duration: 0) : theme.animation.smooth
+  }
+
+  private var navigator: IronTrayNavigator {
+    IronTrayNavigator(
+      push: { view in
+        withAnimation(animation) {
+          stack.append(StackEntry(view: AnyView(view)))
+        }
+      },
+      pop: {
+        withAnimation(animation) {
+          _ = stack.popLast()
+        }
+      },
+      popToRoot: {
+        withAnimation(animation) {
+          stack.removeAll()
+        }
+      },
+      depth: stack.count
+    )
+  }
+}
+
+// MARK: - IronTrayNavigator
+
+/// Provides navigation control within an `IronTrayStack`.
+public struct IronTrayNavigator {
+
+  /// Pushes a new view onto the tray stack.
+  public func push<V: View>(@ViewBuilder _ view: () -> V) {
+    pushAction(AnyView(view()))
+  }
+
+  /// Pops the current view, returning to the previous one.
+  public func pop() {
+    popAction()
+  }
+
+  /// Pops all views, returning to the root.
+  public func popToRoot() {
+    popToRootAction()
+  }
+
+  /// The current depth in the stack (0 = root).
+  public var depth: Int
+
+  /// Whether we're at the root level.
+  public var isAtRoot: Bool { depth == 0 }
+
+  // MARK: Fileprivate
+
+  fileprivate init(
+    push: @escaping (AnyView) -> Void,
+    pop: @escaping () -> Void,
+    popToRoot: @escaping () -> Void,
+    depth: Int
+  ) {
+    pushAction = push
+    popAction = pop
+    popToRootAction = popToRoot
+    self.depth = depth
+  }
+
+  // MARK: Private
+
+  private let pushAction: (AnyView) -> Void
+  private let popAction: () -> Void
+  private let popToRootAction: () -> Void
 }
 
 // MARK: - Previews
@@ -382,7 +397,7 @@ public struct IronTrayHeader: View {
   @Previewable @State var showTray = true
 
   ZStack {
-    Color.blue.opacity(0.3)
+    Color.blue.opacity(0.2)
       .ignoresSafeArea()
 
     VStack {
@@ -394,39 +409,86 @@ public struct IronTrayHeader: View {
     }
 
     if showTray {
-      IronTray(
-        detents: [.small, .medium, .large],
-        onDismiss: { showTray = false },
-      ) {
+      IronTray(onDismiss: { showTray = false }) {
         VStack(spacing: 16) {
-          Text("Tray Content")
-            .font(.title2)
-          Text("Drag to resize or dismiss")
-            .foregroundStyle(.secondary)
+          IronTrayHeader("Welcome", onDismiss: { showTray = false })
 
-          ForEach(1 ... 5, id: \.self) { index in
-            Text("Item \(index)")
-              .frame(maxWidth: .infinity)
-              .padding()
-              .background(Color.gray.opacity(0.1))
-              .clipShape(RoundedRectangle(cornerRadius: 8))
+          Text("This tray sizes to fit its content.")
+            .foregroundStyle(.secondary)
+            .padding(.horizontal)
+
+          Button("Got it") {
+            showTray = false
           }
+          .buttonStyle(.borderedProminent)
+          .padding(.bottom)
         }
-        .padding()
       }
     }
   }
 }
 
-#Preview("IronTray - With Header") {
+#Preview("IronTray - Varying Content") {
+  @Previewable @State var showTray = true
+  @Previewable @State var showMore = false
+
+  ZStack {
+    Color.green.opacity(0.2)
+      .ignoresSafeArea()
+
+    VStack {
+      Text("Tap to show more content")
+      Button("Show Tray") {
+        showTray = true
+        showMore = false
+      }
+      .buttonStyle(.borderedProminent)
+    }
+
+    if showTray {
+      IronTray(onDismiss: { showTray = false }) {
+        VStack(spacing: 16) {
+          IronTrayHeader("Dynamic Height", onDismiss: { showTray = false })
+
+          Text("Watch the height animate!")
+            .padding(.horizontal)
+
+          if showMore {
+            VStack(spacing: 12) {
+              ForEach(1 ... 5, id: \.self) { i in
+                Text("Additional item \(i)")
+                  .frame(maxWidth: .infinity)
+                  .padding()
+                  .background(Color.gray.opacity(0.1))
+                  .clipShape(RoundedRectangle(cornerRadius: 8))
+              }
+            }
+            .padding(.horizontal)
+            .transition(.opacity.combined(with: .move(edge: .bottom)))
+          }
+
+          Button(showMore ? "Show Less" : "Show More") {
+            withAnimation(.smooth) {
+              showMore.toggle()
+            }
+          }
+          .buttonStyle(.borderedProminent)
+          .padding(.bottom)
+        }
+      }
+    }
+  }
+}
+
+#Preview("IronTray - Sequential Flow") {
   @Previewable @State var showTray = true
 
   ZStack {
-    Color.green.opacity(0.3)
+    Color.purple.opacity(0.2)
       .ignoresSafeArea()
 
     VStack {
-      Text("Background Content")
+      Text("Multi-step flow demo")
       Button("Show Tray") {
         showTray = true
       }
@@ -434,35 +496,46 @@ public struct IronTrayHeader: View {
     }
 
     if showTray {
-      IronTray(
-        detents: [.medium, .large],
-        onDismiss: { showTray = false },
-      ) {
-        VStack(spacing: 16) {
-          Text("Settings Content")
-          Toggle("Dark Mode", isOn: .constant(false))
-          Toggle("Notifications", isOn: .constant(true))
-        }
-        .padding()
-      } header: {
-        IronTrayHeader(title: "Settings") {
-          showTray = false
+      IronTray(onDismiss: { showTray = false }) {
+        IronTrayStack { navigator in
+          // Step 1 - shorter
+          VStack(spacing: 16) {
+            IronTrayHeader("Step 1", onDismiss: { showTray = false })
+
+            Text("This is the first step.")
+              .padding(.horizontal)
+
+            Button("Continue") {
+              navigator.push {
+                // Step 2 - taller
+                VStack(spacing: 16) {
+                  IronTrayHeader("Step 2", showsBackButton: true, onDismiss: { navigator.pop() })
+
+                  Text("Notice the height change!")
+                    .padding(.horizontal)
+
+                  ForEach(1 ... 3, id: \.self) { i in
+                    Text("Detail \(i)")
+                      .frame(maxWidth: .infinity)
+                      .padding()
+                      .background(Color.gray.opacity(0.1))
+                      .clipShape(RoundedRectangle(cornerRadius: 8))
+                  }
+                  .padding(.horizontal)
+
+                  Button("Finish") {
+                    showTray = false
+                  }
+                  .buttonStyle(.borderedProminent)
+                  .padding(.bottom)
+                }
+              }
+            }
+            .buttonStyle(.borderedProminent)
+            .padding(.bottom)
+          }
         }
       }
     }
-  }
-}
-
-#Preview("IronTray - Intrinsic Height") {
-  IronTray(detents: [.intrinsic]) {
-    VStack(spacing: 12) {
-      Text("Compact Tray")
-        .font(.headline)
-      Text("This tray sizes to fit its content")
-        .foregroundStyle(.secondary)
-      Button("Got it") { }
-        .buttonStyle(.borderedProminent)
-    }
-    .padding()
   }
 }
