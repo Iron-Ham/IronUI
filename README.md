@@ -195,7 +195,7 @@ swift run ironui-cli <command> [options]
 | `docs` | Generate DocC documentation (`--preview` for live preview server) |
 | `export-snapshots` | Export snapshots to DocC Resources (`--dry-run` to preview) |
 | `format` | Format Swift sources with Airbnb style (`--dry-run` to check only) |
-| `snapshots` | Run snapshot tests (`--record` to update baselines, `--filter` to filter) |
+| `snapshots` | Run snapshot tests on macOS + iOS (`--record`, `--platform`, `--simulator`) |
 | `test` | Run tests (`--filter`, `--test-target`, `--parallel`, `--verbose`) |
 
 ### Examples
@@ -210,8 +210,11 @@ swift run ironui-cli format --dry-run
 # Run specific tests in parallel
 swift run ironui-cli test --filter Button --parallel
 
-# Record new snapshot baselines
+# Record new snapshot baselines (macOS + iOS)
 swift run ironui-cli snapshots --record
+
+# Run iOS snapshots only on a specific simulator
+swift run ironui-cli snapshots --platform ios --simulator "iPhone 16 Pro Max"
 
 # Preview documentation locally
 swift run ironui-cli docs --preview
