@@ -12,7 +12,7 @@ struct IronTrayModifier<TrayContent: View>: ViewModifier {
     isPresented: Binding<Bool>,
     showsDragIndicator: Bool,
     onDismiss: (() -> Void)?,
-    @ViewBuilder content: () -> TrayContent
+    @ViewBuilder content: () -> TrayContent,
   ) {
     _isPresented = isPresented
     self.showsDragIndicator = showsDragIndicator
@@ -31,7 +31,7 @@ struct IronTrayModifier<TrayContent: View>: ViewModifier {
             onDismiss: {
               isPresented = false
               onDismiss?()
-            }
+            },
           ) {
             trayContent
           }
@@ -87,14 +87,14 @@ extension View {
     isPresented: Binding<Bool>,
     showsDragIndicator: Bool = true,
     onDismiss: (() -> Void)? = nil,
-    @ViewBuilder content: () -> some View
+    @ViewBuilder content: () -> some View,
   ) -> some View {
     modifier(
       IronTrayModifier(
         isPresented: isPresented,
         showsDragIndicator: showsDragIndicator,
         onDismiss: onDismiss,
-        content: content
+        content: content,
       )
     )
   }

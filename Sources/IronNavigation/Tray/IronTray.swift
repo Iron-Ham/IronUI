@@ -50,7 +50,7 @@ public struct IronTray<Content: View>: View {
   public init(
     showsDragIndicator: Bool = true,
     onDismiss: (() -> Void)? = nil,
-    @ViewBuilder content: () -> Content
+    @ViewBuilder content: () -> Content,
   ) {
     self.showsDragIndicator = showsDragIndicator
     self.onDismiss = onDismiss
@@ -81,15 +81,16 @@ public struct IronTray<Content: View>: View {
           // Content - sizes the tray
           content
             .frame(maxWidth: .infinity)
+            .padding(.bottom, geometry.safeAreaInsets.bottom)
         }
-        .padding(.bottom, geometry.safeAreaInsets.bottom)
         .background(trayBackground)
         .clipShape(
           UnevenRoundedRectangle(
             topLeadingRadius: theme.radii.xl,
-            topTrailingRadius: theme.radii.xl
+            topTrailingRadius: theme.radii.xl,
           )
         )
+        .ignoresSafeArea(edges: .bottom)
         .ironShadow(theme.shadows.xl)
         .offset(y: dragOffset + (isVisible ? 0 : 500))
         .gesture(dragGesture)
@@ -112,12 +113,12 @@ public struct IronTray<Content: View>: View {
   @Environment(\.ironTheme) private var theme
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+  @State private var isVisible = false
+  @State private var dragOffset: CGFloat = 0
+
   private let showsDragIndicator: Bool
   private let onDismiss: (() -> Void)?
   private let content: Content
-
-  @State private var isVisible = false
-  @State private var dragOffset: CGFloat = 0
 
   private var animation: Animation {
     reduceMotion ? .linear(duration: 0) : theme.animation.smooth
@@ -200,7 +201,7 @@ public struct IronTrayHeader: View {
   public init(
     _ title: LocalizedStringKey,
     showsBackButton: Bool = false,
-    onDismiss: @escaping () -> Void
+    onDismiss: @escaping () -> Void,
   ) {
     self.title = title
     self.showsBackButton = showsBackButton
@@ -214,14 +215,14 @@ public struct IronTrayHeader: View {
       Button {
         IronLogger.ui.debug(
           "IronTrayHeader tapped",
-          metadata: ["isBack": .string("\(showsBackButton)")]
+          metadata: ["isBack": .string("\(showsBackButton)")],
         )
         onDismiss()
       } label: {
         IronIcon(
           systemName: showsBackButton ? "chevron.left" : "xmark",
           size: .small,
-          color: .secondary
+          color: .secondary,
         )
         .fontWeight(.semibold)
         .frame(width: 32, height: 32)
@@ -294,7 +295,7 @@ public struct IronTrayStack<Root: View>: View {
         current.view
           .transition(.asymmetric(
             insertion: .move(edge: .trailing).combined(with: .opacity),
-            removal: .move(edge: .leading).combined(with: .opacity)
+            removal: .move(edge: .leading).combined(with: .opacity),
           ))
       } else {
         root(navigator)
@@ -314,9 +315,9 @@ public struct IronTrayStack<Root: View>: View {
   @Environment(\.ironTheme) private var theme
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-  private let root: (IronTrayNavigator) -> Root
+  @State private var stack = [StackEntry]()
 
-  @State private var stack: [StackEntry] = []
+  private let root: (IronTrayNavigator) -> Root
 
   private var animation: Animation {
     reduceMotion ? .linear(duration: 0) : theme.animation.smooth
@@ -339,7 +340,7 @@ public struct IronTrayStack<Root: View>: View {
           stack.removeAll()
         }
       },
-      depth: stack.count
+      depth: stack.count,
     )
   }
 }
@@ -349,8 +350,32 @@ public struct IronTrayStack<Root: View>: View {
 /// Provides navigation control within an `IronTrayStack`.
 public struct IronTrayNavigator {
 
+  // MARK: Lifecycle
+
+  fileprivate init(
+    push: @escaping (AnyView) -> Void,
+    pop: @escaping () -> Void,
+    popToRoot: @escaping () -> Void,
+    depth: Int,
+  ) {
+    pushAction = push
+    popAction = pop
+    popToRootAction = popToRoot
+    self.depth = depth
+  }
+
+  // MARK: Public
+
+  /// The current depth in the stack (0 = root).
+  public var depth: Int
+
+  /// Whether we're at the root level.
+  public var isAtRoot: Bool {
+    depth == 0
+  }
+
   /// Pushes a new view onto the tray stack.
-  public func push<V: View>(@ViewBuilder _ view: () -> V) {
+  public func push(@ViewBuilder _ view: () -> some View) {
     pushAction(AnyView(view()))
   }
 
@@ -362,26 +387,6 @@ public struct IronTrayNavigator {
   /// Pops all views, returning to the root.
   public func popToRoot() {
     popToRootAction()
-  }
-
-  /// The current depth in the stack (0 = root).
-  public var depth: Int
-
-  /// Whether we're at the root level.
-  public var isAtRoot: Bool { depth == 0 }
-
-  // MARK: Fileprivate
-
-  fileprivate init(
-    push: @escaping (AnyView) -> Void,
-    pop: @escaping () -> Void,
-    popToRoot: @escaping () -> Void,
-    depth: Int
-  ) {
-    pushAction = push
-    popAction = pop
-    popToRootAction = popToRoot
-    self.depth = depth
   }
 
   // MARK: Private
