@@ -80,8 +80,12 @@ public struct IronSegmentedControl<Option: Hashable, Label: View>: View {
 
         // Selection indicator (decorative)
         RoundedRectangle(cornerRadius: innerCornerRadius)
-          .fill(theme.colors.background)
+          .fill(theme.colors.surfaceElevated)
           .shadow(color: theme.colors.primary.opacity(0.1), radius: 2, y: 1)
+          .overlay {
+            RoundedRectangle(cornerRadius: innerCornerRadius)
+              .strokeBorder(theme.colors.primary.opacity(0.3), lineWidth: 1)
+          }
           .frame(width: segmentWidth - indicatorPadding * 2)
           .padding(indicatorPadding)
           .offset(x: selectedIndex * segmentWidth)
