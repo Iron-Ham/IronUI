@@ -136,6 +136,10 @@ public struct IronRadio<Value: Hashable, Label: View>: View {
     }
     .buttonStyle(.plain)
     .disabled(!isEnabled)
+    .accessibilityElement(children: .combine)
+    .accessibilityValue(isSelected ? "Selected" : "Not selected")
+    .accessibilityAddTraits(.isButton)
+    .accessibilityHint(isSelected ? "" : "Double tap to select")
   }
 
   // MARK: Private
@@ -182,10 +186,7 @@ public struct IronRadio<Value: Hashable, Label: View>: View {
       }
     }
     .scaleEffect(isSelected ? 1.0 : 0.95)
-    .accessibilityElement(children: .ignore)
-    .accessibilityLabel("")
-    .accessibilityValue(isSelected ? "Selected" : "Not selected")
-    .accessibilityAddTraits(.isButton)
+    .accessibilityHidden(true)
   }
 
   private var circleSize: CGFloat {

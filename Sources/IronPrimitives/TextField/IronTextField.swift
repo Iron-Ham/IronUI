@@ -185,6 +185,22 @@ public struct IronTextField<Leading: View, Trailing: View>: View {
       fieldContainer
       errorMessage
     }
+    .accessibilityElement(children: .contain)
+    .accessibilityValue(accessibilityStateValue)
+  }
+
+  // MARK: Internal
+
+  /// Accessibility value describing the validation state
+  var accessibilityStateValue: String {
+    switch state {
+    case .normal:
+      ""
+    case .success:
+      "Valid"
+    case .error(let message):
+      "Error: \(message)"
+    }
   }
 
   // MARK: Private

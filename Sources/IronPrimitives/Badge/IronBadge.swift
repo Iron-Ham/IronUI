@@ -154,6 +154,8 @@ public struct IronBadge: View {
       .scaleEffect(hasAppeared ? 1.0 : 0.0)
       .animation(.spring(response: 0.35, dampingFraction: 0.6), value: hasAppeared)
       .onAppear { hasAppeared = true }
+      .accessibilityElement(children: .combine)
+      .accessibilityLabel(accessibilityLabelText)
   }
 
   // MARK: Private
@@ -183,6 +185,31 @@ public struct IronBadge: View {
   private let color: IronBadgeColor
   private let size: IronBadgeSize
   private let maxCount: Int?
+
+  /// Accessibility label for the badge based on content type
+  private var accessibilityLabelText: String {
+    switch content {
+    case .dot:
+      colorAccessibilityDescription
+    case .text, .string:
+      "Badge"
+    case .count:
+      "Notification count"
+    }
+  }
+
+  /// Accessibility description of the color for dot badges
+  private var colorAccessibilityDescription: String {
+    switch color {
+    case .primary: "Active"
+    case .secondary: "Inactive"
+    case .success: "Online"
+    case .warning: "Away"
+    case .error: "Busy"
+    case .info: "Available"
+    case .custom: "Status"
+    }
+  }
 
   @ViewBuilder
   private var contentView: some View {

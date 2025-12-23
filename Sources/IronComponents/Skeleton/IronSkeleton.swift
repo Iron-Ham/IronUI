@@ -60,6 +60,7 @@ public struct IronSkeleton: View {
     skeletonContent
       .accessibilityElement(children: .ignore)
       .accessibilityLabel("Loading")
+      .accessibilityAddTraits(animated ? .updatesFrequently : [])
   }
 
   // MARK: Private

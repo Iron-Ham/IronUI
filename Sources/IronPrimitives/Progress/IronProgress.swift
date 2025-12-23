@@ -106,11 +106,33 @@ public struct IronProgress<Label: View>: View {
   // MARK: Public
 
   public var body: some View {
-    switch style {
-    case .linear:
-      linearProgress
-    case .circular:
-      circularProgress
+    Group {
+      switch style {
+      case .linear:
+        linearProgress
+      case .circular:
+        circularProgress
+      }
+    }
+    .accessibilityElement(children: .ignore)
+    .accessibilityLabel(accessibilityLabelText)
+    .accessibilityValue(accessibilityValueText)
+    .accessibilityAddTraits(value == nil ? .updatesFrequently : [])
+  }
+
+  // MARK: Internal
+
+  /// Accessibility label describing the progress type
+  var accessibilityLabelText: String {
+    value == nil ? "Loading" : "Progress"
+  }
+
+  /// Accessibility value showing percentage or loading state
+  var accessibilityValueText: String {
+    if let value {
+      "\(Int(value * 100)) percent"
+    } else {
+      "In progress"
     }
   }
 
