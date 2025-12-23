@@ -178,6 +178,17 @@ Full documentation is available at [iron-ham.github.io/IronUI](https://iron-ham.
 | [IronDataDisplay](https://iron-ham.github.io/IronUI/documentation/irondatadisplay/) | Data visualization |
 | [IronNavigation](https://iron-ham.github.io/IronUI/documentation/ironnavigation/) | Navigation & presentation |
 
+## Tooling
+
+Use the `ironui-cli` executable (command name `ironui`) for common development tasks:
+
+- `swift run ironui-cli build [--configuration release]` – Build the package.
+- `swift run ironui-cli format` – Run the Airbnb Swift style formatter.
+- `swift run ironui-cli test` – Execute the full test suite.
+- `swift run ironui-cli snapshots [--record] [--filter <pattern>]` – Run snapshot tests (set `--record` or `IRONUI_RECORD_SNAPSHOTS=1` to update baselines).
+- `swift run ironui-cli docs` – Regenerate DocC documentation.
+- `swift run ironui-cli export-snapshots` – Export documentation-ready snapshots.
+
 ## Requirements
 
 - iOS 26.0+
