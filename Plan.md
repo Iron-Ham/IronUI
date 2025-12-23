@@ -122,12 +122,31 @@ Sources/IronLayouts/
 - [x] IronSizeClassStack - Size class-based layout switching
 - [x] IronContainer - Max-width constraints for content
 
-### Phase 4: Micro-interactions
+### Phase 4: Micro-interactions ✅
 **Priority: LOW** - Polish layer
 
-- [ ] `.ironRipple()` modifier
-- [ ] `IronConfetti` view
-- [ ] Enhanced drag-and-drop helpers
+```
+Sources/IronCore/Interactions/
+├── IronRipple.swift       # Touch ripple + sequin effects
+├── IronConfetti.swift     # Celebration particles
+├── IronShimmer.swift      # Loading/stealth shimmer
+├── IronParticleBurst.swift # Emoji/heart bursts
+├── IronShake.swift        # Shake, wiggle, bounce
+└── IronHaptics.swift      # Haptic feedback utilities
+```
+
+**Completed:**
+- [x] `.ironRipple()` - Touch ripple effect
+- [x] `.ironSequinRipple()` - Scattered dot burst
+- [x] `.ironConfetti()` - Physics-based celebration
+- [x] `IronConfettiView` - Standalone confetti
+- [x] `.ironShimmer()` - Loading/stealth shimmer
+- [x] `.ironParticleBurst()` - Emoji/symbol particles
+- [x] `.ironHeartBurst()` - Double-tap heart reactions
+- [x] `.ironShake()` - Error/attention shake (KeyframeAnimator)
+- [x] `.ironWiggle()` - Continuous wiggle (PhaseAnimator)
+- [x] `.ironBounce()` - Scale bounce effect
+- [x] `IronHaptics` - Impact, notification, selection feedback
 
 ### Phase 5: IronForms - Form Container
 **Priority: LOW** - After navigation is solid
@@ -148,6 +167,7 @@ Sources/IronLayouts/
 
 ## Next Action
 
-Phases 1-3 complete. Next options:
-- **Phase 4: Micro-interactions** - `.ironRipple()`, `IronConfetti`
-- **Phase 5: IronForms** - Form container, validation
+Phases 1-4 complete. Options:
+- **Phase 5: IronForms** - Form container, validation, date picker
+- **Merge branch** - `feat/iron-navigation` → `main`
+- **Family Values demo** - Build showcase app with all components
