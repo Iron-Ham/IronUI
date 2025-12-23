@@ -35,6 +35,7 @@ import UIKit
 /// // In a picker or segmented control
 /// IronHaptics.selection()
 /// ```
+@MainActor
 public enum IronHaptics {
 
   /// Triggers impact haptic feedback.
