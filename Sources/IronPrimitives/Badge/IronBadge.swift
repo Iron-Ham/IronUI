@@ -140,11 +140,19 @@ public struct IronBadge: View {
       .padding(.horizontal, horizontalPadding)
       .padding(.vertical, verticalPadding)
       .frame(minWidth: minSize, minHeight: minSize)
-      .background(backgroundColor, in: badgeShape)
+      .background(backgroundColor)
+      .clipShape(badgeShape)
       .overlay {
         if style == .outlined {
           badgeShape
-            .stroke(badgeColor, lineWidth: borderWidth)
+            .strokeBorder(
+              badgeColor,
+              style: StrokeStyle(
+                lineWidth: borderWidth,
+                lineCap: .round,
+                lineJoin: .round,
+              ),
+            )
         }
       }
       // Delightful entrance animation - badge pops in with spring
