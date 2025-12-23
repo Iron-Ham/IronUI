@@ -175,6 +175,7 @@ public struct IronChip<LeadingIcon: View>: View {
   // MARK: Public
 
   public var body: some View {
+    let chipShape = Capsule(style: .continuous)
     let chipBody = HStack(spacing: theme.spacing.xs) {
       if let leadingIcon {
         leadingIcon
@@ -200,11 +201,18 @@ public struct IronChip<LeadingIcon: View>: View {
     .padding(.horizontal, horizontalPadding)
     .padding(.vertical, verticalPadding)
     .background(backgroundColor)
-    .clipShape(Capsule())
+    .clipShape(chipShape)
     .overlay {
       if variant == .outlined || isSelectable {
-        Capsule()
-          .strokeBorder(borderColor, lineWidth: isSelected == true ? 2 : 1)
+        chipShape
+          .strokeBorder(
+            borderColor,
+            style: StrokeStyle(
+              lineWidth: isSelected == true ? 2 : 1,
+              lineCap: .round,
+              lineJoin: .round,
+            ),
+          )
       }
     }
     .scaleEffect(isPressed ? 0.95 : 1.0)
