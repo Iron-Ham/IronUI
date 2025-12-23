@@ -236,31 +236,28 @@ public struct IronWiggleModifier: ViewModifier {
   // MARK: Public
 
   public func body(content: Content) -> some View {
-    content
-      .rotationEffect(.degrees(active ? rotation : 0))
-      .animation(
-        active
-          ? .linear(duration: speed).repeatForever(autoreverses: true)
-          : .default,
-        value: active,
-      )
-      .onChange(of: active) { _, newValue in
-        if newValue {
-          rotation = intensity
-        } else {
-          rotation = 0
+    if active {
+      content
+        .phaseAnimator(WigglePhase.allCases) { view, phase in
+          view.rotationEffect(.degrees(phase == .left ? -intensity : intensity))
+        } animation: { _ in
+          .easeInOut(duration: speed)
         }
-      }
-      .onAppear {
-        if active {
-          rotation = intensity
-        }
-      }
+    } else {
+      content
+        .rotationEffect(.degrees(0))
+    }
+  }
+
+  // MARK: Internal
+
+  /// Wiggle phases for oscillation.
+  enum WigglePhase: CaseIterable {
+    case left
+    case right
   }
 
   // MARK: Private
-
-  @State private var rotation: Double = 0
 
   private let active: Bool
   private let intensity: Double
@@ -322,10 +319,14 @@ public struct IronBounceModifier: ViewModifier {
 
   public func body(content: Content) -> some View {
     content
-      .scaleEffect(scale)
+      .modifier(BounceAnimationModifier(trigger: animationTrigger, intensity: intensity))
       .onChange(of: active) { _, newValue in
         if newValue {
-          performBounce()
+          animationTrigger += 1
+          // Reset active after animation
+          DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            active = false
+          }
         }
       }
   }
@@ -333,28 +334,44 @@ public struct IronBounceModifier: ViewModifier {
   // MARK: Private
 
   @Binding private var active: Bool
-  @State private var scale: CGFloat = 1.0
+  @State private var animationTrigger = 0
 
   private let intensity: CGFloat
+}
 
-  private func performBounce() {
-    // Scale up
-    withAnimation(.spring(response: 0.2, dampingFraction: 0.5)) {
-      scale = 1 + intensity
-    }
+// MARK: - BounceAnimationModifier
 
-    // Bounce back
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-      withAnimation(.spring(response: 0.3, dampingFraction: 0.4)) {
-        scale = 1.0
+/// Internal modifier that performs the keyframe bounce animation.
+private struct BounceAnimationModifier: ViewModifier {
+
+  // MARK: Internal
+
+  let trigger: Int
+  let intensity: CGFloat
+
+  func body(content: Content) -> some View {
+    content
+      .keyframeAnimator(
+        initialValue: BounceValue(),
+        trigger: trigger,
+      ) { view, value in
+        view.scaleEffect(value.scale)
+      } keyframes: { _ in
+        KeyframeTrack(\.scale) {
+          // Quick scale up
+          SpringKeyframe(1 + intensity, duration: 0.15, spring: .snappy)
+          // Bounce back with overshoot
+          SpringKeyframe(1.0, duration: 0.35, spring: .bouncy(duration: 0.35, extraBounce: 0.2))
+        }
       }
-    }
-
-    // Reset active
-    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-      active = false
-    }
   }
+
+  // MARK: Private
+
+  private struct BounceValue {
+    var scale: CGFloat = 1.0
+  }
+
 }
 
 extension View {
@@ -454,35 +471,62 @@ extension View {
 
 #Preview("IronBounce - Notification") {
   @Previewable @State var bounce = false
-  @Previewable @State var count = 0
 
-  VStack(spacing: 24) {
-    Button {
-      count += 1
-      bounce = true
-    } label: {
-      ZStack(alignment: .topTrailing) {
-        Image(systemName: "bell.fill")
-          .font(.system(size: 40))
-          .foregroundStyle(.blue)
+  VStack(spacing: 32) {
+    Text("Tap any item to bounce")
+      .font(.headline)
 
-        if count > 0 {
-          Text("\(count)")
-            .font(.caption2)
-            .fontWeight(.bold)
-            .foregroundStyle(.white)
-            .padding(6)
-            .background(Circle().fill(.red))
-            .offset(x: 8, y: -8)
-            .ironBounce(active: $bounce)
-        }
+    HStack(spacing: 40) {
+      // Heart button
+      Button {
+        bounce = true
+      } label: {
+        Image(systemName: "heart.fill")
+          .font(.system(size: 50))
+          .foregroundStyle(.pink)
       }
-    }
-    .buttonStyle(.plain)
+      .buttonStyle(.plain)
+      .ironBounce(active: $bounce)
 
-    Text("Tap bell to add notification")
+      // Star button with separate state
+      BounceableButton(
+        systemName: "star.fill",
+        color: .yellow,
+      )
+
+      // Bell button with separate state
+      BounceableButton(
+        systemName: "bell.fill",
+        color: .blue,
+      )
+    }
+
+    Text("Each icon bounces independently")
       .font(.caption)
       .foregroundStyle(.secondary)
   }
   .padding()
+}
+
+// MARK: - BounceableButton
+
+/// Helper view for bounce preview with independent state.
+private struct BounceableButton: View {
+  let systemName: String
+  let color: Color
+
+  var body: some View {
+    Button {
+      bounce = true
+    } label: {
+      Image(systemName: systemName)
+        .font(.system(size: 50))
+        .foregroundStyle(color)
+    }
+    .buttonStyle(.plain)
+    .ironBounce(active: $bounce)
+  }
+
+  @State private var bounce = false
+
 }
