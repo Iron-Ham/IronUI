@@ -9,10 +9,23 @@ import IronPrimitives
 ///
 /// This module focuses on:
 /// - Custom navigation transitions
-/// - Presentation modifiers
+/// - Presentation modifiers (IronTray)
 /// - Navigation chrome (accessories, back buttons)
 /// - Hero transitions
 /// - Matched geometry presentations
+///
+/// ## IronTray
+///
+/// A dynamic bottom sheet inspired by Family's tray system:
+///
+/// ```swift
+/// @State private var showTray = false
+///
+/// Button("Show") { showTray = true }
+///   .ironTray(isPresented: $showTray, detents: [.medium, .large]) {
+///     TrayContent()
+///   }
+/// ```
 ///
 /// > Important: This module does NOT provide replacements for system navigation
 /// > containers like UINavigationController or UISplitView. Use SwiftUI's native
