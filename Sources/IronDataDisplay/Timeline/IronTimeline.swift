@@ -2,6 +2,17 @@ import IronCore
 import IronPrimitives
 import SwiftUI
 
+// MARK: - TimelineNodePosition
+
+private enum TimelineNodePosition {
+  case leading
+  case trailing
+}
+
+extension EnvironmentValues {
+  @Entry fileprivate var timelineNodePosition = TimelineNodePosition.leading
+}
+
 // MARK: - IronTimeline
 
 /// A vertical event timeline for displaying chronological entries.
@@ -117,25 +128,31 @@ private struct TimelineRow<Entry: Identifiable, Content: View>: View {
       case .leading:
         connectorColumn
         content(entry)
+          .environment(\.timelineNodePosition, .leading)
           .frame(maxWidth: .infinity, alignment: .leading)
 
       case .trailing:
         content(entry)
+          .environment(\.timelineNodePosition, .trailing)
           .frame(maxWidth: .infinity, alignment: .trailing)
         connectorColumn
 
       case .alternating:
         if index.isMultiple(of: 2) {
+          // Content on left, connector on right → node should be trailing (right side of content)
           content(entry)
+            .environment(\.timelineNodePosition, .trailing)
             .frame(maxWidth: .infinity, alignment: .trailing)
           connectorColumn
           Color.clear
             .frame(maxWidth: .infinity)
         } else {
+          // Content on right, connector on left → node should be leading (left side of content)
           Color.clear
             .frame(maxWidth: .infinity)
           connectorColumn
           content(entry)
+            .environment(\.timelineNodePosition, .leading)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
       }
@@ -290,14 +307,21 @@ public struct IronTimelineEntry<Content: View>: View {
 
   public var body: some View {
     HStack(alignment: .top, spacing: theme.spacing.md) {
-      nodeIndicator
-        .accessibilityHidden(true)
+      if nodePosition == .leading {
+        nodeIndicator
+          .accessibilityHidden(true)
+      }
 
-      VStack(alignment: .leading, spacing: theme.spacing.xs) {
+      VStack(alignment: contentAlignment, spacing: theme.spacing.xs) {
         if let timestamp {
           IronText(formattedTimestamp(timestamp), style: .caption, color: .secondary)
         }
         content()
+      }
+
+      if nodePosition == .trailing {
+        nodeIndicator
+          .accessibilityHidden(true)
       }
     }
     .padding(.vertical, theme.spacing.sm)
@@ -306,6 +330,7 @@ public struct IronTimelineEntry<Content: View>: View {
   // MARK: Private
 
   @Environment(\.ironTheme) private var theme
+  @Environment(\.timelineNodePosition) private var nodePosition
 
   @ScaledMetric(relativeTo: .body)
   private var nodeSize: CGFloat = 12
@@ -316,6 +341,10 @@ public struct IronTimelineEntry<Content: View>: View {
   private let timestamp: Date?
   private let timestampFormat: IronTimelineTimestampFormat
   private let content: () -> Content
+
+  private var contentAlignment: HorizontalAlignment {
+    nodePosition == .leading ? .leading : .trailing
+  }
 
   @ViewBuilder
   private var nodeIndicator: some View {
