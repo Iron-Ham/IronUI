@@ -52,10 +52,18 @@ public struct IronShakeModifier: ViewModifier {
 
   public func body(content: Content) -> some View {
     content
-      .offset(x: offset)
+      .modifier(ShakeAnimationModifier(
+        trigger: animationTrigger,
+        intensity: style.intensity,
+      ))
       .onChange(of: active) { _, newValue in
         if newValue {
-          performShake()
+          animationTrigger += 1
+          // Reset after animation completes
+          DispatchQueue.main.asyncAfter(deadline: .now() + style.duration) {
+            active = false
+            onComplete?()
+          }
         }
       }
   }
@@ -63,40 +71,60 @@ public struct IronShakeModifier: ViewModifier {
   // MARK: Private
 
   @Binding private var active: Bool
-  @State private var offset: CGFloat = 0
+  @State private var animationTrigger = 0
 
   private let style: IronShakeStyle
   private let onComplete: (() -> Void)?
+}
 
-  private func performShake() {
-    let intensity = style.intensity
-    let duration = style.duration
-    let count = style.shakeCount
+// MARK: - ShakeAnimationModifier
 
-    // Create a series of offset animations
-    let interval = duration / Double(count * 2)
+/// Internal modifier that performs the keyframe shake animation.
+private struct ShakeAnimationModifier: ViewModifier {
 
-    for i in 0 ..< count * 2 {
-      let delay = interval * Double(i)
-      let direction: CGFloat = i.isMultiple(of: 2) ? 1 : -1
-      let dampening = 1.0 - (Double(i) / Double(count * 2)) * 0.5
+  // MARK: Internal
 
-      DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
-        withAnimation(.linear(duration: interval)) {
-          offset = intensity * direction * dampening
+  let trigger: Int
+  let intensity: CGFloat
+
+  func body(content: Content) -> some View {
+    content
+      .keyframeAnimator(
+        initialValue: ShakeValue(),
+        trigger: trigger,
+      ) { view, value in
+        view.offset(x: value.offset)
+      } keyframes: { _ in
+        KeyframeTrack(\.offset) {
+          // Oscillating shake with natural dampening
+          // First oscillation (full intensity)
+          SpringKeyframe(intensity, duration: 0.06, spring: .snappy)
+          SpringKeyframe(-intensity, duration: 0.06, spring: .snappy)
+
+          // Second oscillation (75% intensity)
+          SpringKeyframe(intensity * 0.75, duration: 0.06, spring: .snappy)
+          SpringKeyframe(-intensity * 0.75, duration: 0.06, spring: .snappy)
+
+          // Third oscillation (50% intensity)
+          SpringKeyframe(intensity * 0.5, duration: 0.05, spring: .snappy)
+          SpringKeyframe(-intensity * 0.5, duration: 0.05, spring: .snappy)
+
+          // Fourth oscillation (25% intensity)
+          SpringKeyframe(intensity * 0.25, duration: 0.05, spring: .snappy)
+          SpringKeyframe(-intensity * 0.25, duration: 0.05, spring: .snappy)
+
+          // Settle back to center
+          SpringKeyframe(0, duration: 0.1, spring: .smooth)
         }
       }
-    }
-
-    // Return to center
-    DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
-      withAnimation(.spring(response: 0.2, dampingFraction: 0.5)) {
-        offset = 0
-      }
-      active = false
-      onComplete?()
-    }
   }
+
+  // MARK: Private
+
+  private struct ShakeValue {
+    var offset: CGFloat = 0
+  }
+
 }
 
 // MARK: - IronShakeStyle
