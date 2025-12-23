@@ -232,11 +232,17 @@ struct SnapshotConfiguration: Sendable {
     return configs
   }
 
-  /// Creates quick configurations for testing (iPhone light/dark only).
+  /// Creates quick configurations for testing (iPhone and macOS light/dark).
+  /// Includes both iOS and macOS configurations - only the platform-appropriate
+  /// ones will actually run assertions.
   static var quick: [SnapshotConfiguration] {
     [
+      // iOS configurations (run when testing on iOS)
       SnapshotConfiguration(device: .iPhone17Pro, colorScheme: .light),
       SnapshotConfiguration(device: .iPhone17Pro, colorScheme: .dark),
+      // macOS configurations (run when testing on macOS)
+      SnapshotConfiguration(device: .macOSStandard, colorScheme: .light),
+      SnapshotConfiguration(device: .macOSStandard, colorScheme: .dark),
     ]
   }
 
@@ -302,11 +308,15 @@ private func systemBackground(for colorScheme: SnapshotColorScheme) -> Color {
 ///   - file: The file where the assertion is made.
 ///   - testName: The name of the test function.
 ///   - line: The line where the assertion is made.
+/// Set to true to record new reference snapshots, false to verify against existing ones.
+/// Change this to `true` when you need to update or create new reference images.
+private let isRecordingSnapshots = false
+
 @MainActor
 func ironAssertSnapshots(
   of view: some View,
   configurations: [SnapshotConfiguration] = SnapshotConfiguration.quick,
-  record: Bool = false,
+  record: Bool = isRecordingSnapshots,
   file: StaticString = #filePath,
   testName: String = #function,
   line: UInt = #line,
@@ -386,7 +396,7 @@ func ironAssertSnapshots(
   of view: some View,
   configurations: [SnapshotConfiguration] = SnapshotConfiguration.quick,
   width: CGFloat,
-  record: Bool = false,
+  record: Bool = isRecordingSnapshots,
   file: StaticString = #filePath,
   testName: String = #function,
   line: UInt = #line,
@@ -465,7 +475,7 @@ func ironAssertSnapshot(
   named name: String,
   colorScheme: ColorScheme = .light,
   dynamicTypeSize: DynamicTypeSize = .large,
-  record: Bool = false,
+  record: Bool = isRecordingSnapshots,
   file: StaticString = #filePath,
   testName: String = #function,
   line: UInt = #line,

@@ -29,6 +29,21 @@ IronUI follows five core principles:
 - <doc:Theming>
 - <doc:Accessibility>
 
+### Modules
+
+Import individual modules for smaller bundle sizes, or use `IronUI` for everything.
+
+| Module | Description |
+|--------|-------------|
+| `IronCore` | Theming, tokens, accessibility |
+| `IronPrimitives` | Basic components (Button, Text, TextField) |
+| `IronComponents` | Composed components (Avatar, Chip, Menu) |
+| `IronLayouts` | Layout helpers (Container, Flow, Stack) |
+| `IronForms` | Form components (Form, FormField, DatePicker) |
+| `IronDataDisplay` | Data visualization (Timeline, Kanban, Database) |
+| `IronNavigation` | Navigation & presentation (Tray) |
+| `IronKitBridge` | UIKit/AppKit bridges |
+
 ### Primitives
 
 Basic building blocks for constructing interfaces: `IronButton`, `IronText`, `IronIcon`, `IronTextField`, `IronSecureField`, `IronCheckbox`, `IronToggle`, `IronRadio`, `IronProgress`, `IronSpinner`, `IronAlert`, `IronBadge`, `IronCard`, `IronDivider`.
@@ -48,3 +63,7 @@ Form building components with validation: `IronForm`, `IronFormSection`, `IronFo
 ### Data Display
 
 Components for visualizing structured data: `IronTimeline`, `IronKanban`, `IronDatabase`.
+
+### Navigation
+
+Navigation and presentation components: `IronTray`.
