@@ -163,7 +163,7 @@ theme.animation.snappy
 
 ## Documentation
 
-Full documentation is available at [iron-ham.github.io/IronUI](https://iron-ham.github.io/IronUI/)
+Full documentation is available at [iron-ham.github.io/IronUI](https://iron-ham.github.io/IronUI/documentation/ironui/)
 
 ## Requirements
 
