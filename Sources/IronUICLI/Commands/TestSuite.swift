@@ -2,6 +2,7 @@ import ArgumentParser
 import Foundation
 import Noora
 
+#if os(macOS)
 extension IronUICLI {
   struct TestSuite: AsyncParsableCommand, IronUICommand {
 
@@ -9,18 +10,6 @@ extension IronUICLI {
       commandName: "test",
       abstract: "Runs the full IronUI test suite."
     )
-
-    @Option(
-      name: .long,
-      help: "Run only tests matching the specified filter pattern."
-    )
-    var filter: String?
-
-    @Option(
-      name: .long,
-      help: "Run tests for a specific target (e.g., IronCoreTests)."
-    )
-    var testTarget: String?
 
     @Flag(
       name: .long,
@@ -36,14 +25,6 @@ extension IronUICLI {
 
     func run() async throws {
       var arguments = ["swift", "test"]
-
-      if let filter {
-        arguments.append(contentsOf: ["--filter", filter])
-      }
-
-      if let testTarget {
-        arguments.append(contentsOf: ["--test-target", testTarget])
-      }
 
       if parallel {
         arguments.append("--parallel")
@@ -64,17 +45,7 @@ extension IronUICLI {
     }
 
     private func buildDescription() -> String {
-      var parts = ["Running"]
-
-      if let testTarget {
-        parts.append(testTarget)
-      } else {
-        parts.append("all tests")
-      }
-
-      if let filter {
-        parts.append("matching '\(filter)'")
-      }
+      var parts = ["Running all tests"]
 
       if parallel {
         parts.append("(parallel)")
@@ -84,3 +55,4 @@ extension IronUICLI {
     }
   }
 }
+#endif

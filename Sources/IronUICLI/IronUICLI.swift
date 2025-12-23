@@ -1,5 +1,7 @@
-import ArgumentParser
 import Foundation
+
+#if os(macOS)
+import ArgumentParser
 import Noora
 
 @main
@@ -31,3 +33,12 @@ extension IronUICommand {
     CommandRunner(noora: noora)
   }
 }
+#else
+// Stub for non-macOS platforms (CLI is only available on macOS)
+@main
+struct IronUICLI {
+  static func main() {
+    fatalError("IronUI CLI is only available on macOS")
+  }
+}
+#endif

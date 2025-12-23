@@ -2,6 +2,7 @@ import ArgumentParser
 import Foundation
 @preconcurrency import Noora
 
+#if os(macOS)
 struct CommandRunner {
 
   // MARK: Lifecycle
@@ -83,3 +84,4 @@ struct CommandRunner {
 
   private let noora: Noora
 }
+#endif

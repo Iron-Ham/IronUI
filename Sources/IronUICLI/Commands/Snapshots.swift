@@ -2,6 +2,7 @@ import ArgumentParser
 import Foundation
 import Noora
 
+#if os(macOS)
 extension IronUICLI {
   struct Snapshots: AsyncParsableCommand, IronUICommand {
 
@@ -20,12 +21,6 @@ extension IronUICLI {
       help: "Record new reference snapshots instead of validating existing images."
     )
     var record = false
-
-    @Option(
-      name: [.customLong("filter")],
-      help: "Optional filter passed through to test runner."
-    )
-    var filterPattern: String?
 
     @Option(
       name: .long,
@@ -84,14 +79,10 @@ extension IronUICLI {
     }
 
     private func runMacOSTests(action: String, environment: [String: String]) async throws {
-      var arguments = [
+      let arguments = [
         "swift", "test",
-        "--test-target", "IronUISnapshotTests",
+        "--filter", "IronUISnapshotTests",
       ]
-
-      if let filterPattern {
-        arguments.append(contentsOf: ["--filter", filterPattern])
-      }
 
       try await runner.runTask(
         "\(action) macOS snapshots",
@@ -102,29 +93,20 @@ extension IronUICLI {
     }
 
     private func runiOSTests(action: String, environment: [String: String]) async throws {
-      var arguments = [
+      let arguments = [
         "xcodebuild", "test",
         "-scheme", "IronUI-Package",
         "-destination", "platform=iOS Simulator,name=\(simulator)",
         "-only-testing", "IronUISnapshotTests",
       ]
 
-      if let filterPattern {
-        // xcodebuild uses -only-testing with test identifiers
-        arguments.append(contentsOf: ["-only-testing", "IronUISnapshotTests/\(filterPattern)"])
-      }
-
-      // Pass environment via xcodebuild
-      for (key, value) in environment {
-        arguments.append(contentsOf: ["-testenv", "\(key)=\(value)"])
-      }
-
       try await runner.runTask(
         "\(action) iOS snapshots (\(simulator))",
         command: "/usr/bin/env",
         arguments: arguments,
-        environment: [:] // Environment passed via -testenv
+        environment: environment
       )
     }
   }
 }
+#endif

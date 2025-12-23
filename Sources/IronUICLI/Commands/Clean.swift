@@ -2,6 +2,7 @@ import ArgumentParser
 import Foundation
 import Noora
 
+#if os(macOS)
 extension IronUICLI {
   struct Clean: AsyncParsableCommand, IronUICommand {
 
@@ -81,3 +82,4 @@ extension IronUICLI {
     }
   }
 }
+#endif

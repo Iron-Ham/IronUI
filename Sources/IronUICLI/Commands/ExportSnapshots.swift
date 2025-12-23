@@ -2,6 +2,7 @@ import ArgumentParser
 import Foundation
 import Noora
 
+#if os(macOS)
 extension IronUICLI {
   struct ExportSnapshots: AsyncParsableCommand, IronUICommand {
 
@@ -99,14 +100,14 @@ extension IronUICLI {
         // Extract component name (e.g., "IronButton" from "IronButtonSnapshotTests")
         let componentName = testDir.replacingOccurrences(of: "SnapshotTests", with: "")
 
-        // Find all light mode macOS snapshots
+        // Find all light mode iOS snapshots (iPhone 17 Pro)
         let snapshots = try fileManager.contentsOfDirectory(atPath: testPath)
-        let lightSnapshots = snapshots.filter { $0.hasSuffix(".macOSStandard-standard-light.png") }
+        let lightSnapshots = snapshots.filter { $0.hasSuffix(".iPhone17Pro-standard-light.png") }
 
         for lightSnapshot in lightSnapshots {
-          // Extract test name (e.g., "buttonVariants" from "buttonVariants.macOSStandard-standard-light.png")
+          // Extract test name (e.g., "buttonVariants" from "buttonVariants.iPhone17Pro-standard-light.png")
           let testName = lightSnapshot.replacingOccurrences(
-            of: ".macOSStandard-standard-light.png",
+            of: ".iPhone17Pro-standard-light.png",
             with: ""
           )
 
@@ -134,8 +135,8 @@ extension IronUICLI {
 
           // Copy dark version if it exists
           let darkSnapshot = lightSnapshot.replacingOccurrences(
-            of: "standard-light",
-            with: "standard-dark"
+            of: "-light",
+            with: "-dark"
           )
           let darkSource = (testPath as NSString).appendingPathComponent(darkSnapshot)
 
@@ -166,3 +167,4 @@ extension IronUICLI {
     }
   }
 }
+#endif

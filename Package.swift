@@ -177,12 +177,15 @@ let package = Package(
     .executableTarget(
       name: "IronUICLI",
       dependencies: [
-        "IronUI",
-        .product(name: "Noora", package: "Noora"),
-        .product(name: "ArgumentParser", package: "swift-argument-parser"),
+        .target(name: "IronUI", condition: .when(platforms: [.macOS])),
+        .product(name: "Noora", package: "Noora", condition: .when(platforms: [.macOS])),
+        .product(name: "ArgumentParser", package: "swift-argument-parser", condition: .when(platforms: [.macOS])),
       ],
       path: "Sources/IronUICLI",
       resources: [],
+      swiftSettings: [
+        .define("IRONUI_CLI_ENABLED", .when(platforms: [.macOS])),
+      ]
     ),
   ],
   swiftLanguageModes: [.v6],
