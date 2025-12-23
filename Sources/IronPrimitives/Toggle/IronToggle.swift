@@ -193,10 +193,6 @@ public struct IronToggle<Label: View>: View {
     }
     .padding(thumbPadding)
     .gesture(dragGesture)
-    .onTapGesture {
-      guard isEnabled else { return }
-      toggleWithAnimation()
-    }
     .accessibilityElement(children: .ignore)
     .accessibilityLabel(label != nil ? "" : "Toggle")
     .accessibilityValue(isOn ? "On" : "Off")
@@ -205,12 +201,13 @@ public struct IronToggle<Label: View>: View {
 
   /// The drag gesture for sliding the toggle
   private var dragGesture: some Gesture {
-    DragGesture(minimumDistance: 1)
+    DragGesture(minimumDistance: 0)
       .updating($dragOffset) { value, state, _ in
         state = value.translation.width
       }
-      .onChanged { _ in
-        if !isDragging {
+      .onChanged { value in
+        // Only start dragging if we've moved a meaningful amount
+        if !isDragging, abs(value.translation.width) > 2 {
           isDragging = true
         }
       }
@@ -220,6 +217,12 @@ public struct IronToggle<Label: View>: View {
 
         let threshold = maxThumbTravel * 0.3
         let translation = value.translation.width
+
+        // If minimal movement, treat as a tap
+        if abs(translation) < 5 {
+          toggleWithAnimation()
+          return
+        }
 
         // Determine if we should toggle based on drag direction and distance
         if isOn {
