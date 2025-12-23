@@ -155,28 +155,14 @@ private struct TimelineRow<Entry: Identifiable, Content: View>: View {
 
   private var connectorColumn: some View {
     VStack(spacing: 0) {
-      // Top connector (not shown for first entry)
-      if index > 0 {
+      // Connector line spans the full height, node is rendered by IronTimelineEntry
+      if index > 0 || !isLast {
         connectorLine
-          .frame(height: theme.spacing.sm)
-      } else {
-        Color.clear
-          .frame(height: theme.spacing.sm)
-      }
-
-      // Node indicator placeholder - will be replaced by IronTimelineEntry
-      Circle()
-        .fill(theme.colors.primary)
-        .frame(width: nodeSize, height: nodeSize)
-
-      // Bottom connector (not shown for last entry)
-      if !isLast {
-        connectorLine
-          .frame(minHeight: theme.spacing.lg)
           .frame(maxHeight: .infinity)
       }
     }
-    .frame(width: nodeSize)
+    .frame(width: connectorWidth)
+    .padding(.top, theme.spacing.sm + (nodeSize / 2)) // Align with center of entry's node
   }
 
   @ViewBuilder
