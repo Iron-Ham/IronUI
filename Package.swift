@@ -72,7 +72,7 @@ let package = Package(
     // Styled console output
     .package(
       url: "https://github.com/tuist/Noora",
-      branch: "main"
+      branch: "main",
     ),
   ],
   targets: [
@@ -184,8 +184,8 @@ let package = Package(
       path: "Sources/IronUICLI",
       resources: [],
       swiftSettings: [
-        .define("IRONUI_CLI_ENABLED", .when(platforms: [.macOS])),
-      ]
+        .define("IRONUI_CLI_ENABLED", .when(platforms: [.macOS]))
+      ],
     ),
   ],
   swiftLanguageModes: [.v6],

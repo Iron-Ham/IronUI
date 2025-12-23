@@ -6,21 +6,33 @@ import Noora
 extension IronUICLI {
   struct Docs: AsyncParsableCommand, IronUICommand {
 
+    // MARK: Internal
+
     static let configuration = CommandConfiguration(
       abstract: "Generates DocC documentation for IronUI."
     )
 
     @Option(
       name: .long,
-      help: "Output directory for generated documentation."
+      help: "Output directory for generated documentation.",
     )
-    var output: String = "./docs"
+    var output = "./docs"
 
     @Flag(
       name: .long,
-      help: "Preview documentation in a local server."
+      help: "Preview documentation in a local server.",
     )
     var preview = false
+
+    func run() async throws {
+      if preview {
+        try await previewDocs()
+      } else {
+        try await generateDocs()
+      }
+    }
+
+    // MARK: Private
 
     private static let targets = [
       "IronCore",
@@ -37,17 +49,11 @@ extension IronUICLI {
       ".build/plugins/Swift-DocC/outputs/IronUI.doccarchive"
     }
 
-    func run() async throws {
-      if preview {
-        try await previewDocs()
-      } else {
-        try await generateDocs()
-      }
-    }
-
     private func generateDocs() async throws {
       var arguments = [
-        "swift", "package", "generate-documentation",
+        "swift",
+        "package",
+        "generate-documentation",
         "--enable-experimental-combined-documentation",
         "--enable-mentioned-in",
         "--enable-parameters-and-returns-validation",
@@ -61,13 +67,14 @@ extension IronUICLI {
       arguments.append(contentsOf: [
         "--disable-indexing",
         "--transform-for-static-hosting",
-        "--hosting-base-path", "IronUI",
+        "--hosting-base-path",
+        "IronUI",
       ])
 
       try await runner.runTask(
         "Generating combined documentation",
         command: "/usr/bin/env",
-        arguments: arguments
+        arguments: arguments,
       )
 
       // Verify archive exists
@@ -75,7 +82,7 @@ extension IronUICLI {
       guard fileManager.fileExists(atPath: archivePath) else {
         noora.error(.alert(
           "Documentation archive not found",
-          takeaways: ["Expected at: \(archivePath)"]
+          takeaways: ["Expected at: \(archivePath)"],
         ))
         throw ExitCode.failure
       }
@@ -100,13 +107,14 @@ extension IronUICLI {
         takeaways: [
           "Output: \(output)",
           "Targets: \(Self.targets.count) modules",
-        ]
+        ],
       ))
     }
 
     private func previewDocs() async throws {
       var arguments = [
-        "swift", "package",
+        "swift",
+        "package",
         "--disable-sandbox",
         "preview-documentation",
       ]
@@ -118,13 +126,13 @@ extension IronUICLI {
 
       noora.info(.alert(
         "Starting documentation preview server",
-        takeaways: ["Press Ctrl+C to stop"]
+        takeaways: ["Press Ctrl+C to stop"],
       ))
 
       try await runner.runTask(
         "Previewing documentation",
         command: "/usr/bin/env",
-        arguments: arguments
+        arguments: arguments,
       )
     }
   }

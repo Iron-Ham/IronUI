@@ -12,9 +12,9 @@ extension IronUICLI {
 
     @Option(
       name: [.short, .long],
-      help: "Build configuration to use (debug or release)."
+      help: "Build configuration to use (debug or release).",
     )
-    var config: String = "debug"
+    var config = "debug"
 
     func run() async throws {
       let buildConfig = config.lowercased() == "release" ? "release" : "debug"
@@ -27,12 +27,12 @@ extension IronUICLI {
           "build",
           "--configuration",
           buildConfig,
-        ]
+        ],
       )
 
       noora.success(.alert(
         "Build successful",
-        takeaways: ["Configuration: \(buildConfig)"]
+        takeaways: ["Configuration: \(buildConfig)"],
       ))
     }
   }
