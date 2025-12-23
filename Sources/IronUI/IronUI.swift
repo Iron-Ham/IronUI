@@ -23,21 +23,21 @@
 /// import IronPrimitives
 /// ```
 ///
-/// ## Topics
+/// ## Modules
 ///
 /// ### Foundation
-/// - ``IronCore``
+/// - `IronCore` - Theming, tokens, and platform abstractions
 ///
 /// ### Components
-/// - ``IronPrimitives``
-/// - ``IronComponents``
-/// - ``IronLayouts``
+/// - `IronPrimitives` - Basic components (Button, Text, TextField)
+/// - `IronComponents` - Composed components (Avatar, Chip, Menu)
+/// - `IronLayouts` - Layout helpers (Container, Flow, Stack)
 ///
 /// ### Specialized
-/// - ``IronNavigation``
-/// - ``IronForms``
-/// - ``IronDataDisplay``
-/// - ``IronKitBridge``
+/// - `IronNavigation` - Navigation and presentation
+/// - `IronForms` - Form components with validation
+/// - `IronDataDisplay` - Data visualization (Timeline, Kanban, Database)
+/// - `IronKitBridge` - UIKit/AppKit interop
 public enum IronUI {
   /// The current version of IronUI.
   public static let version = "0.1.0"

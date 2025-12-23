@@ -62,7 +62,7 @@ let package = Package(
     // Snapshot Testing (test-only)
     .package(
       url: "https://github.com/pointfreeco/swift-snapshot-testing",
-      from: "1.17.0",
+      from: "1.18.0",
     ),
   ],
   targets: [
