@@ -46,18 +46,37 @@ Exceptions: preview-only code for brevity.
 - Use `@Previewable` for state in previews.
 - Name previews descriptively (e.g., `"IronButton - Variants"`).
 
+## Developer CLI
+
+Use `swift run ironui-cli <command>` for all development tasks. Prefer the CLI over direct commands or shell scripts.
+
+| Command | Purpose |
+|---------|---------|
+| `build` | Build the package (`--config release` for release) |
+| `clean` | Remove build artifacts (`--all` includes Package.resolved) |
+| `docs` | Generate documentation (`--preview` for live server) |
+| `export-snapshots` | Export snapshots to DocC Resources |
+| `format` | Format Swift sources (`--dry-run` to check only) |
+| `snapshots` | Run snapshot tests on macOS + iOS (`--record` to update baselines) |
+| `test` | Run unit tests (`--filter`, `--parallel`, `--verbose`) |
+
 ## Testing
 
 - Unit tests: Swift Testing (not XCTestCase).
 - Snapshot tests: PointFree `swift-snapshot-testing`.
 - Add/maintain accessibility audits for interactive components.
+- Use `swift run ironui-cli test` for running tests.
+- Use `swift run ironui-cli snapshots` for snapshot tests (runs both macOS and iOS by default).
+- Use `swift run ironui-cli snapshots --record` to update snapshot baselines.
 
 ## Documentation
 
 - All public APIs must have DocC docs.
 - Update module DocC when public APIs change.
 - Prefer tutorials/articles for onboarding and complex components.
-- Use `Scripts/generate-docs.sh` for site generation.
+- Use `swift run ironui-cli docs` for site generation.
+- Use `swift run ironui-cli docs --preview` to preview locally.
+- Use `swift run ironui-cli export-snapshots` to copy snapshots to DocC Resources.
 
 ## Logging
 
