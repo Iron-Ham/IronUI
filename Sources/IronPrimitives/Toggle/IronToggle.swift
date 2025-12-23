@@ -122,27 +122,39 @@ public struct IronToggle<Label: View>: View {
   // MARK: Public
 
   public var body: some View {
-    HStack(spacing: theme.spacing.md) {
+    let content = HStack(spacing: theme.spacing.md) {
       if let label {
         label
           .opacity(isEnabled ? 1.0 : 0.5)
-          .onTapGesture {
-            guard isEnabled else { return }
-            toggleWithAnimation()
-          }
       }
 
       Spacer()
 
       toggleSwitch
+        .frame(minWidth: minTouchTarget, minHeight: minTouchTarget)
     }
+    .frame(minHeight: minTouchTarget)
     .contentShape(Rectangle())
+    .onTapGesture {
+      guard isEnabled else { return }
+      toggleWithAnimation()
+    }
+    .accessibilityElement(children: .combine)
+    .accessibilityValue(isOn ? "On" : "Off")
+    .accessibilityAddTraits(.isButton)
+
+    if label == nil {
+      content.accessibilityLabel("Toggle")
+    } else {
+      content
+    }
   }
 
   // MARK: Private
 
   @Environment(\.ironTheme) private var theme
   @Environment(\.isEnabled) private var isEnabled
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
   @Binding private var isOn: Bool
 
@@ -174,6 +186,9 @@ public struct IronToggle<Label: View>: View {
   private let color: IronToggleColor
   private let label: Label?
 
+  /// Minimum touch target size per Apple HIG (44pt).
+  private let minTouchTarget: CGFloat = 44
+
   private var toggleSwitch: some View {
     ZStack(alignment: .leading) {
       // Track
@@ -185,18 +200,15 @@ public struct IronToggle<Label: View>: View {
       Circle()
         .fill(thumbColor)
         .frame(width: thumbSize, height: thumbSize)
-        .shadow(color: .black.opacity(isDragging ? 0.25 : 0.15), radius: isDragging ? 4 : 2, y: 1)
+        .ironShadow(isDragging ? theme.shadows.md : theme.shadows.sm)
         .scaleEffect(isDragging ? 1.1 : 1.0)
         .offset(x: thumbOffset)
-        .animation(isDragging ? nil : theme.animation.bouncy, value: isOn)
-        .animation(theme.animation.snappy, value: isDragging)
+        .accessibleAnimation(theme.animation.bouncy, value: isOn)
+        .accessibleAnimation(theme.animation.snappy, value: isDragging)
     }
     .padding(thumbPadding)
     .gesture(dragGesture)
-    .accessibilityElement(children: .ignore)
-    .accessibilityLabel(label != nil ? "" : "Toggle")
-    .accessibilityValue(isOn ? "On" : "Off")
-    .accessibilityAddTraits(.isButton)
+    .accessibilityHidden(true)
   }
 
   /// The drag gesture for sliding the toggle
@@ -293,11 +305,11 @@ public struct IronToggle<Label: View>: View {
 
   private var trackColor: Color {
     if !isEnabled {
-      return theme.colors.border.opacity(0.5)
+      return theme.colors.onSurface.opacity(0.15)
     }
 
     // Interpolate between off and on colors based on thumb position
-    let offColor = theme.colors.border
+    let offColor = theme.colors.onSurface.opacity(0.3)
     let onColor = toggleColor
 
     // Use overlay blending for smooth color transition
@@ -309,7 +321,7 @@ public struct IronToggle<Label: View>: View {
   }
 
   private var thumbColor: Color {
-    isEnabled ? .white : theme.colors.surface
+    isEnabled ? theme.colors.onPrimary : theme.colors.surface
   }
 
   private var toggleColor: Color {
@@ -330,7 +342,7 @@ public struct IronToggle<Label: View>: View {
 
   /// Toggles the state with animation and logging
   private func toggleWithAnimation() {
-    withAnimation(theme.animation.bouncy) {
+    withAnimation(reduceMotion ? nil : theme.animation.bouncy) {
       isOn.toggle()
     }
     IronLogger.ui.debug(

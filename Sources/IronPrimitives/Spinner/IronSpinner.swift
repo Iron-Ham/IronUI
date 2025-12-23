@@ -82,6 +82,8 @@ public struct IronSpinner: View {
   // MARK: Private
 
   @Environment(\.ironTheme) private var theme
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+  @Environment(\.ironSkipEntranceAnimations) private var skipEntranceAnimations
 
   /// Scaled sizes for Dynamic Type
   @ScaledMetric(relativeTo: .caption2)
@@ -141,13 +143,17 @@ public struct IronSpinner: View {
           style: StrokeStyle(lineWidth: strokeWidth, lineCap: .round),
         )
         .rotationEffect(.degrees(isAnimating ? 360 : 0))
-        .animation(
-          .linear(duration: 0.8)
-            .repeatForever(autoreverses: false),
+        .accessibleAnimation(
+          shouldAnimate
+            ? .linear(duration: 0.8)
+              .repeatForever(autoreverses: false)
+            : nil,
           value: isAnimating,
         )
     }
-    .onAppear { isAnimating = true }
+    .onAppear {
+      isAnimating = shouldAnimate
+    }
   }
 
   private var pulsingView: some View {
@@ -158,15 +164,21 @@ public struct IronSpinner: View {
           .frame(width: dotSize, height: dotSize)
           .scaleEffect(pulsePhases[index] ? 1.0 : 0.5)
           .opacity(pulsePhases[index] ? 1.0 : 0.4)
-          .animation(
-            .spring(response: 0.4, dampingFraction: 0.5)
-              .repeatForever(autoreverses: true)
-              .delay(Double(index) * 0.15),
+          .accessibleAnimation(
+            shouldAnimate
+              ? .spring(response: 0.4, dampingFraction: 0.5)
+                .repeatForever(autoreverses: true)
+                .delay(Double(index) * 0.15)
+              : nil,
             value: pulsePhases[index],
           )
       }
     }
     .onAppear {
+      guard shouldAnimate else {
+        pulsePhases = [true, true, true]
+        return
+      }
       // Stagger the pulse animations
       for index in 0..<3 {
         DispatchQueue.main.asyncAfter(deadline: .now() + Double(index) * 0.15) {
@@ -183,15 +195,21 @@ public struct IronSpinner: View {
           .fill(spinnerColor)
           .frame(width: dotSize, height: dotSize)
           .offset(y: bouncePhases[index] ? -dotSize : dotSize)
-          .animation(
-            .spring(response: 0.35, dampingFraction: 0.4, blendDuration: 0)
-              .repeatForever(autoreverses: true)
-              .delay(Double(index) * 0.12),
+          .accessibleAnimation(
+            shouldAnimate
+              ? .spring(response: 0.35, dampingFraction: 0.4, blendDuration: 0)
+                .repeatForever(autoreverses: true)
+                .delay(Double(index) * 0.12)
+              : nil,
             value: bouncePhases[index],
           )
       }
     }
     .onAppear {
+      guard shouldAnimate else {
+        bouncePhases = [true, true, true]
+        return
+      }
       // Stagger the bounce animations
       for index in 0..<3 {
         DispatchQueue.main.asyncAfter(deadline: .now() + Double(index) * 0.12) {
@@ -215,14 +233,18 @@ public struct IronSpinner: View {
           .frame(width: dotSize * (1.0 - Double(index) * 0.2), height: dotSize * (1.0 - Double(index) * 0.2))
           .offset(x: orbitRadius(for: index))
           .rotationEffect(.degrees(isAnimating ? 360 : 0))
-          .animation(
-            .linear(duration: 1.0 + Double(index) * 0.3)
-              .repeatForever(autoreverses: false),
+          .accessibleAnimation(
+            shouldAnimate
+              ? .linear(duration: 1.0 + Double(index) * 0.3)
+                .repeatForever(autoreverses: false)
+              : nil,
             value: isAnimating,
           )
       }
     }
-    .onAppear { isAnimating = true }
+    .onAppear {
+      isAnimating = shouldAnimate
+    }
   }
 
   private var spinnerSize: CGFloat {
@@ -268,6 +290,10 @@ public struct IronSpinner: View {
     case .onSurface: theme.colors.onSurface
     case .custom(let customColor): customColor
     }
+  }
+
+  private var shouldAnimate: Bool {
+    !reduceMotion && !skipEntranceAnimations
   }
 
   private func orbitRadius(for index: Int) -> CGFloat {

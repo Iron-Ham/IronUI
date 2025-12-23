@@ -119,7 +119,7 @@ public struct IronRadio<Value: Hashable, Label: View>: View {
 
   public var body: some View {
     Button {
-      withAnimation(theme.animation.bouncy) {
+      withAnimation(reduceMotion ? nil : theme.animation.bouncy) {
         selection = value
       }
       IronLogger.ui.debug(
@@ -133,6 +133,7 @@ public struct IronRadio<Value: Hashable, Label: View>: View {
         label
           .opacity(isEnabled ? 1.0 : 0.5)
       }
+      .frame(minHeight: minTouchTarget)
     }
     .buttonStyle(.plain)
     .disabled(!isEnabled)
@@ -146,6 +147,7 @@ public struct IronRadio<Value: Hashable, Label: View>: View {
 
   @Environment(\.ironTheme) private var theme
   @Environment(\.isEnabled) private var isEnabled
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
   @Binding private var selection: Value
 
@@ -162,6 +164,9 @@ public struct IronRadio<Value: Hashable, Label: View>: View {
   private let size: IronRadioSize
   private let color: IronRadioColor
   private let label: Label
+
+  /// Minimum touch target size per Apple HIG (44pt).
+  private let minTouchTarget: CGFloat = 44
 
   private var isSelected: Bool {
     selection == value
@@ -214,7 +219,7 @@ public struct IronRadio<Value: Hashable, Label: View>: View {
   }
 
   private var borderColor: Color {
-    isEnabled ? theme.colors.border : theme.colors.border.opacity(0.5)
+    isEnabled ? theme.colors.onSurface.opacity(0.3) : theme.colors.onSurface.opacity(0.15)
   }
 
   private var radioColor: Color {

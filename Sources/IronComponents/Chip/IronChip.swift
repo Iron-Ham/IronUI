@@ -175,7 +175,8 @@ public struct IronChip<LeadingIcon: View>: View {
   // MARK: Public
 
   public var body: some View {
-    HStack(spacing: theme.spacing.xs) {
+    let chipShape = Capsule(style: .continuous)
+    let chipBody = HStack(spacing: theme.spacing.xs) {
       if let leadingIcon {
         leadingIcon
           .foregroundStyle(contentColor)
@@ -186,7 +187,7 @@ public struct IronChip<LeadingIcon: View>: View {
 
       if let onDismiss {
         Button {
-          withAnimation(theme.animation.snappy) {
+          withAnimation(reduceMotion ? nil : theme.animation.snappy) {
             onDismiss()
           }
           IronLogger.ui.debug("IronChip dismissed")
@@ -200,20 +201,27 @@ public struct IronChip<LeadingIcon: View>: View {
     .padding(.horizontal, horizontalPadding)
     .padding(.vertical, verticalPadding)
     .background(backgroundColor)
-    .clipShape(Capsule())
+    .clipShape(chipShape)
     .overlay {
       if variant == .outlined || isSelectable {
-        Capsule()
-          .strokeBorder(borderColor, lineWidth: isSelected == true ? 2 : 1)
+        chipShape
+          .strokeBorder(
+            borderColor,
+            style: StrokeStyle(
+              lineWidth: isSelected == true ? 2 : 1,
+              lineCap: .round,
+              lineJoin: .round,
+            ),
+          )
       }
     }
     .scaleEffect(isPressed ? 0.95 : 1.0)
-    .animation(theme.animation.snappy, value: isPressed)
-    .animation(theme.animation.snappy, value: isSelected)
+    .accessibleAnimation(theme.animation.snappy, value: isPressed)
+    .accessibleAnimation(theme.animation.snappy, value: isSelected)
     .contentShape(Capsule())
     .onTapGesture {
       guard isSelectable else { return }
-      withAnimation(theme.animation.bouncy) {
+      withAnimation(reduceMotion ? nil : theme.animation.bouncy) {
         isSelected?.toggle()
       }
       IronLogger.ui.debug(
@@ -244,6 +252,14 @@ public struct IronChip<LeadingIcon: View>: View {
         isSelected?.toggle()
       }
     }
+
+    if isSelectable || onDismiss != nil {
+      chipBody
+        .frame(minWidth: minTouchTarget)
+        .frame(minHeight: minTouchTarget)
+    } else {
+      chipBody
+    }
   }
 
   // MARK: Internal
@@ -256,9 +272,13 @@ public struct IronChip<LeadingIcon: View>: View {
   // MARK: Private
 
   @Environment(\.ironTheme) private var theme
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
   @Binding private var isSelected: Bool?
   @State private var isPressed = false
+
+  /// Minimum touch target size per Apple HIG (44pt).
+  private let minTouchTarget: CGFloat = 44
 
   private let title: LocalizedStringKey
   private let variant: IronChipVariant
@@ -320,7 +340,7 @@ public struct IronChip<LeadingIcon: View>: View {
     }
 
     switch variant {
-    case .filled: return theme.colors.surface
+    case .filled: return theme.colors.background
     case .outlined: return .clear
     case .elevated: return theme.colors.surfaceElevated
     }
