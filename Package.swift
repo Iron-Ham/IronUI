@@ -71,10 +71,6 @@ let package = Package(
       name: "IronCore",
       dependencies: [],
       path: "Sources/IronCore",
-      swiftSettings: [
-        .enableExperimentalFeature("StrictConcurrency"),
-        .unsafeFlags(["-warnings-as-errors"]),
-      ],
     ),
     .testTarget(
       name: "IronCoreTests",
@@ -87,10 +83,6 @@ let package = Package(
       name: "IronPrimitives",
       dependencies: ["IronCore"],
       path: "Sources/IronPrimitives",
-      swiftSettings: [
-        .enableExperimentalFeature("StrictConcurrency"),
-        .unsafeFlags(["-warnings-as-errors"]),
-      ],
     ),
     .testTarget(
       name: "IronPrimitivesTests",
@@ -103,10 +95,6 @@ let package = Package(
       name: "IronLayouts",
       dependencies: ["IronCore"],
       path: "Sources/IronLayouts",
-      swiftSettings: [
-        .enableExperimentalFeature("StrictConcurrency"),
-        .unsafeFlags(["-warnings-as-errors"]),
-      ],
     ),
 
     // MARK: - Components Module
@@ -116,10 +104,6 @@ let package = Package(
       path: "Sources/IronComponents",
       resources: [
         .process("Resources")
-      ],
-      swiftSettings: [
-        .enableExperimentalFeature("StrictConcurrency"),
-        .unsafeFlags(["-warnings-as-errors"]),
       ],
     ),
     .testTarget(
@@ -133,10 +117,6 @@ let package = Package(
       name: "IronNavigation",
       dependencies: ["IronCore", "IronPrimitives", "IronComponents"],
       path: "Sources/IronNavigation",
-      swiftSettings: [
-        .enableExperimentalFeature("StrictConcurrency"),
-        .unsafeFlags(["-warnings-as-errors"]),
-      ],
     ),
 
     // MARK: - Forms Module
@@ -144,10 +124,6 @@ let package = Package(
       name: "IronForms",
       dependencies: ["IronCore", "IronPrimitives", "IronComponents"],
       path: "Sources/IronForms",
-      swiftSettings: [
-        .enableExperimentalFeature("StrictConcurrency"),
-        .unsafeFlags(["-warnings-as-errors"]),
-      ],
     ),
 
     // MARK: - Data Display Module
@@ -155,10 +131,6 @@ let package = Package(
       name: "IronDataDisplay",
       dependencies: ["IronCore", "IronPrimitives", "IronComponents"],
       path: "Sources/IronDataDisplay",
-      swiftSettings: [
-        .enableExperimentalFeature("StrictConcurrency"),
-        .unsafeFlags(["-warnings-as-errors"]),
-      ],
     ),
 
     // MARK: - Kit Bridge Module
@@ -166,10 +138,6 @@ let package = Package(
       name: "IronKitBridge",
       dependencies: ["IronCore"],
       path: "Sources/IronKitBridge",
-      swiftSettings: [
-        .enableExperimentalFeature("StrictConcurrency"),
-        .unsafeFlags(["-warnings-as-errors"]),
-      ],
     ),
 
     // MARK: - Umbrella Module
@@ -186,10 +154,6 @@ let package = Package(
         "IronKitBridge",
       ],
       path: "Sources/IronUI",
-      swiftSettings: [
-        .enableExperimentalFeature("StrictConcurrency"),
-        .unsafeFlags(["-warnings-as-errors"]),
-      ],
     ),
 
     // MARK: - Snapshot Tests (XCTest-based)
