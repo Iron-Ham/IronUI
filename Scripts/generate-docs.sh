@@ -47,14 +47,64 @@ for module in "${MODULES[@]}"; do
             cp "$archive/data/documentation/$module_lower.json" "$OUTPUT_DIR/data/documentation/"
         fi
 
-        # Copy documentation content
+        # Copy documentation content (HTML pages)
         if [ -d "$archive/documentation/$module_lower" ]; then
             cp -r "$archive/documentation/$module_lower" "$OUTPUT_DIR/documentation/"
+        fi
+
+        # Copy images for this module
+        if [ -d "$archive/images/$module" ]; then
+            mkdir -p "$OUTPUT_DIR/images/"
+            cp -r "$archive/images/$module" "$OUTPUT_DIR/images/"
+            echo "  Copied images for $module"
+        fi
+
+        # Copy index data for this module (for sidebar navigation)
+        if [ -f "$archive/index/index.json" ]; then
+            mkdir -p "$OUTPUT_DIR/index-modules"
+            cp "$archive/index/index.json" "$OUTPUT_DIR/index-modules/$module_lower-index.json"
         fi
 
         echo "  Merged $module"
     fi
 done
+
+# Merge all module indices into a combined index.json for sidebar navigation
+echo "Merging sidebar indices..."
+python3 << 'PYTHON_SCRIPT'
+import json
+import os
+
+output_dir = "./docs"
+index_modules_dir = os.path.join(output_dir, "index-modules")
+
+# Collect all module indices
+all_archives = []
+all_modules = []
+
+for filename in sorted(os.listdir(index_modules_dir)):
+    if filename.endswith("-index.json"):
+        filepath = os.path.join(index_modules_dir, filename)
+        with open(filepath, 'r') as f:
+            data = json.load(f)
+            all_archives.extend(data.get("includedArchiveIdentifiers", []))
+            all_modules.extend(data.get("interfaceLanguages", {}).get("swift", []))
+
+# Create merged index
+merged_index = {
+    "includedArchiveIdentifiers": all_archives,
+    "interfaceLanguages": {
+        "swift": all_modules
+    },
+    "schemaVersion": {"major": 0, "minor": 1, "patch": 2}
+}
+
+# Write merged index
+with open(os.path.join(output_dir, "index", "index.json"), 'w') as f:
+    json.dump(merged_index, f)
+
+print(f"  Merged {len(all_archives)} modules into sidebar")
+PYTHON_SCRIPT
 
 # Clean up individual .doccarchive folders
 echo "Cleaning up..."
