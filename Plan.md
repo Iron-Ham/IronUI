@@ -61,56 +61,66 @@ From the [Family Values](https://benji.org/family-values) showcase:
 
 ## Implementation Phases
 
-### Phase 1: IronNavigation - Dynamic Tray
+### Phase 1: IronNavigation - Dynamic Tray ✅
 **Priority: HIGH** - This is the showcase component
 
 ```
 Sources/IronNavigation/
 ├── Tray/
-│   ├── IronTray.swift              # Core tray container
-│   ├── IronTrayConfiguration.swift # Height detents, theming
-│   ├── IronTrayStack.swift         # Multi-tray coordination
-│   └── IronTrayModifier.swift      # .ironTray() view modifier
-└── Transitions/
-    └── IronDirectionalTransition.swift
+│   ├── IronTray.swift          # Content-sized tray container
+│   └── IronTrayModifier.swift  # .ironTray() view modifier
 ```
 
-**IronTray Features:**
-- [ ] Detent system (fractional heights, intrinsic sizing)
-- [ ] Drag gesture with velocity-based dismissal
-- [ ] Stacked trays with height differentiation
-- [ ] Adaptive theming per tray
-- [ ] Navigation header (title + dismiss/back icon)
-- [ ] Background dimming with tap-to-dismiss
-- [ ] Keyboard avoidance
-- [ ] Accessibility: reduce motion support
+**Completed (Family Values redesign):**
+- [x] Content-driven sizing (not fixed detents)
+- [x] Drag gesture with velocity-based dismissal
+- [x] IronTrayStack for sequential navigation
+- [x] IronTrayNavigator with push/pop/popToRoot
+- [x] IronTrayHeader (title + dismiss/back icon)
+- [x] Background dimming with tap-to-dismiss
+- [x] Accessibility: reduce motion support
+- [x] Height animations signal progression
 
-### Phase 2: IronCore - Animation Utilities
+### Phase 2: IronCore - Animation Utilities ✅
 **Priority: HIGH** - Needed for tray polish and text morphing
 
 ```
 Sources/IronCore/Animation/
-├── IronTextMorph.swift        # Shared letter animation helper
-├── IronMatchedGeometry.swift  # matchedGeometryEffect helpers
-└── IronTransition.swift       # Custom AnyTransition extensions
+├── IronTextTransition.swift      # Text morphing utilities
+├── IronMatchedGeometry.swift     # Matched geometry helpers
+└── IronDirectionalTransition.swift # Directional transitions
 ```
 
-**Animation Features:**
-- [ ] `.ironMorphingText()` modifier for label transitions
-- [ ] `IronNamespace` environment for shared geometry
-- [ ] Directional slide transitions
-- [ ] Spring presets beyond current tokens
+**Completed:**
+- [x] IronMorphingText - Animated text transitions
+- [x] IronCountingText - Animated number counting
+- [x] `.ironMorphingText()` modifier
+- [x] `ironNamespace` environment for shared geometry
+- [x] `.ironMatchedGeometry()` modifier
+- [x] IronHeroTransition container
+- [x] IronDirection enum with directional transitions
+- [x] `.ironSlide()` and `.ironPush()` transitions
+- [x] IronDirectionalContainer for tab-like navigation
 
-### Phase 3: IronLayouts - Container Components
+### Phase 3: IronLayouts - Layout Components ✅
 **Priority: MEDIUM** - Useful but not blocking
 
 ```
 Sources/IronLayouts/
-├── IronContainer.swift    # Adaptive padding/max-width
-├── IronVStack.swift       # VStack with spacing tokens
-├── IronHStack.swift       # HStack with spacing tokens
-└── IronGrid.swift         # Responsive grid
+├── Container/
+│   └── IronContainer.swift    # Adaptive max-width + padding
+├── Flow/
+│   └── IronFlowLayout.swift   # Flexbox-style wrap layout
+└── Responsive/
+    └── IronResponsiveStack.swift  # Adaptive HStack/VStack
 ```
+
+**Completed:**
+- [x] IronFlow - Flexbox-style wrapping for tags, chips, labels
+- [x] IronAdaptiveStack - ViewThatFits-based layout switching
+- [x] IronResponsiveStack - Threshold-based layout switching
+- [x] IronSizeClassStack - Size class-based layout switching
+- [x] IronContainer - Max-width constraints for content
 
 ### Phase 4: Micro-interactions
 **Priority: LOW** - Polish layer
@@ -138,4 +148,6 @@ Sources/IronLayouts/
 
 ## Next Action
 
-Start **Phase 1: IronTray** in IronNavigation module.
+Phases 1-3 complete. Next options:
+- **Phase 4: Micro-interactions** - `.ironRipple()`, `IronConfetti`
+- **Phase 5: IronForms** - Form container, validation
