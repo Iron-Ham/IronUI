@@ -5,18 +5,24 @@
   }
 
   @Chapter(name: "Timeline Visualization") {
+    @Image(source: "iron-timeline.png", alt: "IronTimeline preview")
+
     Create chronological visualizations with customizable layouts and styles.
 
     @TutorialReference(tutorial: "doc:BuildingWithIronTimeline")
   }
 
   @Chapter(name: "Kanban Boards") {
+    @Image(source: "iron-kanban.png", alt: "IronKanban preview")
+
     Build interactive task boards with drag-and-drop columns.
 
     @TutorialReference(tutorial: "doc:BuildingWithIronKanban")
   }
 
   @Chapter(name: "Database Tables") {
+    @Image(source: "iron-database.png", alt: "IronDatabase preview")
+
     Create Notion-style database views with multiple column types.
 
     @TutorialReference(tutorial: "doc:BuildingWithIronDatabase")

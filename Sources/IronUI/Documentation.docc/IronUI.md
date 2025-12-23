@@ -42,7 +42,6 @@ Import individual modules for smaller bundle sizes, or use `IronUI` for everythi
 | `IronForms` | Form components (Form, FormField, DatePicker) |
 | `IronDataDisplay` | Data visualization (Timeline, Kanban, Database) |
 | `IronNavigation` | Navigation & presentation (Tray) |
-| `IronKitBridge` | UIKit/AppKit bridges |
 
 ### Primitives
 

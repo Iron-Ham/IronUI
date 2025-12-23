@@ -5,6 +5,8 @@
 
     IronTimeline provides a flexible vertical timeline with multiple layout modes,
     connector styles, and custom node indicators.
+
+    @Image(source: "iron-timeline.png", alt: "IronTimeline preview")
   }
 
   @Section(title: "Creating a Basic Timeline") {

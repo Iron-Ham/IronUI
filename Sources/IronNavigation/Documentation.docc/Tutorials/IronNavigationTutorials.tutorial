@@ -5,6 +5,8 @@
   }
 
   @Chapter(name: "Bottom Sheets") {
+    @Image(source: "iron-tray.svg", alt: "IronTray bottom sheet preview")
+
     Master IronTray for creating content-sized bottom sheets with
     multi-step flows and custom interactions.
 

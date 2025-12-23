@@ -140,16 +140,13 @@ public struct IronBadge: View {
       .padding(.horizontal, horizontalPadding)
       .padding(.vertical, verticalPadding)
       .frame(minWidth: minSize, minHeight: minSize)
-      // Use ContainerRelativeShape with containerShape for consistent shape rendering
-      .background(backgroundColor)
+      .background(backgroundColor, in: badgeShape)
       .overlay {
         if style == .outlined {
-          ContainerRelativeShape()
-            .strokeBorder(badgeColor, lineWidth: borderWidth)
+          badgeShape
+            .stroke(badgeColor, lineWidth: borderWidth)
         }
       }
-      .containerShape(Capsule())
-      .clipShape(Capsule())
       // Delightful entrance animation - badge pops in with spring
       // Respects reduced motion preference and skip animations flag
       .scaleEffect(shouldSkipAnimation || hasAppeared ? 1.0 : 0.0)
@@ -290,6 +287,10 @@ public struct IronBadge: View {
     case .medium: mediumDotSize
     case .large: largeDotSize
     }
+  }
+
+  private var badgeShape: Capsule {
+    Capsule(style: .continuous)
   }
 
   private var borderWidth: CGFloat {

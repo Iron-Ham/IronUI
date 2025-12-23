@@ -12,7 +12,6 @@
 		DCF8DE832EFA29DA00CEB77B /* IronCore in Frameworks */ = {isa = PBXBuildFile; productRef = DCF8DE822EFA29DA00CEB77B /* IronCore */; };
 		DCF8DE852EFA29DA00CEB77B /* IronDataDisplay in Frameworks */ = {isa = PBXBuildFile; productRef = DCF8DE842EFA29DA00CEB77B /* IronDataDisplay */; };
 		DCF8DE872EFA29DA00CEB77B /* IronForms in Frameworks */ = {isa = PBXBuildFile; productRef = DCF8DE862EFA29DA00CEB77B /* IronForms */; };
-		DCF8DE892EFA29DA00CEB77B /* IronKitBridge in Frameworks */ = {isa = PBXBuildFile; productRef = DCF8DE882EFA29DA00CEB77B /* IronKitBridge */; };
 		DCF8DE8B2EFA29DA00CEB77B /* IronLayouts in Frameworks */ = {isa = PBXBuildFile; productRef = DCF8DE8A2EFA29DA00CEB77B /* IronLayouts */; };
 		DCF8DE8D2EFA29DA00CEB77B /* IronNavigation in Frameworks */ = {isa = PBXBuildFile; productRef = DCF8DE8C2EFA29DA00CEB77B /* IronNavigation */; };
 		DCF8DE8F2EFA29DA00CEB77B /* IronPrimitives in Frameworks */ = {isa = PBXBuildFile; productRef = DCF8DE8E2EFA29DA00CEB77B /* IronPrimitives */; };
@@ -71,7 +70,6 @@
 				DCF8DE832EFA29DA00CEB77B /* IronCore in Frameworks */,
 				DCF8DE872EFA29DA00CEB77B /* IronForms in Frameworks */,
 				DCF8DE7E2EFA29AC00CEB77B /* PreviewGallery in Frameworks */,
-				DCF8DE892EFA29DA00CEB77B /* IronKitBridge in Frameworks */,
 				DCF8DE852EFA29DA00CEB77B /* IronDataDisplay in Frameworks */,
 				DCF8DE8D2EFA29DA00CEB77B /* IronNavigation in Frameworks */,
 				DCF8DE8B2EFA29DA00CEB77B /* IronLayouts in Frameworks */,
@@ -140,7 +138,6 @@
 				DCF8DE822EFA29DA00CEB77B /* IronCore */,
 				DCF8DE842EFA29DA00CEB77B /* IronDataDisplay */,
 				DCF8DE862EFA29DA00CEB77B /* IronForms */,
-				DCF8DE882EFA29DA00CEB77B /* IronKitBridge */,
 				DCF8DE8A2EFA29DA00CEB77B /* IronLayouts */,
 				DCF8DE8C2EFA29DA00CEB77B /* IronNavigation */,
 				DCF8DE8E2EFA29DA00CEB77B /* IronPrimitives */,
@@ -655,10 +652,6 @@
 		DCF8DE862EFA29DA00CEB77B /* IronForms */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = IronForms;
-		};
-		DCF8DE882EFA29DA00CEB77B /* IronKitBridge */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = IronKitBridge;
 		};
 		DCF8DE8A2EFA29DA00CEB77B /* IronLayouts */ = {
 			isa = XCSwiftPackageProductDependency;
