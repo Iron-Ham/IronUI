@@ -60,6 +60,7 @@ public struct IronToggle<Label: View>: View {
     self.size = size
     self.color = color
     label = nil
+    accessibilityTitle = nil
   }
 
   /// Creates a toggle with a text label.
@@ -79,6 +80,8 @@ public struct IronToggle<Label: View>: View {
     self.size = size
     self.color = color
     label = IronText(title, style: .bodyMedium, color: .primary)
+    // LocalizedStringKey doesn't expose its string value, so we rely on .combine
+    accessibilityTitle = nil
   }
 
   /// Creates a toggle with a text label from a string.
@@ -98,6 +101,7 @@ public struct IronToggle<Label: View>: View {
     self.size = size
     self.color = color
     label = IronText(title, style: .bodyMedium, color: .primary)
+    accessibilityTitle = String(title)
   }
 
   /// Creates a toggle with a custom label.
@@ -106,17 +110,21 @@ public struct IronToggle<Label: View>: View {
   ///   - isOn: Binding to the toggle state.
   ///   - size: The size of the toggle.
   ///   - color: The color when the toggle is on.
+  ///   - accessibilityLabel: Optional accessibility label for the toggle.
+  ///     If not provided, the label's accessibility text will be combined automatically.
   ///   - label: The label view.
   public init(
     isOn: Binding<Bool>,
     size: IronToggleSize = .medium,
     color: IronToggleColor = .primary,
+    accessibilityLabel: String? = nil,
     @ViewBuilder label: () -> Label,
   ) {
     _isOn = isOn
     self.size = size
     self.color = color
     self.label = label()
+    accessibilityTitle = accessibilityLabel
   }
 
   // MARK: Public
@@ -140,14 +148,26 @@ public struct IronToggle<Label: View>: View {
       toggleWithAnimation()
     }
     .accessibilityElement(children: .combine)
+    .accessibilityLabel(accessibilityLabelText)
     .accessibilityValue(isOn ? "On" : "Off")
     .accessibilityAddTraits(.isButton)
+  }
 
-    if label == nil {
-      content.accessibilityLabel("Toggle")
-    } else {
-      content
+  // MARK: Internal
+
+  /// Computes the accessibility label text.
+  /// Priority: explicit accessibilityTitle > fallback "Toggle" when no label.
+  /// When a label view is present without explicit title, returns empty to let .combine work.
+  var accessibilityLabelText: String {
+    if let accessibilityTitle {
+      return accessibilityTitle
     }
+    if label == nil {
+      return "Toggle"
+    }
+    // When label is present, return empty and let .accessibilityElement(children: .combine)
+    // derive the label from child views
+    return ""
   }
 
   // MARK: Private
@@ -186,6 +206,7 @@ public struct IronToggle<Label: View>: View {
   private let size: IronToggleSize
   private let color: IronToggleColor
   private let label: Label?
+  private let accessibilityTitle: String?
 
   /// Minimum touch target size per Apple HIG (44pt).
   private let minTouchTarget: CGFloat = 44
@@ -574,4 +595,3 @@ public enum IronToggleColor: Sendable {
 
   return Demo()
 }
-
