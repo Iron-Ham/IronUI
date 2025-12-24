@@ -294,7 +294,7 @@ public struct IronAlert<Icon: View, Actions: View>: View {
             .fontWeight(.semibold)
         }
 
-        IronText(message, style: .bodyMedium, color: .secondary)
+        IronText(message, style: .bodyMedium, color: .onSurface)
 
         if let actions {
           HStack(spacing: theme.spacing.sm) {
