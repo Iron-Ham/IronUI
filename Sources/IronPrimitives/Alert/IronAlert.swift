@@ -308,7 +308,7 @@ public struct IronAlert<Icon: View, Actions: View>: View {
       // Dismiss button
       if let onDismiss {
         Button {
-          withAnimation(reduceMotion ? nil : theme.animation.snappy) {
+          withAnimation(shouldAnimate ? theme.animation.snappy : nil) {
             onDismiss()
           }
           IronLogger.ui.debug("IronAlert dismissed", metadata: ["variant": .string("\(variant)")])
@@ -354,6 +354,7 @@ public struct IronAlert<Icon: View, Actions: View>: View {
 
   @Environment(\.ironTheme) private var theme
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
+  @Environment(\.ironSkipEntranceAnimations) private var skipEntranceAnimations
 
   private let title: LocalizedStringKey?
   private let message: LocalizedStringKey
@@ -430,6 +431,10 @@ public struct IronAlert<Icon: View, Actions: View>: View {
       return Text(message)
     }
     return Text(accessibilityMessage)
+  }
+
+  private var shouldAnimate: Bool {
+    !reduceMotion && !skipEntranceAnimations
   }
 }
 

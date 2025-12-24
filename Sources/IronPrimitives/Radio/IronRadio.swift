@@ -119,7 +119,7 @@ public struct IronRadio<Value: Hashable, Label: View>: View {
 
   public var body: some View {
     Button {
-      withAnimation(reduceMotion ? nil : theme.animation.bouncy) {
+      withAnimation(shouldAnimate ? theme.animation.bouncy : nil) {
         selection = value
       }
       IronLogger.ui.debug(
@@ -148,6 +148,7 @@ public struct IronRadio<Value: Hashable, Label: View>: View {
   @Environment(\.ironTheme) private var theme
   @Environment(\.isEnabled) private var isEnabled
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
+  @Environment(\.ironSkipEntranceAnimations) private var skipEntranceAnimations
 
   @Binding private var selection: Value
 
@@ -235,6 +236,10 @@ public struct IronRadio<Value: Hashable, Label: View>: View {
     case .error: return theme.colors.error
     case .custom(let customColor): return customColor
     }
+  }
+
+  private var shouldAnimate: Bool {
+    !reduceMotion && !skipEntranceAnimations
   }
 }
 
