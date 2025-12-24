@@ -64,6 +64,7 @@ public struct IronCheckbox<Label: View>: View {
     self.size = size
     self.color = color
     label = nil
+    accessibilityTitle = nil
   }
 
   /// Creates a checkbox with a text label.
@@ -83,6 +84,8 @@ public struct IronCheckbox<Label: View>: View {
     self.size = size
     self.color = color
     label = IronText(title, style: .bodyMedium, color: .primary)
+    // LocalizedStringKey doesn't expose its string value, so we rely on .combine
+    accessibilityTitle = nil
   }
 
   /// Creates a checkbox with a text label from a string.
@@ -102,6 +105,7 @@ public struct IronCheckbox<Label: View>: View {
     self.size = size
     self.color = color
     label = IronText(title, style: .bodyMedium, color: .primary)
+    accessibilityTitle = String(title)
   }
 
   /// Creates a checkbox with a custom label.
@@ -110,17 +114,21 @@ public struct IronCheckbox<Label: View>: View {
   ///   - isChecked: Binding to the checked state.
   ///   - size: The size of the checkbox.
   ///   - color: The color when checked.
+  ///   - accessibilityLabel: Optional accessibility label for the checkbox.
+  ///     If not provided, the label's accessibility text will be combined automatically.
   ///   - label: The label view.
   public init(
     isChecked: Binding<Bool>,
     size: IronCheckboxSize = .medium,
     color: IronCheckboxColor = .primary,
+    accessibilityLabel: String? = nil,
     @ViewBuilder label: () -> Label,
   ) {
     _isChecked = isChecked
     self.size = size
     self.color = color
     self.label = label()
+    accessibilityTitle = accessibilityLabel
   }
 
   // MARK: Public
@@ -149,14 +157,26 @@ public struct IronCheckbox<Label: View>: View {
     .buttonStyle(.plain)
     .disabled(!isEnabled)
     .accessibilityElement(children: .combine)
+    .accessibilityLabel(accessibilityLabelText)
     .accessibilityValue(isChecked ? "Checked" : "Unchecked")
     .accessibilityAddTraits(.isButton)
+  }
 
-    if label == nil {
-      button.accessibilityLabel("Checkbox")
-    } else {
-      button
+  // MARK: Internal
+
+  /// Computes the accessibility label text.
+  /// Priority: explicit accessibilityTitle > fallback "Checkbox" when no label.
+  /// When a label view is present without explicit title, returns empty to let .combine work.
+  var accessibilityLabelText: String {
+    if let accessibilityTitle {
+      return accessibilityTitle
     }
+    if label == nil {
+      return "Checkbox"
+    }
+    // When label is present, return empty and let .accessibilityElement(children: .combine)
+    // derive the label from child views
+    return ""
   }
 
   // MARK: Private
@@ -182,6 +202,7 @@ public struct IronCheckbox<Label: View>: View {
   private let size: IronCheckboxSize
   private let color: IronCheckboxColor
   private let label: Label?
+  private let accessibilityTitle: String?
 
   private var checkboxControl: some View {
     ZStack {
