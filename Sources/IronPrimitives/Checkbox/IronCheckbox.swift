@@ -135,7 +135,7 @@ public struct IronCheckbox<Label: View>: View {
 
   public var body: some View {
     let button = Button {
-      withAnimation(reduceMotion ? nil : theme.animation.bouncy) {
+      withAnimation(shouldAnimate ? theme.animation.bouncy : nil) {
         isChecked.toggle()
       }
       IronLogger.ui.debug(
@@ -184,6 +184,7 @@ public struct IronCheckbox<Label: View>: View {
   @Environment(\.ironTheme) private var theme
   @Environment(\.isEnabled) private var isEnabled
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
+  @Environment(\.ironSkipEntranceAnimations) private var skipEntranceAnimations
 
   @Binding private var isChecked: Bool
 
@@ -280,6 +281,10 @@ public struct IronCheckbox<Label: View>: View {
     case .error: return theme.colors.error
     case .custom(let customColor): return customColor
     }
+  }
+
+  private var shouldAnimate: Bool {
+    !reduceMotion && !skipEntranceAnimations
   }
 }
 
