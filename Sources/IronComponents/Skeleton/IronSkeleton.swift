@@ -133,6 +133,10 @@ public struct IronSkeleton: View {
       .frame(width: gradientWidth)
       .offset(x: shimmerOffset * (width + gradientWidth) - gradientWidth)
       .onAppear {
+        guard shouldAnimate else {
+          shimmerOffset = 0.5 // Static position when animations disabled
+          return
+        }
         withAnimation(
           .linear(duration: 1.5)
             .repeatForever(autoreverses: false)
