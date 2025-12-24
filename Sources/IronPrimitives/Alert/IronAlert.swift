@@ -282,7 +282,7 @@ public struct IronAlert<Icon: View, Actions: View>: View {
   // MARK: Public
 
   public var body: some View {
-    let alertView = HStack(alignment: .top, spacing: theme.spacing.sm) {
+    HStack(alignment: .top, spacing: theme.spacing.sm) {
       // Icon
       iconView
         .padding(.top, 2)
@@ -340,14 +340,7 @@ public struct IronAlert<Icon: View, Actions: View>: View {
         .strokeBorder(borderColor, lineWidth: 1)
     }
     .accessibilityElement(children: .combine)
-    .accessibilityLabel(accessibilityPrimaryLabel)
-    .accessibilityValue(accessibilitySecondaryValue)
-
-    if title != nil {
-      alertView.accessibilityHint(Text(accessibilityMessage))
-    } else {
-      alertView
-    }
+    .accessibilityLabel(accessibilityLabel)
   }
 
   // MARK: Private
@@ -410,7 +403,7 @@ public struct IronAlert<Icon: View, Actions: View>: View {
     foregroundColor.opacity(0.25)
   }
 
-  private var accessibilityMessage: String {
+  private var variantAccessibilityLabel: String {
     switch variant {
     case .info: "Information"
     case .success: "Success"
@@ -419,18 +412,15 @@ public struct IronAlert<Icon: View, Actions: View>: View {
     }
   }
 
-  private var accessibilityPrimaryLabel: Text {
+  /// Comprehensive accessibility label that announces variant, title, and message.
+  ///
+  /// Format: "Warning: Title. Message" or "Information: Message"
+  private var accessibilityLabel: Text {
     if let title {
-      return Text(title)
+      Text("\(variantAccessibilityLabel): \(Text(title)). \(Text(message))")
+    } else {
+      Text("\(variantAccessibilityLabel): \(Text(message))")
     }
-    return Text(message)
-  }
-
-  private var accessibilitySecondaryValue: Text {
-    if title != nil {
-      return Text(message)
-    }
-    return Text(accessibilityMessage)
   }
 
   private var shouldAnimate: Bool {
