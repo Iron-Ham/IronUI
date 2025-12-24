@@ -187,7 +187,7 @@ public struct IronChip<LeadingIcon: View>: View {
 
       if let onDismiss {
         Button {
-          withAnimation(reduceMotion ? nil : theme.animation.snappy) {
+          withAnimation(shouldAnimate ? theme.animation.snappy : nil) {
             onDismiss()
           }
           IronLogger.ui.debug("IronChip dismissed")
@@ -221,7 +221,7 @@ public struct IronChip<LeadingIcon: View>: View {
     .contentShape(Capsule())
     .onTapGesture {
       guard isSelectable else { return }
-      withAnimation(reduceMotion ? nil : theme.animation.bouncy) {
+      withAnimation(shouldAnimate ? theme.animation.bouncy : nil) {
         isSelected?.toggle()
       }
       IronLogger.ui.debug(
@@ -273,6 +273,7 @@ public struct IronChip<LeadingIcon: View>: View {
 
   @Environment(\.ironTheme) private var theme
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
+  @Environment(\.ironSkipEntranceAnimations) private var skipEntranceAnimations
 
   @Binding private var isSelected: Bool?
   @State private var isPressed = false
@@ -288,6 +289,10 @@ public struct IronChip<LeadingIcon: View>: View {
 
   private var isSelectable: Bool {
     isSelected != nil
+  }
+
+  private var shouldAnimate: Bool {
+    !reduceMotion && !skipEntranceAnimations
   }
 
   private var textStyle: IronTextStyle {

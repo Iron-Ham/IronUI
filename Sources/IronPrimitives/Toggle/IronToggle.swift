@@ -155,6 +155,7 @@ public struct IronToggle<Label: View>: View {
   @Environment(\.ironTheme) private var theme
   @Environment(\.isEnabled) private var isEnabled
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
+  @Environment(\.ironSkipEntranceAnimations) private var skipEntranceAnimations
 
   @Binding private var isOn: Bool
 
@@ -331,9 +332,13 @@ public struct IronToggle<Label: View>: View {
     }
   }
 
+  private var shouldAnimate: Bool {
+    !reduceMotion && !skipEntranceAnimations
+  }
+
   /// Toggles the state with animation and logging
   private func toggleWithAnimation() {
-    withAnimation(reduceMotion ? nil : theme.animation.bouncy) {
+    withAnimation(shouldAnimate ? theme.animation.bouncy : nil) {
       isOn.toggle()
     }
     IronLogger.ui.debug(
