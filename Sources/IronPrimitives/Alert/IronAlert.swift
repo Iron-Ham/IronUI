@@ -327,18 +327,32 @@ public struct IronAlert<Icon: View, Actions: View>: View {
     .padding(.trailing, theme.spacing.md)
     .padding(.vertical, theme.spacing.md)
     .background {
-      // Use ZStack with alignment to place accent bar on leading edge
-      // The clipShape ensures the bar curves with the container
-      ZStack(alignment: .leading) {
-        backgroundColor
-        foregroundColor
+      GeometryReader { geo in
+        let innerRadius = max(0, theme.radii.md - borderWidth)
+        let innerWidth = geo.size.width - 2 * borderWidth
+        let innerHeight = geo.size.height - 2 * borderWidth
+
+        ZStack(alignment: .leading) {
+          backgroundColor
+
+          UnevenRoundedRectangle(
+            topLeadingRadius: innerRadius,
+            bottomLeadingRadius: innerRadius,
+            bottomTrailingRadius: 0,
+            topTrailingRadius: 0,
+          )
+          .fill(foregroundColor)
           .frame(width: 4)
+        }
+        .frame(width: innerWidth, height: innerHeight)
+        .clipShape(RoundedRectangle(cornerRadius: innerRadius))
+        .position(x: geo.size.width / 2, y: geo.size.height / 2)
       }
     }
     .clipShape(RoundedRectangle(cornerRadius: theme.radii.md))
     .overlay {
       RoundedRectangle(cornerRadius: theme.radii.md)
-        .strokeBorder(borderColor, lineWidth: 1)
+        .strokeBorder(borderColor, lineWidth: borderWidth)
     }
     .accessibilityElement(children: .combine)
     .accessibilityLabel(accessibilityLabel)
@@ -359,6 +373,9 @@ public struct IronAlert<Icon: View, Actions: View>: View {
 
   /// Minimum touch target size per Apple HIG (44pt).
   private let minTouchTarget: CGFloat = 44
+
+  /// Border stroke width.
+  private let borderWidth: CGFloat = 1
 
   @ViewBuilder
   private var iconView: some View {
