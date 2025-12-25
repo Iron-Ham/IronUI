@@ -738,33 +738,27 @@ private struct IronContextGroupLayout: _VariadicView_UnaryViewRoot {
 }
 
 #Preview("IronContextLine - Animated") {
-  struct AnimatedDemo: View {
-    @State private var isRevealed = false
+  @Previewable @State var isRevealed = false
 
-    var body: some View {
-      VStack(alignment: .leading, spacing: 8) {
-        Button("Toggle Result") {
-          isRevealed.toggle()
-        }
-        .buttonStyle(.borderedProminent)
+  return VStack(alignment: .leading, spacing: 8) {
+    Button("Toggle Result") {
+      isRevealed.toggle()
+    }
+    .buttonStyle(.borderedProminent)
 
-        HStack(spacing: 8) {
-          Image(systemName: "terminal")
-          Text("Long running task")
-            .fontWeight(.medium)
-        }
+    HStack(spacing: 8) {
+      Image(systemName: "terminal")
+      Text("Long running task")
+        .fontWeight(.medium)
+    }
 
-        IronContextLine(isRevealed: $isRevealed) {
-          HStack(spacing: 4) {
-            Image(systemName: "checkmark.circle.fill")
-              .foregroundStyle(.green)
-            Text("Task completed!")
-          }
-        }
+    IronContextLine(isRevealed: $isRevealed) {
+      HStack(spacing: 4) {
+        Image(systemName: "checkmark.circle.fill")
+          .foregroundStyle(.green)
+        Text("Task completed!")
       }
-      .padding()
     }
   }
-
-  return AnimatedDemo()
+  .padding()
 }

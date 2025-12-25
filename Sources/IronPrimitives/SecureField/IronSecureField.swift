@@ -342,146 +342,104 @@ public struct IronSecureField<Leading: View>: View {
 // MARK: - Previews
 
 #Preview("IronSecureField - Basic") {
-  struct Demo: View {
-    @State private var password = ""
+  @Previewable @State var password = ""
 
-    var body: some View {
-      VStack(spacing: 16) {
-        IronSecureField("Password", text: $password)
-        IronSecureField("With text", text: .constant("secret123"))
-      }
-      .padding()
-    }
+  return VStack(spacing: 16) {
+    IronSecureField("Password", text: $password)
+    IronSecureField("With text", text: .constant("secret123"))
   }
-
-  return Demo()
+  .padding()
 }
 
 #Preview("IronSecureField - Styles") {
-  struct Demo: View {
-    @State private var text1 = ""
-    @State private var text2 = ""
-    @State private var text3 = ""
+  @Previewable @State var text1 = ""
+  @Previewable @State var text2 = ""
+  @Previewable @State var text3 = ""
 
-    var body: some View {
-      VStack(spacing: 24) {
-        VStack(alignment: .leading) {
-          Text("Outlined").font(.caption).foregroundStyle(.secondary)
-          IronSecureField("Password", text: $text1, style: .outlined)
-        }
+  return VStack(spacing: 24) {
+    VStack(alignment: .leading) {
+      Text("Outlined").font(.caption).foregroundStyle(.secondary)
+      IronSecureField("Password", text: $text1, style: .outlined)
+    }
 
-        VStack(alignment: .leading) {
-          Text("Filled").font(.caption).foregroundStyle(.secondary)
-          IronSecureField("Password", text: $text2, style: .filled)
-        }
+    VStack(alignment: .leading) {
+      Text("Filled").font(.caption).foregroundStyle(.secondary)
+      IronSecureField("Password", text: $text2, style: .filled)
+    }
 
-        VStack(alignment: .leading) {
-          Text("Underlined").font(.caption).foregroundStyle(.secondary)
-          IronSecureField("Password", text: $text3, style: .underlined)
-        }
-      }
-      .padding()
+    VStack(alignment: .leading) {
+      Text("Underlined").font(.caption).foregroundStyle(.secondary)
+      IronSecureField("Password", text: $text3, style: .underlined)
     }
   }
-
-  return Demo()
+  .padding()
 }
 
 #Preview("IronSecureField - Sizes") {
-  struct Demo: View {
-    @State private var text = ""
+  @Previewable @State var text = ""
 
-    var body: some View {
-      VStack(spacing: 16) {
-        IronSecureField("Small", text: $text, size: .small)
-        IronSecureField("Medium", text: $text, size: .medium)
-        IronSecureField("Large", text: $text, size: .large)
-      }
-      .padding()
-    }
+  return VStack(spacing: 16) {
+    IronSecureField("Small", text: $text, size: .small)
+    IronSecureField("Medium", text: $text, size: .medium)
+    IronSecureField("Large", text: $text, size: .large)
   }
-
-  return Demo()
+  .padding()
 }
 
 #Preview("IronSecureField - States") {
-  struct Demo: View {
-    @State private var normal = ""
-    @State private var success = "strongPassword123!"
-    @State private var error = "weak"
+  @Previewable @State var normal = ""
+  @Previewable @State var success = "strongPassword123!"
+  @Previewable @State var error = "weak"
 
-    var body: some View {
-      VStack(spacing: 16) {
-        IronSecureField("Normal", text: $normal, state: .normal)
-        IronSecureField("Success", text: $success, state: .success)
-        IronSecureField("Error", text: $error, state: .error("Password must be at least 8 characters"))
-      }
-      .padding()
-    }
+  return VStack(spacing: 16) {
+    IronSecureField("Normal", text: $normal, state: .normal)
+    IronSecureField("Success", text: $success, state: .success)
+    IronSecureField("Error", text: $error, state: .error("Password must be at least 8 characters"))
   }
-
-  return Demo()
+  .padding()
 }
 
 #Preview("IronSecureField - With Leading Icon") {
-  struct Demo: View {
-    @State private var password = ""
+  @Previewable @State var password = ""
 
-    var body: some View {
-      VStack(spacing: 16) {
-        IronSecureField("Password", text: $password, leading: {
-          Image(systemName: "lock")
-        })
+  return VStack(spacing: 16) {
+    IronSecureField("Password", text: $password, leading: {
+      Image(systemName: "lock")
+    })
 
-        IronSecureField("PIN", text: $password, leading: {
-          Image(systemName: "number")
-        })
-      }
-      .padding()
-    }
+    IronSecureField("PIN", text: $password, leading: {
+      Image(systemName: "number")
+    })
   }
-
-  return Demo()
+  .padding()
 }
 
 #Preview("IronSecureField - Without Toggle") {
-  struct Demo: View {
-    @State private var password = ""
+  @Previewable @State var password = ""
 
-    var body: some View {
-      VStack(spacing: 16) {
-        IronSecureField("With toggle", text: $password, showToggle: true)
-        IronSecureField("Without toggle", text: $password, showToggle: false)
-      }
-      .padding()
-    }
+  return VStack(spacing: 16) {
+    IronSecureField("With toggle", text: $password, showToggle: true)
+    IronSecureField("Without toggle", text: $password, showToggle: false)
   }
-
-  return Demo()
+  .padding()
 }
 
 #Preview("IronSecureField - Login Form") {
-  struct Demo: View {
-    @State private var email = ""
-    @State private var password = ""
+  @Previewable @State var email = ""
+  @Previewable @State var password = ""
 
-    var body: some View {
-      VStack(spacing: 16) {
-        IronTextField("Email", text: $email, leading: {
-          Image(systemName: "envelope")
-        })
+  return VStack(spacing: 16) {
+    IronTextField("Email", text: $email, leading: {
+      Image(systemName: "envelope")
+    })
 
-        IronSecureField("Password", text: $password, leading: {
-          Image(systemName: "lock")
-        })
+    IronSecureField("Password", text: $password, leading: {
+      Image(systemName: "lock")
+    })
 
-        IronButton("Sign In", isFullWidth: true) {
-          // Sign in action
-        }
-      }
-      .padding()
+    IronButton("Sign In", isFullWidth: true) {
+      // Sign in action
     }
   }
-
-  return Demo()
+  .padding()
 }

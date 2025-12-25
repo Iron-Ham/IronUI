@@ -466,56 +466,50 @@ public enum IronAlertVariant: Sendable, CaseIterable {
 }
 
 #Preview("IronAlert - Dismissible") {
-  struct Demo: View {
-    @State private var showInfo = true
-    @State private var showSuccess = true
-    @State private var showWarning = true
-    @State private var showError = true
+  @Previewable @State var showInfo = true
+  @Previewable @State var showSuccess = true
+  @Previewable @State var showWarning = true
+  @Previewable @State var showError = true
 
-    var body: some View {
-      VStack(spacing: 16) {
-        if showInfo {
-          IronAlert("Tap the X to dismiss", variant: .info, onDismiss: {
-            showInfo = false
-          })
-        }
+  return VStack(spacing: 16) {
+    if showInfo {
+      IronAlert("Tap the X to dismiss", variant: .info, onDismiss: {
+        showInfo = false
+      })
+    }
 
-        if showSuccess {
-          IronAlert("Saved", message: "Your profile has been updated", variant: .success, onDismiss: {
-            showSuccess = false
-          })
-        }
+    if showSuccess {
+      IronAlert("Saved", message: "Your profile has been updated", variant: .success, onDismiss: {
+        showSuccess = false
+      })
+    }
 
-        if showWarning {
-          IronAlert("Warning", message: "This action cannot be undone", variant: .warning, onDismiss: {
-            showWarning = false
-          })
-        }
+    if showWarning {
+      IronAlert("Warning", message: "This action cannot be undone", variant: .warning, onDismiss: {
+        showWarning = false
+      })
+    }
 
-        if showError {
-          IronAlert("Error", message: "Failed to load data", variant: .error, onDismiss: {
-            showError = false
-          })
-        }
+    if showError {
+      IronAlert("Error", message: "Failed to load data", variant: .error, onDismiss: {
+        showError = false
+      })
+    }
 
-        if !showInfo, !showSuccess, !showWarning, !showError {
-          Button("Reset All") {
-            showInfo = true
-            showSuccess = true
-            showWarning = true
-            showError = true
-          }
-        }
+    if !showInfo, !showSuccess, !showWarning, !showError {
+      Button("Reset All") {
+        showInfo = true
+        showSuccess = true
+        showWarning = true
+        showError = true
       }
-      .padding()
-      .animation(.default, value: showInfo)
-      .animation(.default, value: showSuccess)
-      .animation(.default, value: showWarning)
-      .animation(.default, value: showError)
     }
   }
-
-  return Demo()
+  .padding()
+  .animation(.default, value: showInfo)
+  .animation(.default, value: showSuccess)
+  .animation(.default, value: showWarning)
+  .animation(.default, value: showError)
 }
 
 #Preview("IronAlert - With Actions") {

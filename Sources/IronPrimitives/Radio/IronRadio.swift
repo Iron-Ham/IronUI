@@ -336,184 +336,142 @@ private enum SampleOption: String, CaseIterable {
 }
 
 #Preview("IronRadio - Basic") {
-  struct Demo: View {
-    @State private var selection = SampleOption.first
+  @Previewable @State var selection = SampleOption.first
 
-    var body: some View {
-      VStack(alignment: .leading, spacing: 16) {
-        IronRadio("First Option", value: SampleOption.first, selection: $selection)
-        IronRadio("Second Option", value: SampleOption.second, selection: $selection)
-        IronRadio("Third Option", value: SampleOption.third, selection: $selection)
-      }
-      .padding()
-    }
+  return VStack(alignment: .leading, spacing: 16) {
+    IronRadio("First Option", value: SampleOption.first, selection: $selection)
+    IronRadio("Second Option", value: SampleOption.second, selection: $selection)
+    IronRadio("Third Option", value: SampleOption.third, selection: $selection)
   }
-
-  return Demo()
+  .padding()
 }
 
 #Preview("IronRadio - Custom Labels") {
-  struct Demo: View {
-    enum Plan: String, CaseIterable {
-      case basic, pro, enterprise
-    }
-
-    @State private var plan = Plan.pro
-
-    var body: some View {
-      VStack(alignment: .leading, spacing: 16) {
-        IronRadio(value: Plan.basic, selection: $plan) {
-          VStack(alignment: .leading) {
-            Text("Basic")
-              .fontWeight(.medium)
-            Text("Free forever")
-              .font(.caption)
-              .foregroundStyle(.secondary)
-          }
-        }
-
-        IronRadio(value: Plan.pro, selection: $plan) {
-          VStack(alignment: .leading) {
-            Text("Pro")
-              .fontWeight(.medium)
-            Text("$9.99/month")
-              .font(.caption)
-              .foregroundStyle(.secondary)
-          }
-        }
-
-        IronRadio(value: Plan.enterprise, selection: $plan) {
-          VStack(alignment: .leading) {
-            Text("Enterprise")
-              .fontWeight(.medium)
-            Text("Contact sales")
-              .font(.caption)
-              .foregroundStyle(.secondary)
-          }
-        }
-      }
-      .padding()
-    }
+  enum Plan: String, CaseIterable {
+    case basic, pro, enterprise
   }
 
-  return Demo()
+  @Previewable @State var plan = Plan.pro
+
+  return VStack(alignment: .leading, spacing: 16) {
+    IronRadio(value: Plan.basic, selection: $plan) {
+      VStack(alignment: .leading) {
+        Text("Basic")
+          .fontWeight(.medium)
+        Text("Free forever")
+          .font(.caption)
+          .foregroundStyle(.secondary)
+      }
+    }
+
+    IronRadio(value: Plan.pro, selection: $plan) {
+      VStack(alignment: .leading) {
+        Text("Pro")
+          .fontWeight(.medium)
+        Text("$9.99/month")
+          .font(.caption)
+          .foregroundStyle(.secondary)
+      }
+    }
+
+    IronRadio(value: Plan.enterprise, selection: $plan) {
+      VStack(alignment: .leading) {
+        Text("Enterprise")
+          .fontWeight(.medium)
+        Text("Contact sales")
+          .font(.caption)
+          .foregroundStyle(.secondary)
+      }
+    }
+  }
+  .padding()
 }
 
 #Preview("IronRadio - Sizes") {
-  struct Demo: View {
-    @State private var selection = SampleOption.first
+  @Previewable @State var selection = SampleOption.first
 
-    var body: some View {
-      VStack(alignment: .leading, spacing: 24) {
-        IronRadio("Small", value: SampleOption.first, selection: $selection, size: .small)
-        IronRadio("Medium", value: SampleOption.second, selection: $selection, size: .medium)
-        IronRadio("Large", value: SampleOption.third, selection: $selection, size: .large)
-      }
-      .padding()
-    }
+  return VStack(alignment: .leading, spacing: 24) {
+    IronRadio("Small", value: SampleOption.first, selection: $selection, size: .small)
+    IronRadio("Medium", value: SampleOption.second, selection: $selection, size: .medium)
+    IronRadio("Large", value: SampleOption.third, selection: $selection, size: .large)
   }
-
-  return Demo()
+  .padding()
 }
 
 #Preview("IronRadio - Colors") {
-  struct Demo: View {
-    enum ColorOption: String, CaseIterable {
-      case primary, success, warning, error, custom
-    }
-
-    @State private var selection = ColorOption.primary
-
-    var body: some View {
-      VStack(alignment: .leading, spacing: 16) {
-        IronRadio("Primary", value: ColorOption.primary, selection: $selection, color: .primary)
-        IronRadio("Success", value: ColorOption.success, selection: $selection, color: .success)
-        IronRadio("Warning", value: ColorOption.warning, selection: $selection, color: .warning)
-        IronRadio("Error", value: ColorOption.error, selection: $selection, color: .error)
-        IronRadio("Custom", value: ColorOption.custom, selection: $selection, color: .custom(.purple))
-      }
-      .padding()
-    }
+  enum ColorOption: String, CaseIterable {
+    case primary, success, warning, error, custom
   }
 
-  return Demo()
+  @Previewable @State var selection = ColorOption.primary
+
+  return VStack(alignment: .leading, spacing: 16) {
+    IronRadio("Primary", value: ColorOption.primary, selection: $selection, color: .primary)
+    IronRadio("Success", value: ColorOption.success, selection: $selection, color: .success)
+    IronRadio("Warning", value: ColorOption.warning, selection: $selection, color: .warning)
+    IronRadio("Error", value: ColorOption.error, selection: $selection, color: .error)
+    IronRadio("Custom", value: ColorOption.custom, selection: $selection, color: .custom(.purple))
+  }
+  .padding()
 }
 
 #Preview("IronRadio - Disabled") {
-  struct Demo: View {
-    @State private var selection = SampleOption.first
+  @Previewable @State var selection = SampleOption.first
 
-    var body: some View {
-      VStack(alignment: .leading, spacing: 16) {
-        IronRadio("Enabled Selected", value: SampleOption.first, selection: $selection)
-        IronRadio("Enabled Unselected", value: SampleOption.second, selection: $selection)
-        IronRadio("Disabled Selected", value: SampleOption.first, selection: .constant(.first))
-          .disabled(true)
-        IronRadio("Disabled Unselected", value: SampleOption.second, selection: .constant(.first))
-          .disabled(true)
-      }
-      .padding()
-    }
+  return VStack(alignment: .leading, spacing: 16) {
+    IronRadio("Enabled Selected", value: SampleOption.first, selection: $selection)
+    IronRadio("Enabled Unselected", value: SampleOption.second, selection: $selection)
+    IronRadio("Disabled Selected", value: SampleOption.first, selection: .constant(.first))
+      .disabled(true)
+    IronRadio("Disabled Unselected", value: SampleOption.second, selection: .constant(.first))
+      .disabled(true)
   }
-
-  return Demo()
+  .padding()
 }
 
 #Preview("IronRadioGroup") {
-  struct Demo: View {
-    @State private var selection = SampleOption.second
+  @Previewable @State var selection = SampleOption.second
 
-    var body: some View {
-      VStack(alignment: .leading) {
-        Text("Select an option")
-          .font(.headline)
-          .padding(.bottom, 8)
+  return VStack(alignment: .leading) {
+    Text("Select an option")
+      .font(.headline)
+      .padding(.bottom, 8)
 
-        IronRadioGroup(selection: $selection) {
-          IronRadio("First Option", value: SampleOption.first, selection: $selection)
-          IronRadio("Second Option", value: SampleOption.second, selection: $selection)
-          IronRadio("Third Option", value: SampleOption.third, selection: $selection)
-        }
-      }
-      .padding()
+    IronRadioGroup(selection: $selection) {
+      IronRadio("First Option", value: SampleOption.first, selection: $selection)
+      IronRadio("Second Option", value: SampleOption.second, selection: $selection)
+      IronRadio("Third Option", value: SampleOption.third, selection: $selection)
     }
   }
-
-  return Demo()
+  .padding()
 }
 
 #Preview("IronRadio - Survey Example") {
-  struct Demo: View {
-    enum Rating: Int, CaseIterable {
-      case poor = 1
-      case fair = 2
-      case good = 3
-      case excellent = 4
-    }
-
-    @State private var rating = Rating.good
-
-    var body: some View {
-      VStack(alignment: .leading, spacing: 16) {
-        Text("How would you rate our service?")
-          .font(.headline)
-
-        IronRadioGroup(selection: $rating) {
-          IronRadio("Poor", value: Rating.poor, selection: $rating)
-          IronRadio("Fair", value: Rating.fair, selection: $rating)
-          IronRadio("Good", value: Rating.good, selection: $rating)
-          IronRadio("Excellent", value: Rating.excellent, selection: $rating)
-        }
-
-        Spacer().frame(height: 16)
-
-        IronButton("Submit", isFullWidth: true) {
-          // Submit action
-        }
-      }
-      .padding()
-    }
+  enum Rating: Int, CaseIterable {
+    case poor = 1
+    case fair = 2
+    case good = 3
+    case excellent = 4
   }
 
-  return Demo()
+  @Previewable @State var rating = Rating.good
+
+  return VStack(alignment: .leading, spacing: 16) {
+    Text("How would you rate our service?")
+      .font(.headline)
+
+    IronRadioGroup(selection: $rating) {
+      IronRadio("Poor", value: Rating.poor, selection: $rating)
+      IronRadio("Fair", value: Rating.fair, selection: $rating)
+      IronRadio("Good", value: Rating.good, selection: $rating)
+      IronRadio("Excellent", value: Rating.excellent, selection: $rating)
+    }
+
+    Spacer().frame(height: 16)
+
+    IronButton("Submit", isFullWidth: true) {
+      // Submit action
+    }
+  }
+  .padding()
 }

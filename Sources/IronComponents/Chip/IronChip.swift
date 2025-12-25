@@ -454,24 +454,18 @@ public enum IronChipSize: Sendable, CaseIterable {
 }
 
 #Preview("IronChip - Dismissible") {
-  struct Demo: View {
-    @State private var tags = ["Swift", "SwiftUI", "iOS", "macOS"]
+  @Previewable @State var tags = ["Swift", "SwiftUI", "iOS", "macOS"]
 
-    var body: some View {
-      HStack(spacing: 8) {
-        ForEach(tags, id: \.self) { tag in
-          IronChip(tag) {
-            withAnimation {
-              tags.removeAll { $0 == tag }
-            }
-          }
+  return HStack(spacing: 8) {
+    ForEach(tags, id: \.self) { tag in
+      IronChip(tag) {
+        withAnimation {
+          tags.removeAll { $0 == tag }
         }
       }
-      .padding()
     }
   }
-
-  return Demo()
+  .padding()
 }
 
 #Preview("IronChip - Selectable") {
@@ -488,36 +482,31 @@ public enum IronChipSize: Sendable, CaseIterable {
 }
 
 #Preview("IronChip - Filter Example") {
-  struct Demo: View {
-    @State private var filters: Set<String> = ["Active"]
+  @Previewable @State var filters: Set<String> = ["Active"]
 
-    let allFilters = ["All", "Active", "Completed", "Archived"]
+  let allFilters = ["All", "Active", "Completed", "Archived"]
 
-    var body: some View {
-      VStack(alignment: .leading, spacing: 16) {
-        IronText("Filters", style: .labelLarge, color: .primary)
+  return VStack(alignment: .leading, spacing: 16) {
+    IronText("Filters", style: .labelLarge, color: .primary)
 
-        HStack(spacing: 8) {
-          ForEach(allFilters, id: \.self) { filter in
-            IronChip(
-              filter,
-              isSelected: Binding(
-                get: { filters.contains(filter) },
-                set: { isSelected in
-                  if isSelected {
-                    filters.insert(filter)
-                  } else {
-                    filters.remove(filter)
-                  }
-                },
-              ),
-            )
-          }
-        }
+    HStack(spacing: 8) {
+      ForEach(allFilters, id: \.self) { filter in
+        IronChip(
+          filter,
+          isSelected: Binding(
+            get: { filters.contains(filter) },
+            set: { isSelected in
+              if isSelected {
+                filters.insert(filter)
+              } else {
+                filters.remove(filter)
+              }
+            },
+          ),
+        )
       }
-      .padding()
     }
   }
+  .padding()
 
-  return Demo()
 }

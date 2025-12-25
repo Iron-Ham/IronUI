@@ -403,148 +403,117 @@ public enum IronToggleColor: Sendable {
 // MARK: - Previews
 
 #Preview("IronToggle - Basic") {
-  struct Demo: View {
-    @State private var isOn = false
-    @State private var isEnabled = true
+  @Previewable @State var isOn = false
 
-    var body: some View {
-      VStack(spacing: 24) {
-        IronToggle(isOn: $isOn)
+  return VStack(spacing: 24) {
+    IronToggle(isOn: $isOn)
 
-        IronToggle(isOn: .constant(true))
-        IronToggle(isOn: .constant(false))
-      }
-      .padding()
-    }
+    IronToggle(isOn: .constant(true))
+    IronToggle(isOn: .constant(false))
   }
-
-  return Demo()
+  .padding()
 }
 
 #Preview("IronToggle - With Labels") {
-  struct Demo: View {
-    @State private var darkMode = false
-    @State private var notifications = true
-    @State private var analytics = false
+  @Previewable @State var darkMode = false
+  @Previewable @State var notifications = true
+  @Previewable @State var analytics = false
 
-    var body: some View {
-      VStack(spacing: 16) {
-        IronToggle("Dark Mode", isOn: $darkMode)
-        IronToggle("Notifications", isOn: $notifications)
-        IronToggle("Analytics", isOn: $analytics)
-      }
-      .padding()
-    }
+  return VStack(spacing: 16) {
+    IronToggle("Dark Mode", isOn: $darkMode)
+    IronToggle("Notifications", isOn: $notifications)
+    IronToggle("Analytics", isOn: $analytics)
   }
-
-  return Demo()
+  .padding()
 }
 
 #Preview("IronToggle - Custom Labels") {
-  struct Demo: View {
-    @State private var wifi = true
-    @State private var bluetooth = false
-    @State private var airplane = false
+  @Previewable @State var wifi = true
+  @Previewable @State var bluetooth = false
+  @Previewable @State var airplane = false
 
-    var body: some View {
-      VStack(spacing: 16) {
-        IronToggle(isOn: $wifi) {
-          Label("Wi-Fi", systemImage: "wifi")
-        }
+  return VStack(spacing: 16) {
+    IronToggle(isOn: $wifi) {
+      Label("Wi-Fi", systemImage: "wifi")
+    }
 
-        IronToggle(isOn: $bluetooth) {
-          Label("Bluetooth", systemImage: "wave.3.right")
-        }
+    IronToggle(isOn: $bluetooth) {
+      Label("Bluetooth", systemImage: "wave.3.right")
+    }
 
-        IronToggle(isOn: $airplane) {
-          Label("Airplane Mode", systemImage: "airplane")
-        }
-      }
-      .padding()
+    IronToggle(isOn: $airplane) {
+      Label("Airplane Mode", systemImage: "airplane")
     }
   }
-
-  return Demo()
+  .padding()
 }
 
 #Preview("IronToggle - Sizes") {
-  struct Demo: View {
-    @State private var small = true
-    @State private var medium = true
-    @State private var large = true
+  @Previewable @State var small = true
+  @Previewable @State var medium = true
+  @Previewable @State var large = true
 
-    var body: some View {
-      VStack(spacing: 24) {
-        HStack {
-          Text("Small")
-          Spacer()
-          IronToggle(isOn: $small, size: .small)
-        }
+  return VStack(spacing: 24) {
+    HStack {
+      Text("Small")
+      Spacer()
+      IronToggle(isOn: $small, size: .small)
+    }
 
-        HStack {
-          Text("Medium")
-          Spacer()
-          IronToggle(isOn: $medium, size: .medium)
-        }
+    HStack {
+      Text("Medium")
+      Spacer()
+      IronToggle(isOn: $medium, size: .medium)
+    }
 
-        HStack {
-          Text("Large")
-          Spacer()
-          IronToggle(isOn: $large, size: .large)
-        }
-      }
-      .padding()
+    HStack {
+      Text("Large")
+      Spacer()
+      IronToggle(isOn: $large, size: .large)
     }
   }
-
-  return Demo()
+  .padding()
 }
 
 #Preview("IronToggle - Colors") {
-  struct Demo: View {
-    @State private var primary = true
-    @State private var success = true
-    @State private var warning = true
-    @State private var error = true
-    @State private var custom = true
+  @Previewable @State var primary = true
+  @Previewable @State var success = true
+  @Previewable @State var warning = true
+  @Previewable @State var error = true
+  @Previewable @State var custom = true
 
-    var body: some View {
-      VStack(spacing: 16) {
-        HStack {
-          Text("Primary")
-          Spacer()
-          IronToggle(isOn: $primary, color: .primary)
-        }
+  return VStack(spacing: 16) {
+    HStack {
+      Text("Primary")
+      Spacer()
+      IronToggle(isOn: $primary, color: .primary)
+    }
 
-        HStack {
-          Text("Success")
-          Spacer()
-          IronToggle(isOn: $success, color: .success)
-        }
+    HStack {
+      Text("Success")
+      Spacer()
+      IronToggle(isOn: $success, color: .success)
+    }
 
-        HStack {
-          Text("Warning")
-          Spacer()
-          IronToggle(isOn: $warning, color: .warning)
-        }
+    HStack {
+      Text("Warning")
+      Spacer()
+      IronToggle(isOn: $warning, color: .warning)
+    }
 
-        HStack {
-          Text("Error")
-          Spacer()
-          IronToggle(isOn: $error, color: .error)
-        }
+    HStack {
+      Text("Error")
+      Spacer()
+      IronToggle(isOn: $error, color: .error)
+    }
 
-        HStack {
-          Text("Custom")
-          Spacer()
-          IronToggle(isOn: $custom, color: .custom(.purple))
-        }
-      }
-      .padding()
+    HStack {
+      Text("Custom")
+      Spacer()
+      IronToggle(isOn: $custom, color: .custom(.purple))
     }
   }
-
-  return Demo()
+  .padding()
 }
 
 #Preview("IronToggle - Disabled") {
@@ -561,28 +530,6 @@ public enum IronToggleColor: Sendable {
 }
 
 #Preview("IronToggle - Settings Example") {
-  struct Demo: View {
-    @State private var notifications = true
-    @State private var sounds = true
-    @State private var haptics = false
-    @State private var autoUpdate = true
-
-    var body: some View {
-      VStack(spacing: 0) {
-        SettingsRow(title: "Push Notifications", isOn: $notifications)
-        Divider().padding(.leading)
-        SettingsRow(title: "Sound Effects", isOn: $sounds)
-        Divider().padding(.leading)
-        SettingsRow(title: "Haptic Feedback", isOn: $haptics)
-        Divider().padding(.leading)
-        SettingsRow(title: "Auto-Update", isOn: $autoUpdate)
-      }
-      .background(Color.white)
-      .clipShape(RoundedRectangle(cornerRadius: 12))
-      .padding()
-    }
-  }
-
   struct SettingsRow: View {
     let title: String
     @Binding var isOn: Bool
@@ -593,5 +540,21 @@ public enum IronToggleColor: Sendable {
     }
   }
 
-  return Demo()
+  @Previewable @State var notifications = true
+  @Previewable @State var sounds = true
+  @Previewable @State var haptics = false
+  @Previewable @State var autoUpdate = true
+
+  return VStack(spacing: 0) {
+    SettingsRow(title: "Push Notifications", isOn: $notifications)
+    Divider().padding(.leading)
+    SettingsRow(title: "Sound Effects", isOn: $sounds)
+    Divider().padding(.leading)
+    SettingsRow(title: "Haptic Feedback", isOn: $haptics)
+    Divider().padding(.leading)
+    SettingsRow(title: "Auto-Update", isOn: $autoUpdate)
+  }
+  .background(Color.white)
+  .clipShape(RoundedRectangle(cornerRadius: 12))
+  .padding()
 }
