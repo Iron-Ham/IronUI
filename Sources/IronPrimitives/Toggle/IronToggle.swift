@@ -130,7 +130,7 @@ public struct IronToggle<Label: View>: View {
   // MARK: Public
 
   public var body: some View {
-    let content = HStack(spacing: theme.spacing.md) {
+    HStack(spacing: theme.spacing.md) {
       if let label {
         label
           .opacity(isEnabled ? 1.0 : 0.5)

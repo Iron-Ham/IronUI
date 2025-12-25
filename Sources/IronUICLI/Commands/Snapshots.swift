@@ -36,6 +36,12 @@ extension IronUICLI {
     )
     var simulator = "iPhone 17 Pro"
 
+    @Flag(
+      name: .long,
+      help: "Use SPM for macOS tests instead of Tuist.",
+    )
+    var spm = false
+
     func run() async throws {
       var environment = [String: String]()
       if record {
@@ -48,6 +54,15 @@ extension IronUICLI {
 
       let action = record ? "Recording" : "Verifying"
       var platformsRun = [String]()
+
+      // Generate project first if using Tuist
+      if !spm {
+        try await runner.runTask(
+          "Generating Xcode project",
+          command: "/usr/bin/env",
+          arguments: ["tuist", "generate"],
+        )
+      }
 
       // Run macOS tests
       if platform == .all || platform == .macos {
@@ -83,12 +98,23 @@ extension IronUICLI {
     // MARK: Private
 
     private func runMacOSTests(action: String, environment: [String: String]) async throws {
-      let arguments = [
-        "swift",
-        "test",
-        "--filter",
-        "IronUISnapshotTests",
-      ]
+      let arguments: [String] =
+        if spm {
+          [
+            "swift",
+            "test",
+            "--filter",
+            "IronUISnapshotTests",
+          ]
+        } else {
+          [
+            "tuist",
+            "test",
+            "IronUISnapshotTests",
+            "--platform",
+            "macos",
+          ]
+        }
 
       let status = try await runner.runTaskWithOutput(
         "\(action) macOS snapshots",
@@ -107,29 +133,29 @@ extension IronUICLI {
     }
 
     private func runiOSTests(action: String, environment: [String: String]) async throws {
-      // iOS tests must run through Sample.xcodeproj because drawHierarchyInKeyWindow
-      // requires a host application. The SampleTests target includes IronUISnapshotTests.
-      var arguments = [
+      // iOS tests run through the PreviewGallery app target
+      let arguments = [
         "xcodebuild",
         "test",
-        "-project",
-        "Sample/Sample.xcodeproj",
+        "-workspace",
+        "IronUI.xcworkspace",
         "-scheme",
-        "Sample",
+        "PreviewGallery",
         "-destination",
         "platform=iOS Simulator,name=\(simulator)",
       ]
 
-      // Use the RecordSnapshots test plan when recording, which sets IRONUI_RECORD_SNAPSHOTS=1
+      // For recording, use environment variable
+      var env = environment
       if record {
-        arguments.append(contentsOf: ["-testPlan", "RecordSnapshots"])
+        env["IRONUI_RECORD_SNAPSHOTS"] = "1"
       }
 
       let status = try await runner.runTaskWithOutput(
         "\(action) iOS snapshots (\(simulator))",
         command: "/usr/bin/env",
         arguments: arguments,
-        environment: environment,
+        environment: env,
         allowFailure: record,
         streamOutput: false,
       )

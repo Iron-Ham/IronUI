@@ -12,7 +12,7 @@ extension IronUICLI {
 
     @Flag(
       name: .long,
-      help: "Also remove derived data and package caches.",
+      help: "Also remove derived data, package caches, and Tuist cache.",
     )
     var all = false
 
@@ -41,6 +41,39 @@ extension IronUICLI {
         removedItems.append(buildDir)
       }
 
+      // Clean Tuist generated files
+      let tuistGeneratedFiles = [
+        "IronUI.xcworkspace",
+        "IronUI.xcodeproj",
+        "Derived",
+      ]
+
+      for file in tuistGeneratedFiles {
+        if fileManager.fileExists(atPath: file) {
+          if dryRun {
+            noora.info(.alert("Would remove", takeaways: ["\(file)"]))
+          } else {
+            try fileManager.removeItem(atPath: file)
+          }
+          removedItems.append(file)
+        }
+      }
+
+      // Run tuist clean if not dry run
+      if !dryRun {
+        do {
+          try await runner.runTask(
+            "Running tuist clean",
+            command: "/usr/bin/env",
+            arguments: ["tuist", "clean"],
+          )
+          removedItems.append("Tuist cache")
+        } catch {
+          // Tuist clean may fail if not initialized, that's okay
+          noora.info(.alert("Note", takeaways: ["Tuist clean skipped (not initialized)"]))
+        }
+      }
+
       if all {
         // Clean package resolved
         let packageResolved = "Package.resolved"
@@ -53,14 +86,22 @@ extension IronUICLI {
           removedItems.append(packageResolved)
         }
 
-        // Clean Xcode derived data for this project
-        let xcodeProject = "IronUI.xcodeproj"
-        if fileManager.fileExists(atPath: xcodeProject) {
-          noora.info(.alert(
-            "Note: Xcode derived data",
-            takeaways: ["Clean manually via Xcode or remove ~/Library/Developer/Xcode/DerivedData"],
-          ))
+        // Clean Tuist dependencies
+        let tuistDeps = "Tuist/.build"
+        if fileManager.fileExists(atPath: tuistDeps) {
+          if dryRun {
+            noora.info(.alert("Would remove", takeaways: ["\(tuistDeps)"]))
+          } else {
+            try fileManager.removeItem(atPath: tuistDeps)
+          }
+          removedItems.append(tuistDeps)
         }
+
+        // Note about Xcode derived data
+        noora.info(.alert(
+          "Note: Xcode derived data",
+          takeaways: ["Clean manually via Xcode or remove ~/Library/Developer/Xcode/DerivedData"],
+        ))
       }
 
       if removedItems.isEmpty {
@@ -76,7 +117,7 @@ extension IronUICLI {
       if !all {
         noora.info(.alert(
           "Tip",
-          takeaways: ["Use --all to also remove Package.resolved"],
+          takeaways: ["Use --all to also remove Package.resolved and Tuist cache"],
         ))
       }
     }

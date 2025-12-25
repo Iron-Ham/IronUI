@@ -134,7 +134,7 @@ public struct IronCheckbox<Label: View>: View {
   // MARK: Public
 
   public var body: some View {
-    let button = Button {
+    Button {
       withAnimation(shouldAnimate ? theme.animation.bouncy : nil) {
         isChecked.toggle()
       }
