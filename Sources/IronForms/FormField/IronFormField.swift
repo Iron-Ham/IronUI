@@ -114,7 +114,7 @@ public struct IronFormField<Content: View>: View {
         IronText(hint, style: .caption, color: .secondary)
       }
     }
-    .animation(.easeInOut(duration: 0.2), value: error)
+    .accessibleAnimation(theme.animation.snappy, value: error)
     .accessibilityElement(children: .contain)
   }
 
