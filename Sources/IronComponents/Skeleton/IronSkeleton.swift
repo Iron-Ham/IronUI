@@ -45,13 +45,13 @@ public struct IronSkeleton: View {
   ///
   /// - Parameters:
   ///   - shape: The shape of the skeleton.
-  ///   - animated: Whether to show the shimmer animation.
+  ///   - isAnimated: Whether to show the shimmer animation.
   public init(
     shape: IronSkeletonShape,
-    animated: Bool = true,
+    isAnimated: Bool = true,
   ) {
     self.shape = shape
-    self.animated = animated
+    self.isAnimated = isAnimated
   }
 
   // MARK: Public
@@ -60,7 +60,7 @@ public struct IronSkeleton: View {
     skeletonContent
       .accessibilityElement(children: .ignore)
       .accessibilityLabel("Loading")
-      .accessibilityAddTraits(animated ? .updatesFrequently : [])
+      .accessibilityAddTraits(isAnimated ? .updatesFrequently : [])
   }
 
   // MARK: Private
@@ -72,7 +72,7 @@ public struct IronSkeleton: View {
   @State private var shimmerOffset: CGFloat = -1
 
   private let shape: IronSkeletonShape
-  private let animated: Bool
+  private let isAnimated: Bool
 
   @ViewBuilder
   private var skeletonContent: some View {
@@ -148,7 +148,7 @@ public struct IronSkeleton: View {
   }
 
   private var shouldAnimate: Bool {
-    animated && !reduceMotion && !skipEntranceAnimations
+    isAnimated && !reduceMotion && !skipEntranceAnimations
   }
 
   private func skeletonView(
@@ -256,16 +256,16 @@ public struct IronSkeletonCard: View {
 
   /// Creates a skeleton card.
   ///
-  /// - Parameter showImage: Whether to show an image placeholder.
-  public init(showImage: Bool = true) {
-    self.showImage = showImage
+  /// - Parameter isImageVisible: Whether to show an image placeholder.
+  public init(isImageVisible: Bool = true) {
+    self.isImageVisible = isImageVisible
   }
 
   // MARK: Public
 
   public var body: some View {
     VStack(alignment: .leading, spacing: theme.spacing.md) {
-      if showImage {
+      if isImageVisible {
         IronSkeleton(shape: .rectangle(width: .infinity, height: 150))
           .frame(maxWidth: .infinity)
           .frame(height: 150)
@@ -291,7 +291,7 @@ public struct IronSkeletonCard: View {
 
   @Environment(\.ironTheme) private var theme
 
-  private let showImage: Bool
+  private let isImageVisible: Bool
 }
 
 // MARK: - IronSkeletonList
@@ -401,8 +401,8 @@ public struct IronSkeletonListItem: View {
 
 #Preview("IronSkeleton - Static (No Animation)") {
   VStack(spacing: 16) {
-    IronSkeleton(shape: .rounded(width: 200, height: 20, radius: 4), animated: false)
-    IronSkeleton(shape: .circle(size: 48), animated: false)
+    IronSkeleton(shape: .rounded(width: 200, height: 20, radius: 4), isAnimated: false)
+    IronSkeleton(shape: .circle(size: 48), isAnimated: false)
   }
   .padding()
 }

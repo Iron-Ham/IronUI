@@ -365,7 +365,7 @@ struct IronSkeletonTests {
 
   @Test("can be created without animation")
   func createWithoutAnimation() {
-    _ = IronSkeleton(shape: .text(), animated: false)
+    _ = IronSkeleton(shape: .text(), isAnimated: false)
     // Skeleton created successfully
   }
 }
@@ -421,13 +421,13 @@ struct IronSkeletonCardTests {
 
   @Test("can be created with image placeholder")
   func createWithImagePlaceholder() {
-    _ = IronSkeletonCard(showImage: true)
+    _ = IronSkeletonCard(isImageVisible: true)
     // SkeletonCard created successfully
   }
 
   @Test("can be created without image placeholder")
   func createWithoutImagePlaceholder() {
-    _ = IronSkeletonCard(showImage: false)
+    _ = IronSkeletonCard(isImageVisible: false)
     // SkeletonCard created successfully
   }
 }

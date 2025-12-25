@@ -15,7 +15,7 @@ import SwiftUI
 ///
 /// // Conditional shimmer
 /// BalanceView()
-///   .ironShimmer(active: isLoading)
+///   .ironShimmer(isActive: isLoading)
 /// ```
 ///
 /// ## Stealth Mode Style
@@ -32,15 +32,15 @@ public struct IronShimmerModifier: ViewModifier {
   /// Creates a shimmer modifier.
   ///
   /// - Parameters:
-  ///   - active: Whether the shimmer is animating.
+  ///   - isActive: Whether the shimmer is animating.
   ///   - style: The shimmer visual style.
   ///   - duration: Duration of one shimmer cycle.
   public init(
-    active: Bool = true,
+    isActive: Bool = true,
     style: IronShimmerStyle = .standard,
     duration: Double = 1.5,
   ) {
-    self.active = active
+    self.isActive = isActive
     self.style = style
     self.duration = duration
   }
@@ -50,7 +50,7 @@ public struct IronShimmerModifier: ViewModifier {
   public func body(content: Content) -> some View {
     content
       .overlay {
-        if active {
+        if isActive {
           GeometryReader { geometry in
             shimmerGradient
               .frame(width: geometry.size.width * 2)
@@ -61,10 +61,10 @@ public struct IronShimmerModifier: ViewModifier {
         }
       }
       .onAppear {
-        guard active else { return }
+        guard isActive else { return }
         startAnimation()
       }
-      .onChange(of: active) { _, newValue in
+      .onChange(of: isActive) { _, newValue in
         if newValue {
           startAnimation()
         }
@@ -75,7 +75,7 @@ public struct IronShimmerModifier: ViewModifier {
 
   @State private var animating = false
 
-  private let active: Bool
+  private let isActive: Bool
   private let style: IronShimmerStyle
   private let duration: Double
 
@@ -153,7 +153,7 @@ extension View {
   /// ```swift
   /// // Loading shimmer
   /// PlaceholderCard()
-  ///   .ironShimmer(active: isLoading)
+  ///   .ironShimmer(isActive: isLoading)
   ///
   /// // Stealth mode
   /// Text("$••••")
@@ -161,18 +161,18 @@ extension View {
   /// ```
   ///
   /// - Parameters:
-  ///   - active: Whether shimmer is animating.
+  ///   - isActive: Whether shimmer is animating.
   ///   - style: The shimmer visual style.
   ///   - duration: Duration of one cycle.
   /// - Returns: A view with shimmer effect.
   public func ironShimmer(
-    active: Bool = true,
+    isActive: Bool = true,
     style: IronShimmerStyle = .standard,
     duration: Double = 1.5,
   ) -> some View {
     modifier(
       IronShimmerModifier(
-        active: active,
+        isActive: isActive,
         style: style,
         duration: duration,
       )
@@ -352,7 +352,7 @@ public struct IronShimmerView: View {
       .frame(maxWidth: .infinity)
       .background(Color.green.opacity(0.2))
       .clipShape(RoundedRectangle(cornerRadius: 12))
-      .ironShimmer(active: isLoading)
+      .ironShimmer(isActive: isLoading)
   }
   .padding()
 }

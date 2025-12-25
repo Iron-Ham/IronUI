@@ -10,12 +10,12 @@ struct IronTrayModifier<TrayContent: View>: ViewModifier {
 
   init(
     isPresented: Binding<Bool>,
-    showsDragIndicator: Bool,
+    isDragIndicatorVisible: Bool,
     onDismiss: (() -> Void)?,
     @ViewBuilder content: () -> TrayContent,
   ) {
     _isPresented = isPresented
-    self.showsDragIndicator = showsDragIndicator
+    self.isDragIndicatorVisible = isDragIndicatorVisible
     self.onDismiss = onDismiss
     trayContent = content()
   }
@@ -27,7 +27,7 @@ struct IronTrayModifier<TrayContent: View>: ViewModifier {
       .overlay {
         if isPresented {
           IronTray(
-            showsDragIndicator: showsDragIndicator,
+            isDragIndicatorVisible: isDragIndicatorVisible,
             onDismiss: {
               isPresented = false
               onDismiss?()
@@ -48,7 +48,7 @@ struct IronTrayModifier<TrayContent: View>: ViewModifier {
 
   @Binding private var isPresented: Bool
 
-  private let showsDragIndicator: Bool
+  private let isDragIndicatorVisible: Bool
   private let onDismiss: (() -> Void)?
   private let trayContent: TrayContent
 
@@ -79,20 +79,20 @@ extension View {
   ///
   /// - Parameters:
   ///   - isPresented: Binding controlling tray visibility.
-  ///   - showsDragIndicator: Whether to show the drag handle. Defaults to `true`.
+  ///   - isDragIndicatorVisible: Whether to show the drag handle. Defaults to `true`.
   ///   - onDismiss: Called when the tray is dismissed.
   ///   - content: The tray content builder.
   /// - Returns: A view with tray presentation capability.
   public func ironTray(
     isPresented: Binding<Bool>,
-    showsDragIndicator: Bool = true,
+    isDragIndicatorVisible: Bool = true,
     onDismiss: (() -> Void)? = nil,
     @ViewBuilder content: () -> some View,
   ) -> some View {
     modifier(
       IronTrayModifier(
         isPresented: isPresented,
-        showsDragIndicator: showsDragIndicator,
+        isDragIndicatorVisible: isDragIndicatorVisible,
         onDismiss: onDismiss,
         content: content,
       )

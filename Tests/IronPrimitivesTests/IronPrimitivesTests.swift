@@ -631,10 +631,10 @@ struct IronCardTests {
 
   @Test("can be created as tappable")
   func createAsTappable() {
-    _ = IronCard {
-      Text("Tappable card")
-    } action: {
+    _ = IronCard(onTap: {
       // Action
+    }) {
+      Text("Tappable card")
     }
     // Tappable card created successfully
   }
@@ -1105,13 +1105,13 @@ struct IronSecureFieldTests {
 
   @Test("supports show toggle")
   func supportsShowToggle() {
-    _ = IronSecureField("Password", text: .constant(""), showToggle: true)
+    _ = IronSecureField("Password", text: .constant(""), isToggleVisible: true)
     // Show toggle works
   }
 
   @Test("supports hiding toggle")
   func supportsHidingToggle() {
-    _ = IronSecureField("Password", text: .constant(""), showToggle: false)
+    _ = IronSecureField("Password", text: .constant(""), isToggleVisible: false)
     // Hidden toggle works
   }
 
@@ -1131,7 +1131,7 @@ struct IronSecureFieldTests {
       style: .outlined,
       size: .large,
       state: .success,
-      showToggle: true,
+      isToggleVisible: true,
       leading: {
         Image(systemName: "lock")
       },
