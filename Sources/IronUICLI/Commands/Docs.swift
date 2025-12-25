@@ -71,10 +71,11 @@ extension IronUICLI {
         "IronUI",
       ])
 
-      try await runner.runTask(
+      _ = try await runner.runTaskWithOutput(
         "Generating combined documentation",
         command: "/usr/bin/env",
         arguments: arguments,
+        streamOutput: false,
       )
 
       // Verify archive exists
