@@ -138,18 +138,6 @@ public struct IronFormField<Content: View>: View {
   }
 }
 
-// MARK: - IronFormFieldStyle
-
-/// Styles for form field layout.
-public enum IronFormFieldStyle: Sendable {
-  /// Stacked layout with label above input.
-  case stacked
-  /// Horizontal layout with label beside input.
-  case horizontal
-  /// Floating label that animates into the field.
-  case floating
-}
-
 // MARK: - Previews
 
 #Preview("IronFormField - Basic") {
