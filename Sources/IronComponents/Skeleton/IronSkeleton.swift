@@ -78,11 +78,14 @@ public struct IronSkeleton: View {
   private var skeletonContent: some View {
     switch shape {
     case .text(let widthRatio):
-      skeletonView(
-        shape: RoundedRectangle(cornerRadius: 4),
-        width: widthRatio < 1.0 ? nil : nil,
-        height: 16,
-      )
+      GeometryReader { geometry in
+        skeletonView(
+          shape: RoundedRectangle(cornerRadius: 4),
+          width: widthRatio < 1.0 ? geometry.size.width * widthRatio : nil,
+          height: 16,
+        )
+      }
+      .frame(height: 16)
 
     case .circle(let size):
       skeletonView(
