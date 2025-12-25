@@ -25,10 +25,9 @@ Global Tokens (Raw Values)
     |
     v
 Semantic Tokens (Meaning-based)
-    |
-    v
-Component Tokens (Component-specific)
 ```
+
+> **Note:** A third tier (Component Tokens) was considered but deferred. Components currently access semantic tokens directly via `theme.colors.primary`, `theme.typography.bodyLarge`, etc. Component-specific token protocols may be added if per-component customization demand arises, but the current two-tier system provides sufficient flexibility while keeping theme creation simple.
 
 ### Core Protocols
 

@@ -6,12 +6,13 @@ Accepted
 
 ## Context
 
-IronUI needs a distinctive visual identity that sets it apart from generic component libraries while remaining unopinionated enough for broad adoption. We want to be:
+IronUI needs a distinctive visual identity that sets it apart from generic component libraries. We want to be:
 
-1. Beautiful and modern
-2. Cutting-edge in motion design
-3. Delightful to use
-4. Accessible
+1. **Modern and stylish** - A bold, contemporary aesthetic
+2. **Opinionated by default** - Ships with a distinctive, polished theme out of the box
+3. **Themable and customizable** - Consumers can override tokens to match their brand
+4. **Cutting-edge in motion design** - Delightful animations that respect accessibility
+5. **Accessible** - Never sacrificing usability for aesthetics
 
 ## Decision
 
@@ -78,16 +79,6 @@ Ship an opinionated, stylish default theme that embodies these principles:
 
 - Users can still create neutral themes
 - Philosophy guides decisions but doesn't mandate specific implementations
-
-## Alternatives Considered
-
-### Minimal/System-like Default
-
-Ship with neutral, system-like defaults. Less distinctive, harder to stand out.
-
-### No Default Theme
-
-Require users to provide all theming. Too much friction for adoption.
 
 ## References
 
