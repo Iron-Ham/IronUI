@@ -316,7 +316,8 @@ public struct IronAlert<Icon: View, Actions: View>: View {
           IronIcon(systemName: "xmark", size: .xSmall, color: .secondary)
             .frame(width: 20, height: 20)
             .background(theme.colors.onSurface.opacity(0.08), in: Circle())
-            .frame(width: minTouchTarget, height: minTouchTarget)
+            .frame(minWidth: minTouchTarget, minHeight: minTouchTarget)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Dismiss")
