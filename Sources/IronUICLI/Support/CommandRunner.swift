@@ -83,7 +83,7 @@ struct CommandRunner {
     environment: [String: String] = [:],
     visibleLines: UInt = 5,
     allowFailure: Bool = false,
-    streamOutput: Bool = true
+    streamOutput: Bool = true,
   ) async throws -> Int32 {
     var terminationStatus: Int32 = 0
     try await noora.collapsibleStep(
@@ -114,7 +114,7 @@ struct CommandRunner {
         progress: sendableProgress,
         flushDelay: .seconds(1),
         maxLinesPerFlush: 200,
-        streaming: streamOutput
+        streaming: streamOutput,
       )
 
       // Set up readability handlers to stream output.
@@ -163,21 +163,45 @@ struct CommandRunner {
     return terminationStatus
   }
 
+  /// Runs a shell script with progress indication.
+  ///
+  /// - Parameters:
+  ///   - relativePath: The script path relative to the current directory.
+  ///   - environment: Additional environment variables.
+  func runScript(_ relativePath: String, environment: [String: String] = [:]) async throws {
+    let scriptURL = URL(
+      fileURLWithPath: relativePath,
+      relativeTo: URL(fileURLWithPath: FileManager.default.currentDirectoryPath),
+    )
+
+    try await runTask(
+      "Running \(relativePath)",
+      command: "/usr/bin/env",
+      arguments: ["bash", scriptURL.path],
+      environment: environment,
+    )
+  }
+
+  // MARK: Private
+
   /// Wrapper to make non-Sendable values passable across concurrency boundaries.
   private struct UncheckedSendable<T>: @unchecked Sendable {
+    init(_ value: T) {
+      self.value = value
+    }
+
     let value: T
-    init(_ value: T) { self.value = value }
   }
 
   private final class StreamBuffer: @unchecked Sendable {
-    private let lock = NSLock()
-    private var buffer = ""
-    private var errorOutput = ""
-    private let collectErrorOutput: Bool
+
+    // MARK: Lifecycle
 
     init(collectErrorOutput: Bool) {
       self.collectErrorOutput = collectErrorOutput
     }
+
+    // MARK: Internal
 
     func append(_ output: String) -> [String] {
       lock.lock()
@@ -187,7 +211,7 @@ struct CommandRunner {
       if collectErrorOutput {
         errorOutput.append(output)
       }
-      var lines: [String] = []
+      var lines = [String]()
       while let range = buffer.range(of: "\n") {
         let line = String(buffer[..<range.lowerBound])
         buffer.removeSubrange(..<range.upperBound)
@@ -212,23 +236,26 @@ struct CommandRunner {
       defer { lock.unlock() }
       return errorOutput
     }
+
+    // MARK: Private
+
+    private let lock = NSLock()
+    private var buffer = ""
+    private var errorOutput = ""
+    private let collectErrorOutput: Bool
+
   }
 
   private final class LineBatcher: @unchecked Sendable {
-    private let queue: DispatchQueue
-    private let progress: UncheckedSendable<(TerminalText) -> Void>
-    private let flushDelay: DispatchTimeInterval
-    private let maxLinesPerFlush: Int
-    private let streaming: Bool
-    private var pendingLines: [String] = []
-    private var flushWorkItem: DispatchWorkItem?
+
+    // MARK: Lifecycle
 
     init(
       queue: DispatchQueue,
       progress: UncheckedSendable<(TerminalText) -> Void>,
       flushDelay: DispatchTimeInterval,
       maxLinesPerFlush: Int,
-      streaming: Bool
+      streaming: Bool,
     ) {
       self.queue = queue
       self.progress = progress
@@ -236,6 +263,8 @@ struct CommandRunner {
       self.maxLinesPerFlush = maxLinesPerFlush
       self.streaming = streaming
     }
+
+    // MARK: Internal
 
     func enqueue(_ lines: [String]) {
       guard !lines.isEmpty else { return }
@@ -261,6 +290,16 @@ struct CommandRunner {
       }
     }
 
+    // MARK: Private
+
+    private let queue: DispatchQueue
+    private let progress: UncheckedSendable<(TerminalText) -> Void>
+    private let flushDelay: DispatchTimeInterval
+    private let maxLinesPerFlush: Int
+    private let streaming: Bool
+    private var pendingLines = [String]()
+    private var flushWorkItem: DispatchWorkItem?
+
     private func flushInternal(cancelScheduled: Bool) {
       if cancelScheduled {
         flushWorkItem?.cancel()
@@ -272,27 +311,6 @@ struct CommandRunner {
       progress.value(TerminalText(stringLiteral: joined))
     }
   }
-
-  /// Runs a shell script with progress indication.
-  ///
-  /// - Parameters:
-  ///   - relativePath: The script path relative to the current directory.
-  ///   - environment: Additional environment variables.
-  func runScript(_ relativePath: String, environment: [String: String] = [:]) async throws {
-    let scriptURL = URL(
-      fileURLWithPath: relativePath,
-      relativeTo: URL(fileURLWithPath: FileManager.default.currentDirectoryPath),
-    )
-
-    try await runTask(
-      "Running \(relativePath)",
-      command: "/usr/bin/env",
-      arguments: ["bash", scriptURL.path],
-      environment: environment,
-    )
-  }
-
-  // MARK: Private
 
   private let noora: Noora
 }
