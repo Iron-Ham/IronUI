@@ -1,0 +1,28 @@
+{
+  "configurations" : [
+    {
+      "id" : "B2C3D4E5-F6A7-8901-BCDE-F23456789012",
+      "name" : "Configuration 1",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "targetForVariableExpansion" : {
+      "containerPath" : "container:Sample.xcodeproj",
+      "identifier" : "Sample",
+      "name" : "Sample"
+    }
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:Sample.xcodeproj",
+        "identifier" : "SampleTests",
+        "name" : "SampleTests"
+      }
+    }
+  ],
+  "version" : 1
+}
