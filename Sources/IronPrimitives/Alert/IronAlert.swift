@@ -326,18 +326,30 @@ public struct IronAlert<Icon: View, Actions: View>: View {
     .padding(.trailing, theme.spacing.md)
     .padding(.vertical, theme.spacing.md)
     .background {
-      // Use ZStack with alignment to place accent bar on leading edge
-      // The clipShape ensures the bar curves with the container
+      // Inset the background content to be interior to the border
+      let innerRadius = max(0, theme.radii.md - borderWidth)
+
       ZStack(alignment: .leading) {
-        backgroundColor
-        foregroundColor
-          .frame(width: 4)
+        // Background fill
+        RoundedRectangle(cornerRadius: innerRadius)
+          .fill(backgroundColor)
+
+        // Accent bar with rounded corners on left side only
+        UnevenRoundedRectangle(
+          topLeadingRadius: innerRadius,
+          bottomLeadingRadius: innerRadius,
+          bottomTrailingRadius: 0,
+          topTrailingRadius: 0,
+        )
+        .fill(foregroundColor)
+        .frame(width: 4)
       }
+      .padding(borderWidth)
     }
     .clipShape(RoundedRectangle(cornerRadius: theme.radii.md))
     .overlay {
       RoundedRectangle(cornerRadius: theme.radii.md)
-        .strokeBorder(borderColor, lineWidth: 1)
+        .strokeBorder(borderColor, lineWidth: borderWidth)
     }
     .accessibilityElement(children: .combine)
     .accessibilityLabel(accessibilityPrimaryLabel)
@@ -364,6 +376,9 @@ public struct IronAlert<Icon: View, Actions: View>: View {
 
   /// Minimum touch target size per Apple HIG (44pt).
   private let minTouchTarget: CGFloat = 44
+
+  /// Border stroke width.
+  private let borderWidth: CGFloat = 1
 
   @ViewBuilder
   private var iconView: some View {
