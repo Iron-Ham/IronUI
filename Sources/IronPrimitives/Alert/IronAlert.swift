@@ -327,28 +327,27 @@ public struct IronAlert<Icon: View, Actions: View>: View {
     .padding(.trailing, theme.spacing.md)
     .padding(.vertical, theme.spacing.md)
     .background {
-      // Inset the background content to be interior to the border
-      let innerRadius = max(0, theme.radii.md - borderWidth)
+      GeometryReader { geo in
+        let innerRadius = max(0, theme.radii.md - borderWidth)
+        let innerWidth = geo.size.width - 2 * borderWidth
+        let innerHeight = geo.size.height - 2 * borderWidth
 
-      // Background fill - full rounded rectangle
-      RoundedRectangle(cornerRadius: innerRadius)
-        .fill(backgroundColor)
-        .padding(borderWidth)
+        ZStack(alignment: .leading) {
+          backgroundColor
 
-      // Accent bar - inset on leading, top, and bottom
-      HStack(spacing: 0) {
-        UnevenRoundedRectangle(
-          topLeadingRadius: innerRadius,
-          bottomLeadingRadius: innerRadius,
-          bottomTrailingRadius: 0,
-          topTrailingRadius: 0,
-        )
-        .fill(foregroundColor)
-        .frame(width: 4)
-        Spacer()
+          UnevenRoundedRectangle(
+            topLeadingRadius: innerRadius,
+            bottomLeadingRadius: innerRadius,
+            bottomTrailingRadius: 0,
+            topTrailingRadius: 0,
+          )
+          .fill(foregroundColor)
+          .frame(width: 4)
+        }
+        .frame(width: innerWidth, height: innerHeight)
+        .clipShape(RoundedRectangle(cornerRadius: innerRadius))
+        .position(x: geo.size.width / 2, y: geo.size.height / 2)
       }
-      .padding(.leading, borderWidth)
-      .padding(.vertical, borderWidth)
     }
     .clipShape(RoundedRectangle(cornerRadius: theme.radii.md))
     .overlay {
