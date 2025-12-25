@@ -90,12 +90,20 @@ extension IronUICLI {
         "IronUISnapshotTests",
       ]
 
-      try await runner.runTask(
+      let status = try await runner.runTaskWithOutput(
         "\(action) macOS snapshots",
         command: "/usr/bin/env",
         arguments: arguments,
         environment: environment,
+        allowFailure: record,
+        streamOutput: true,
       )
+      if record, status != 0 {
+        noora.warning(.alert(
+          "Recording macOS snapshots finished with issues",
+          takeaway: "Re-run without --record to verify the new baselines",
+        ))
+      }
     }
 
     private func runiOSTests(action: String, environment: [String: String]) async throws {
@@ -117,12 +125,20 @@ extension IronUICLI {
         arguments.append(contentsOf: ["-testPlan", "RecordSnapshots"])
       }
 
-      try await runner.runTask(
+      let status = try await runner.runTaskWithOutput(
         "\(action) iOS snapshots (\(simulator))",
         command: "/usr/bin/env",
         arguments: arguments,
         environment: environment,
+        allowFailure: record,
+        streamOutput: false,
       )
+      if record, status != 0 {
+        noora.warning(.alert(
+          "Recording iOS snapshots finished with issues",
+          takeaway: "Re-run without --record to verify the new baselines",
+        ))
+      }
     }
   }
 }
