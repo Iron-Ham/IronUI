@@ -330,12 +330,13 @@ public struct IronAlert<Icon: View, Actions: View>: View {
       // Inset the background content to be interior to the border
       let innerRadius = max(0, theme.radii.md - borderWidth)
 
-      ZStack(alignment: .leading) {
-        // Background fill
-        RoundedRectangle(cornerRadius: innerRadius)
-          .fill(backgroundColor)
+      // Background fill - full rounded rectangle
+      RoundedRectangle(cornerRadius: innerRadius)
+        .fill(backgroundColor)
+        .padding(borderWidth)
 
-        // Accent bar with rounded corners on left side only
+      // Accent bar - inset on leading, top, and bottom
+      HStack(spacing: 0) {
         UnevenRoundedRectangle(
           topLeadingRadius: innerRadius,
           bottomLeadingRadius: innerRadius,
@@ -344,8 +345,10 @@ public struct IronAlert<Icon: View, Actions: View>: View {
         )
         .fill(foregroundColor)
         .frame(width: 4)
+        Spacer()
       }
-      .padding(borderWidth)
+      .padding(.leading, borderWidth)
+      .padding(.vertical, borderWidth)
     }
     .clipShape(RoundedRectangle(cornerRadius: theme.radii.md))
     .overlay {
