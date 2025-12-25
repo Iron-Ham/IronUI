@@ -292,26 +292,26 @@ public struct IronPrintHandler: IronLogHandler {
   /// - Parameters:
   ///   - label: A label to prefix log messages with.
   ///   - minimumLevel: The minimum level to log.
-  ///   - includeTimestamp: Whether to include timestamps in output.
-  ///   - includeSource: Whether to include source file/line information.
+  ///   - isTimestampIncluded: Whether to include timestamps in output.
+  ///   - isSourceIncluded: Whether to include source file/line information.
   public init(
     label: String,
     minimumLevel: IronLogLevel = .debug,
-    includeTimestamp: Bool = true,
-    includeSource: Bool = true,
+    isTimestampIncluded: Bool = true,
+    isSourceIncluded: Bool = true,
   ) {
     self.label = label
     self.minimumLevel = minimumLevel
-    self.includeTimestamp = includeTimestamp
-    self.includeSource = includeSource
+    self.isTimestampIncluded = isTimestampIncluded
+    self.isSourceIncluded = isSourceIncluded
   }
 
   // MARK: Public
 
   public let label: String
   public let minimumLevel: IronLogLevel
-  public let includeTimestamp: Bool
-  public let includeSource: Bool
+  public let isTimestampIncluded: Bool
+  public let isSourceIncluded: Bool
 
   public func log(
     level: IronLogLevel,
@@ -326,7 +326,7 @@ public struct IronPrintHandler: IronLogHandler {
 
     var components = [String]()
 
-    if includeTimestamp {
+    if isTimestampIncluded {
       components.append(Self.timestampFormatter.string(from: Date()))
     }
 
@@ -334,7 +334,7 @@ public struct IronPrintHandler: IronLogHandler {
     components.append(level.emoji)
     components.append(level.label)
 
-    if includeSource {
+    if isSourceIncluded {
       let fileName = (file as NSString).lastPathComponent
       components.append("(\(fileName):\(line))")
     }

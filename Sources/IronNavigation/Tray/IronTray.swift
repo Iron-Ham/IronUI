@@ -44,15 +44,15 @@ public struct IronTray<Content: View>: View {
   /// Creates a content-sized tray.
   ///
   /// - Parameters:
-  ///   - showsDragIndicator: Whether to show the drag handle.
+  ///   - isDragIndicatorVisible: Whether to show the drag handle.
   ///   - onDismiss: Called when the tray is dismissed.
   ///   - content: The tray content - height is determined by this content.
   public init(
-    showsDragIndicator: Bool = true,
+    isDragIndicatorVisible: Bool = true,
     onDismiss: (() -> Void)? = nil,
     @ViewBuilder content: () -> Content,
   ) {
-    self.showsDragIndicator = showsDragIndicator
+    self.isDragIndicatorVisible = isDragIndicatorVisible
     self.onDismiss = onDismiss
     self.content = content()
   }
@@ -74,7 +74,7 @@ public struct IronTray<Content: View>: View {
         // Tray card
         VStack(spacing: 0) {
           // Drag indicator
-          if showsDragIndicator {
+          if isDragIndicatorVisible {
             dragIndicator
           }
 
@@ -116,7 +116,7 @@ public struct IronTray<Content: View>: View {
   @State private var isVisible = false
   @State private var dragOffset: CGFloat = 0
 
-  private let showsDragIndicator: Bool
+  private let isDragIndicatorVisible: Bool
   private let onDismiss: (() -> Void)?
   private let content: Content
 
@@ -196,15 +196,15 @@ public struct IronTrayHeader: View {
   ///
   /// - Parameters:
   ///   - title: The header title.
-  ///   - showsBackButton: If true, shows back arrow instead of close.
+  ///   - isBackButtonVisible: If true, shows back arrow instead of close.
   ///   - onDismiss: Action when the button is tapped.
   public init(
     _ title: LocalizedStringKey,
-    showsBackButton: Bool = false,
+    isBackButtonVisible: Bool = false,
     onDismiss: @escaping () -> Void,
   ) {
     self.title = title
-    self.showsBackButton = showsBackButton
+    self.isBackButtonVisible = isBackButtonVisible
     self.onDismiss = onDismiss
   }
 
@@ -215,12 +215,12 @@ public struct IronTrayHeader: View {
       Button {
         IronLogger.ui.debug(
           "IronTrayHeader tapped",
-          metadata: ["isBack": .string("\(showsBackButton)")],
+          metadata: ["isBack": .string("\(isBackButtonVisible)")],
         )
         onDismiss()
       } label: {
         IronIcon(
-          systemName: showsBackButton ? "chevron.left" : "xmark",
+          systemName: isBackButtonVisible ? "chevron.left" : "xmark",
           size: .small,
           color: .secondary,
         )
@@ -232,7 +232,7 @@ public struct IronTrayHeader: View {
         }
       }
       .buttonStyle(.plain)
-      .accessibilityLabel(showsBackButton ? "Back" : "Close")
+      .accessibilityLabel(isBackButtonVisible ? "Back" : "Close")
 
       Spacer()
 
@@ -253,7 +253,7 @@ public struct IronTrayHeader: View {
   @Environment(\.ironTheme) private var theme
 
   private let title: LocalizedStringKey
-  private let showsBackButton: Bool
+  private let isBackButtonVisible: Bool
   private let onDismiss: () -> Void
 }
 
@@ -514,7 +514,7 @@ public struct IronTrayNavigator {
               navigator.push {
                 // Step 2 - taller
                 VStack(spacing: 16) {
-                  IronTrayHeader("Step 2", showsBackButton: true, onDismiss: { navigator.pop() })
+                  IronTrayHeader("Step 2", isBackButtonVisible: true, onDismiss: { navigator.pop() })
 
                   Text("Notice the height change!")
                     .padding(.horizontal)

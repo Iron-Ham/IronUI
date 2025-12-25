@@ -32,10 +32,10 @@ import SwiftUI
 /// ## Tappable Cards
 ///
 /// ```swift
-/// IronCard {
-///   Text("Tap me")
-/// } action: {
+/// IronCard(onTap: {
 ///   print("Card tapped")
+/// }) {
+///   Text("Tap me")
 /// }
 /// ```
 ///
@@ -70,7 +70,7 @@ public struct IronCard<Content: View, Header: View, Footer: View>: View {
     self.content = content()
     header = nil
     footer = nil
-    action = nil
+    onTap = nil
   }
 
   /// Creates a tappable card with content.
@@ -78,20 +78,20 @@ public struct IronCard<Content: View, Header: View, Footer: View>: View {
   /// - Parameters:
   ///   - style: The visual style of the card.
   ///   - padding: The padding inside the card.
+  ///   - onTap: The action to perform when tapped.
   ///   - content: The main content of the card.
-  ///   - action: The action to perform when tapped.
   public init(
     style: IronCardStyle = .elevated,
     padding: IronCardPadding = .standard,
+    onTap: @escaping () -> Void,
     @ViewBuilder content: () -> Content,
-    action: @escaping () -> Void,
   ) where Header == EmptyView, Footer == EmptyView {
     self.style = style
     self.padding = padding
+    self.onTap = onTap
     self.content = content()
     header = nil
     footer = nil
-    self.action = action
   }
 
   /// Creates a card with header, content, and footer.
@@ -114,7 +114,7 @@ public struct IronCard<Content: View, Header: View, Footer: View>: View {
     self.content = content()
     self.header = header()
     self.footer = footer()
-    action = nil
+    onTap = nil
   }
 
   /// Creates a card with header and content.
@@ -135,7 +135,7 @@ public struct IronCard<Content: View, Header: View, Footer: View>: View {
     self.content = content()
     self.header = header()
     footer = nil
-    action = nil
+    onTap = nil
   }
 
   /// Creates a card with content and footer.
@@ -156,17 +156,17 @@ public struct IronCard<Content: View, Header: View, Footer: View>: View {
     self.content = content()
     header = nil
     self.footer = footer()
-    action = nil
+    onTap = nil
   }
 
   // MARK: Public
 
   public var body: some View {
     Group {
-      if let action {
+      if let onTap {
         Button {
           IronLogger.ui.debug("IronCard tapped", metadata: ["style": .string("\(style)")])
-          action()
+          onTap()
         } label: {
           cardContent
         }
@@ -200,7 +200,7 @@ public struct IronCard<Content: View, Header: View, Footer: View>: View {
   private let content: Content
   private let header: Header?
   private let footer: Footer?
-  private let action: (() -> Void)?
+  private let onTap: (() -> Void)?
 
   private var cardShape: some InsettableShape {
     RoundedRectangle(cornerRadius: theme.radii.lg, style: .continuous)
@@ -478,7 +478,9 @@ public enum IronCardPadding: Sendable, CaseIterable {
 
 #Preview("IronCard - Tappable") {
   VStack(spacing: 16) {
-    IronCard {
+    IronCard(onTap: {
+      // Handle tap
+    }) {
       HStack {
         Image(systemName: "gear")
           .font(.title2)
@@ -494,11 +496,11 @@ public enum IronCardPadding: Sendable, CaseIterable {
         Image(systemName: "chevron.right")
           .foregroundStyle(.secondary)
       }
-    } action: {
-      // Handle tap
     }
 
-    IronCard(style: .outlined) {
+    IronCard(style: .outlined, onTap: {
+      // Handle tap
+    }) {
       HStack {
         Image(systemName: "bell")
           .font(.title2)
@@ -514,8 +516,6 @@ public enum IronCardPadding: Sendable, CaseIterable {
         Image(systemName: "chevron.right")
           .foregroundStyle(.secondary)
       }
-    } action: {
-      // Handle tap
     }
   }
   .padding()
@@ -525,7 +525,9 @@ public enum IronCardPadding: Sendable, CaseIterable {
   ScrollView {
     VStack(spacing: 12) {
       ForEach(0..<5) { index in
-        IronCard {
+        IronCard(onTap: {
+          // Handle tap
+        }) {
           HStack {
             Circle()
               .fill(Color.blue.opacity(0.2))
@@ -543,8 +545,6 @@ public enum IronCardPadding: Sendable, CaseIterable {
             }
             Spacer()
           }
-        } action: {
-          // Handle tap
         }
       }
     }

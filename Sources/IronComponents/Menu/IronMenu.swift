@@ -181,17 +181,17 @@ public struct IronMenuItem: View {
   ///   - title: The item title.
   ///   - icon: Optional SF Symbol name.
   ///   - role: The button role (e.g., destructive).
-  ///   - action: The action to perform.
+  ///   - onTap: The action to perform.
   public init(
     _ title: LocalizedStringKey,
     icon: String? = nil,
     role: ButtonRole? = nil,
-    action: @escaping () -> Void,
+    onTap: @escaping () -> Void,
   ) {
     self.title = title
     self.icon = icon
     self.role = role
-    self.action = action
+    self.onTap = onTap
   }
 
   /// Creates a menu item from a string.
@@ -200,24 +200,24 @@ public struct IronMenuItem: View {
   ///   - title: The item title string.
   ///   - icon: Optional SF Symbol name.
   ///   - role: The button role (e.g., destructive).
-  ///   - action: The action to perform.
+  ///   - onTap: The action to perform.
   public init(
     _ title: some StringProtocol,
     icon: String? = nil,
     role: ButtonRole? = nil,
-    action: @escaping () -> Void,
+    onTap: @escaping () -> Void,
   ) {
     self.title = LocalizedStringKey(String(title))
     self.icon = icon
     self.role = role
-    self.action = action
+    self.onTap = onTap
   }
 
   // MARK: Public
 
   public var body: some View {
     Button(role: role) {
-      action()
+      onTap()
       IronLogger.ui.debug(
         "IronMenuItem tapped",
         metadata: ["role": .string("\(String(describing: role))")],
@@ -240,7 +240,7 @@ public struct IronMenuItem: View {
   private let title: LocalizedStringKey
   private let icon: String?
   private let role: ButtonRole?
-  private let action: () -> Void
+  private let onTap: () -> Void
 }
 
 // MARK: - IronMenuSection

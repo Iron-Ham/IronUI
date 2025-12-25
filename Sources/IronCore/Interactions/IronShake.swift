@@ -13,7 +13,7 @@ import SwiftUI
 /// @State private var shake = false
 ///
 /// TextField("Password", text: $password)
-///   .ironShake(active: shake)
+///   .ironShake(isActive: $shake)
 ///
 /// // Trigger on error
 /// if passwordWrong {
@@ -24,9 +24,9 @@ import SwiftUI
 /// ## Shake Styles
 ///
 /// ```swift
-/// .ironShake(active: shake, style: .subtle)   // Gentle nudge
-/// .ironShake(active: shake, style: .standard) // Normal shake
-/// .ironShake(active: shake, style: .intense)  // Urgent attention
+/// .ironShake(isActive: $shake, style: .subtle)   // Gentle nudge
+/// .ironShake(isActive: $shake, style: .standard) // Normal shake
+/// .ironShake(isActive: $shake, style: .intense)  // Urgent attention
 /// ```
 public struct IronShakeModifier: ViewModifier {
 
@@ -35,15 +35,15 @@ public struct IronShakeModifier: ViewModifier {
   /// Creates a shake modifier.
   ///
   /// - Parameters:
-  ///   - active: When true, triggers the shake animation.
+  ///   - isActive: When true, triggers the shake animation.
   ///   - style: The intensity of the shake.
   ///   - onComplete: Called when the shake animation finishes.
   public init(
-    active: Binding<Bool>,
+    isActive: Binding<Bool>,
     style: IronShakeStyle = .standard,
     onComplete: (() -> Void)? = nil,
   ) {
-    _active = active
+    _isActive = isActive
     self.style = style
     self.onComplete = onComplete
   }
@@ -56,12 +56,12 @@ public struct IronShakeModifier: ViewModifier {
         trigger: animationTrigger,
         intensity: style.intensity,
       ))
-      .onChange(of: active) { _, newValue in
+      .onChange(of: isActive) { _, newValue in
         if newValue {
           animationTrigger += 1
           // Reset after animation completes
           DispatchQueue.main.asyncAfter(deadline: .now() + style.duration) {
-            active = false
+            isActive = false
             onComplete?()
           }
         }
@@ -70,7 +70,7 @@ public struct IronShakeModifier: ViewModifier {
 
   // MARK: Private
 
-  @Binding private var active: Bool
+  @Binding private var isActive: Bool
   @State private var animationTrigger = 0
 
   private let style: IronShakeStyle
@@ -175,32 +175,32 @@ public enum IronShakeStyle: Sendable {
 extension View {
   /// Adds a shake animation for attention feedback.
   ///
-  /// When `active` becomes true, the view shakes horizontally
+  /// When `isActive` becomes true, the view shakes horizontally
   /// and then returns to its original position.
   ///
   /// ```swift
   /// @State private var shake = false
   ///
   /// TextField("Code", text: $code)
-  ///   .ironShake(active: $shake)
+  ///   .ironShake(isActive: $shake)
   ///   .onChange(of: isInvalid) { _, invalid in
   ///     if invalid { shake = true }
   ///   }
   /// ```
   ///
   /// - Parameters:
-  ///   - active: Binding that triggers shake when true.
+  ///   - isActive: Binding that triggers shake when true.
   ///   - style: The shake intensity.
   ///   - onComplete: Called when shake finishes.
   /// - Returns: A view with shake capability.
   public func ironShake(
-    active: Binding<Bool>,
+    isActive: Binding<Bool>,
     style: IronShakeStyle = .standard,
     onComplete: (() -> Void)? = nil,
   ) -> some View {
     modifier(
       IronShakeModifier(
-        active: active,
+        isActive: isActive,
         style: style,
         onComplete: onComplete,
       )
@@ -217,18 +217,18 @@ extension View {
 ///
 /// ```swift
 /// TrashIcon()
-///   .ironWiggle(active: trashIsFull)
+///   .ironWiggle(isActive: trashIsFull)
 /// ```
 public struct IronWiggleModifier: ViewModifier {
 
   // MARK: Lifecycle
 
   public init(
-    active: Bool,
+    isActive: Bool,
     intensity: Double = 3,
     speed: Double = 0.1,
   ) {
-    self.active = active
+    self.isActive = isActive
     self.intensity = intensity
     self.speed = speed
   }
@@ -236,7 +236,7 @@ public struct IronWiggleModifier: ViewModifier {
   // MARK: Public
 
   public func body(content: Content) -> some View {
-    if active {
+    if isActive {
       content
         .phaseAnimator(WigglePhase.allCases) { view, phase in
           view.rotationEffect(.degrees(phase == .left ? -intensity : intensity))
@@ -259,7 +259,7 @@ public struct IronWiggleModifier: ViewModifier {
 
   // MARK: Private
 
-  private let active: Bool
+  private let isActive: Bool
   private let intensity: Double
   private let speed: Double
 }
@@ -272,22 +272,22 @@ extension View {
   ///
   /// ```swift
   /// Image(systemName: "trash.fill")
-  ///   .ironWiggle(active: trashNeedsEmptying)
+  ///   .ironWiggle(isActive: trashNeedsEmptying)
   /// ```
   ///
   /// - Parameters:
-  ///   - active: Whether the wiggle is animating.
+  ///   - isActive: Whether the wiggle is animating.
   ///   - intensity: Rotation angle in degrees.
   ///   - speed: Time for one wiggle direction.
   /// - Returns: A view with wiggle animation.
   public func ironWiggle(
-    active: Bool,
+    isActive: Bool,
     intensity: Double = 3,
     speed: Double = 0.1,
   ) -> some View {
     modifier(
       IronWiggleModifier(
-        active: active,
+        isActive: isActive,
         intensity: intensity,
         speed: speed,
       )
@@ -301,17 +301,17 @@ extension View {
 ///
 /// ```swift
 /// NotificationBadge()
-///   .ironBounce(active: hasNewNotification)
+///   .ironBounce(isActive: $hasNewNotification)
 /// ```
 public struct IronBounceModifier: ViewModifier {
 
   // MARK: Lifecycle
 
   public init(
-    active: Binding<Bool>,
+    isActive: Binding<Bool>,
     intensity: CGFloat = 0.3,
   ) {
-    _active = active
+    _isActive = isActive
     self.intensity = intensity
   }
 
@@ -320,12 +320,12 @@ public struct IronBounceModifier: ViewModifier {
   public func body(content: Content) -> some View {
     content
       .modifier(BounceAnimationModifier(trigger: animationTrigger, intensity: intensity))
-      .onChange(of: active) { _, newValue in
+      .onChange(of: isActive) { _, newValue in
         if newValue {
           animationTrigger += 1
-          // Reset active after animation
+          // Reset isActive after animation
           DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            active = false
+            isActive = false
           }
         }
       }
@@ -333,7 +333,7 @@ public struct IronBounceModifier: ViewModifier {
 
   // MARK: Private
 
-  @Binding private var active: Bool
+  @Binding private var isActive: Bool
   @State private var animationTrigger = 0
 
   private let intensity: CGFloat
@@ -381,16 +381,16 @@ extension View {
   /// with spring physics.
   ///
   /// - Parameters:
-  ///   - active: Binding that triggers bounce when true.
+  ///   - isActive: Binding that triggers bounce when true.
   ///   - intensity: Scale increase (0.3 = 30% larger).
   /// - Returns: A view with bounce animation.
   public func ironBounce(
-    active: Binding<Bool>,
+    isActive: Binding<Bool>,
     intensity: CGFloat = 0.3,
   ) -> some View {
     modifier(
       IronBounceModifier(
-        active: active,
+        isActive: isActive,
         intensity: intensity,
       )
     )
@@ -410,16 +410,16 @@ extension View {
 
     Button("Subtle") { shakeSubtle = true }
       .buttonStyle(.borderedProminent)
-      .ironShake(active: $shakeSubtle, style: .subtle)
+      .ironShake(isActive: $shakeSubtle, style: .subtle)
 
     Button("Standard") { shakeStandard = true }
       .buttonStyle(.borderedProminent)
-      .ironShake(active: $shakeStandard, style: .standard)
+      .ironShake(isActive: $shakeStandard, style: .standard)
 
     Button("Intense") { shakeIntense = true }
       .buttonStyle(.borderedProminent)
       .tint(.red)
-      .ironShake(active: $shakeIntense, style: .intense)
+      .ironShake(isActive: $shakeIntense, style: .intense)
   }
   .padding()
 }
@@ -436,7 +436,7 @@ extension View {
     SecureField("Password", text: $password)
       .textFieldStyle(.roundedBorder)
       .padding(.horizontal, 40)
-      .ironShake(active: $shake, style: .standard)
+      .ironShake(isActive: $shake, style: .standard)
 
     if showError {
       Text("Wrong password!")
@@ -464,7 +464,7 @@ extension View {
     Image(systemName: "trash.fill")
       .font(.system(size: 50))
       .foregroundStyle(trashFull ? .red : .secondary)
-      .ironWiggle(active: trashFull)
+      .ironWiggle(isActive: trashFull)
   }
   .padding()
 }
@@ -486,7 +486,7 @@ extension View {
           .foregroundStyle(.pink)
       }
       .buttonStyle(.plain)
-      .ironBounce(active: $bounce)
+      .ironBounce(isActive: $bounce)
 
       // Star button with separate state
       BounceableButton(
@@ -524,7 +524,7 @@ private struct BounceableButton: View {
         .foregroundStyle(color)
     }
     .buttonStyle(.plain)
-    .ironBounce(active: $bounce)
+    .ironBounce(isActive: $bounce)
   }
 
   @State private var bounce = false

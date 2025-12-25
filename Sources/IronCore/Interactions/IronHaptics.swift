@@ -255,28 +255,28 @@ public struct IronSensoryFeedbackModifier: ViewModifier {
   // MARK: Lifecycle
 
   public init(
-    trigger: Bool,
-    haptic: @escaping () -> Void,
+    isTriggered: Bool,
+    onTrigger: @escaping () -> Void,
   ) {
-    self.trigger = trigger
-    self.haptic = haptic
+    self.isTriggered = isTriggered
+    self.onTrigger = onTrigger
   }
 
   // MARK: Public
 
   public func body(content: Content) -> some View {
     content
-      .onChange(of: trigger) { _, newValue in
+      .onChange(of: isTriggered) { _, newValue in
         if newValue {
-          haptic()
+          onTrigger()
         }
       }
   }
 
   // MARK: Private
 
-  private let trigger: Bool
-  private let haptic: () -> Void
+  private let isTriggered: Bool
+  private let onTrigger: () -> Void
 }
 
 extension View {
@@ -286,23 +286,23 @@ extension View {
   ///
   /// ```swift
   /// ContentView()
-  ///   .ironSensoryFeedback(trigger: isComplete) {
+  ///   .ironSensoryFeedback(isTriggered: isComplete) {
   ///     IronHaptics.success()
   ///   }
   /// ```
   ///
   /// - Parameters:
-  ///   - trigger: Condition that triggers the haptic.
-  ///   - haptic: The haptic feedback to trigger.
+  ///   - isTriggered: Condition that triggers the haptic.
+  ///   - onTrigger: The haptic feedback to trigger.
   /// - Returns: A view with sensory feedback.
   public func ironSensoryFeedback(
-    trigger: Bool,
-    haptic: @escaping () -> Void,
+    isTriggered: Bool,
+    onTrigger: @escaping () -> Void,
   ) -> some View {
     modifier(
       IronSensoryFeedbackModifier(
-        trigger: trigger,
-        haptic: haptic,
+        isTriggered: isTriggered,
+        onTrigger: onTrigger,
       )
     )
   }

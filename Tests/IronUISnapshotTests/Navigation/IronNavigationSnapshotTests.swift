@@ -22,7 +22,7 @@ struct IronTrayHeaderSnapshotTests {
   @Test("TrayHeader - Back Button")
   @MainActor
   func trayHeaderBackButton() {
-    let view = IronTrayHeader("Profile Details", showsBackButton: true) { }
+    let view = IronTrayHeader("Profile Details", isBackButtonVisible: true) { }
       .padding()
       .background(Color.gray.opacity(0.1))
 
@@ -43,7 +43,7 @@ struct IronTrayHeaderSnapshotTests {
 
       VStack(alignment: .leading, spacing: 4) {
         IronText("Nested Level (Back)", style: .caption, color: .secondary)
-        IronTrayHeader("Step 2", showsBackButton: true) { }
+        IronTrayHeader("Step 2", isBackButtonVisible: true) { }
           .background(Color.gray.opacity(0.1))
       }
     }
@@ -105,7 +105,7 @@ struct IronTraySnapshotTests {
         .padding(.bottom, 4)
 
       VStack(spacing: 16) {
-        IronTrayHeader("Choose Option", showsBackButton: true) { }
+        IronTrayHeader("Choose Option", isBackButtonVisible: true) { }
 
         ForEach(["Option A", "Option B", "Option C"], id: \.self) { option in
           HStack {

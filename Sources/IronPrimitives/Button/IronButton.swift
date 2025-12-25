@@ -55,19 +55,19 @@ public struct IronButton<Label: View>: View {
   ///   - variant: The visual style of the button.
   ///   - size: The size of the button.
   ///   - isFullWidth: Whether the button should expand to fill available width.
-  ///   - action: The action to perform when the button is tapped.
+  ///   - onTap: The action to perform when the button is tapped.
   ///   - label: A view builder that creates the button's label.
   public init(
     variant: IronButtonVariant = .filled,
     size: IronButtonSize = .medium,
     isFullWidth: Bool = false,
-    action: @escaping () -> Void,
+    onTap: @escaping () -> Void,
     @ViewBuilder label: () -> Label,
   ) {
     self.variant = variant
     self.size = size
     self.isFullWidth = isFullWidth
-    self.action = action
+    self.onTap = onTap
     self.label = label()
   }
 
@@ -76,7 +76,7 @@ public struct IronButton<Label: View>: View {
   public var body: some View {
     Button {
       IronLogger.ui.debug("IronButton tapped", metadata: ["variant": .string("\(variant)"), "size": .string("\(size)")])
-      action()
+      onTap()
     } label: {
       label
         .contentTransition(.interpolate)
@@ -100,7 +100,7 @@ public struct IronButton<Label: View>: View {
   private let variant: IronButtonVariant
   private let size: IronButtonSize
   private let isFullWidth: Bool
-  private let action: () -> Void
+  private let onTap: () -> Void
   private let label: Label
 
 }
@@ -115,18 +115,18 @@ extension IronButton where Label == IronText {
   ///   - variant: The visual style of the button.
   ///   - size: The size of the button.
   ///   - isFullWidth: Whether the button should expand to fill available width.
-  ///   - action: The action to perform when the button is tapped.
+  ///   - onTap: The action to perform when the button is tapped.
   public init(
     _ title: LocalizedStringKey,
     variant: IronButtonVariant = .filled,
     size: IronButtonSize = .medium,
     isFullWidth: Bool = false,
-    action: @escaping () -> Void,
+    onTap: @escaping () -> Void,
   ) {
     self.variant = variant
     self.size = size
     self.isFullWidth = isFullWidth
-    self.action = action
+    self.onTap = onTap
     label = IronText(title, style: .labelLarge, color: .inherited)
   }
 
@@ -137,18 +137,18 @@ extension IronButton where Label == IronText {
   ///   - variant: The visual style of the button.
   ///   - size: The size of the button.
   ///   - isFullWidth: Whether the button should expand to fill available width.
-  ///   - action: The action to perform when the button is tapped.
+  ///   - onTap: The action to perform when the button is tapped.
   public init(
     _ title: some StringProtocol,
     variant: IronButtonVariant = .filled,
     size: IronButtonSize = .medium,
     isFullWidth: Bool = false,
-    action: @escaping () -> Void,
+    onTap: @escaping () -> Void,
   ) {
     self.variant = variant
     self.size = size
     self.isFullWidth = isFullWidth
-    self.action = action
+    self.onTap = onTap
     label = IronText(title, style: .labelLarge, color: .inherited)
   }
 }

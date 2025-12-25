@@ -19,7 +19,7 @@ import SwiftUI
 /// ## With Visibility Toggle
 ///
 /// ```swift
-/// IronSecureField("Password", text: $password, showToggle: true)
+/// IronSecureField("Password", text: $password, isToggleVisible: true)
 /// ```
 ///
 /// ## Styles
@@ -56,21 +56,21 @@ public struct IronSecureField<Leading: View>: View {
   ///   - style: The visual style of the field.
   ///   - size: The size of the field.
   ///   - state: The validation state.
-  ///   - showToggle: Whether to show the visibility toggle.
+  ///   - isToggleVisible: Whether to show the visibility toggle.
   public init(
     _ placeholder: LocalizedStringKey,
     text: Binding<String>,
     style: IronTextFieldStyle = .outlined,
     size: IronTextFieldSize = .medium,
     state: IronTextFieldState = .normal,
-    showToggle: Bool = true,
+    isToggleVisible: Bool = true,
   ) where Leading == EmptyView {
     self.placeholder = placeholder
     _text = text
     self.style = style
     self.size = size
     self.state = state
-    self.showToggle = showToggle
+    self.isToggleVisible = isToggleVisible
     leading = nil
   }
 
@@ -82,21 +82,21 @@ public struct IronSecureField<Leading: View>: View {
   ///   - style: The visual style of the field.
   ///   - size: The size of the field.
   ///   - state: The validation state.
-  ///   - showToggle: Whether to show the visibility toggle.
+  ///   - isToggleVisible: Whether to show the visibility toggle.
   public init(
     _ placeholder: some StringProtocol,
     text: Binding<String>,
     style: IronTextFieldStyle = .outlined,
     size: IronTextFieldSize = .medium,
     state: IronTextFieldState = .normal,
-    showToggle: Bool = true,
+    isToggleVisible: Bool = true,
   ) where Leading == EmptyView {
     self.placeholder = LocalizedStringKey(String(placeholder))
     _text = text
     self.style = style
     self.size = size
     self.state = state
-    self.showToggle = showToggle
+    self.isToggleVisible = isToggleVisible
     leading = nil
   }
 
@@ -108,7 +108,7 @@ public struct IronSecureField<Leading: View>: View {
   ///   - style: The visual style of the field.
   ///   - size: The size of the field.
   ///   - state: The validation state.
-  ///   - showToggle: Whether to show the visibility toggle.
+  ///   - isToggleVisible: Whether to show the visibility toggle.
   ///   - leading: The leading accessory view.
   public init(
     _ placeholder: LocalizedStringKey,
@@ -116,7 +116,7 @@ public struct IronSecureField<Leading: View>: View {
     style: IronTextFieldStyle = .outlined,
     size: IronTextFieldSize = .medium,
     state: IronTextFieldState = .normal,
-    showToggle: Bool = true,
+    isToggleVisible: Bool = true,
     @ViewBuilder leading: () -> Leading,
   ) {
     self.placeholder = placeholder
@@ -124,7 +124,7 @@ public struct IronSecureField<Leading: View>: View {
     self.style = style
     self.size = size
     self.state = state
-    self.showToggle = showToggle
+    self.isToggleVisible = isToggleVisible
     self.leading = leading()
   }
 
@@ -159,7 +159,7 @@ public struct IronSecureField<Leading: View>: View {
   private let style: IronTextFieldStyle
   private let size: IronTextFieldSize
   private let state: IronTextFieldState
-  private let showToggle: Bool
+  private let isToggleVisible: Bool
   private let leading: Leading?
 
   private var fieldContainer: some View {
@@ -187,7 +187,7 @@ public struct IronSecureField<Leading: View>: View {
         )
       }
 
-      if showToggle {
+      if isToggleVisible {
         Button {
           withAnimation(theme.animation.snappy) {
             isRevealed.toggle()
@@ -418,8 +418,8 @@ public struct IronSecureField<Leading: View>: View {
   @Previewable @State var password = ""
 
   return VStack(spacing: 16) {
-    IronSecureField("With toggle", text: $password, showToggle: true)
-    IronSecureField("Without toggle", text: $password, showToggle: false)
+    IronSecureField("With toggle", text: $password, isToggleVisible: true)
+    IronSecureField("Without toggle", text: $password, isToggleVisible: false)
   }
   .padding()
 }

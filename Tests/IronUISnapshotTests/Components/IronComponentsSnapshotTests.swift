@@ -295,16 +295,16 @@ struct IronSkeletonSnapshotTests {
   @MainActor
   func skeletonShapes() {
     let view = VStack(spacing: 24) {
-      IronSkeleton(shape: .text(), animated: false)
+      IronSkeleton(shape: .text(), isAnimated: false)
         .frame(width: 200)
 
-      IronSkeleton(shape: .circle(size: 48), animated: false)
+      IronSkeleton(shape: .circle(size: 48), isAnimated: false)
 
-      IronSkeleton(shape: .rectangle(width: 150, height: 100), animated: false)
+      IronSkeleton(shape: .rectangle(width: 150, height: 100), isAnimated: false)
 
-      IronSkeleton(shape: .rounded(width: 120, height: 40, radius: 8), animated: false)
+      IronSkeleton(shape: .rounded(width: 120, height: 40, radius: 8), isAnimated: false)
 
-      IronSkeleton(shape: .capsule(width: 100, height: 32), animated: false)
+      IronSkeleton(shape: .capsule(width: 100, height: 32), isAnimated: false)
     }
     .padding()
 
