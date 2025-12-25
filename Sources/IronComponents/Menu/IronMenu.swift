@@ -443,20 +443,14 @@ public struct IronMenuPicker<Option: Hashable, Label: View>: View {
 }
 
 #Preview("IronMenuPicker") {
-  struct Demo: View {
-    enum SortOption: String, CaseIterable {
-      case name, date, size
-    }
-
-    @State private var sortBy = SortOption.name
-
-    var body: some View {
-      IronMenuPicker("Sort by: \(sortBy.rawValue.capitalized)", selection: $sortBy, options: SortOption.allCases) { option in
-        Text(option.rawValue.capitalized)
-      }
-      .padding()
-    }
+  enum SortOption: String, CaseIterable {
+    case name, date, size
   }
 
-  return Demo()
+  @Previewable @State var sortBy = SortOption.name
+
+  return IronMenuPicker("Sort by: \(sortBy.rawValue.capitalized)", selection: $sortBy, options: SortOption.allCases) { option in
+    Text(option.rawValue.capitalized)
+  }
+  .padding()
 }

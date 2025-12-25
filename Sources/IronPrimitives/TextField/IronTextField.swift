@@ -424,129 +424,99 @@ public enum IronTextFieldState: Sendable, Equatable {
 // MARK: - Previews
 
 #Preview("IronTextField - Basic") {
-  struct Demo: View {
-    @State private var text = ""
+  @Previewable @State var text = ""
 
-    var body: some View {
-      VStack(spacing: 16) {
-        IronTextField("Enter your name", text: $text)
-        IronTextField("With some text", text: .constant("Hello World"))
-      }
-      .padding()
-    }
+  return VStack(spacing: 16) {
+    IronTextField("Enter your name", text: $text)
+    IronTextField("With some text", text: .constant("Hello World"))
   }
-
-  return Demo()
+  .padding()
 }
 
 #Preview("IronTextField - Styles") {
-  struct Demo: View {
-    @State private var text1 = ""
-    @State private var text2 = ""
-    @State private var text3 = ""
+  @Previewable @State var text1 = ""
+  @Previewable @State var text2 = ""
+  @Previewable @State var text3 = ""
 
-    var body: some View {
-      VStack(spacing: 24) {
-        VStack(alignment: .leading) {
-          Text("Outlined").font(.caption).foregroundStyle(.secondary)
-          IronTextField("Outlined style", text: $text1, style: .outlined)
-        }
+  return VStack(spacing: 24) {
+    VStack(alignment: .leading) {
+      Text("Outlined").font(.caption).foregroundStyle(.secondary)
+      IronTextField("Outlined style", text: $text1, style: .outlined)
+    }
 
-        VStack(alignment: .leading) {
-          Text("Filled").font(.caption).foregroundStyle(.secondary)
-          IronTextField("Filled style", text: $text2, style: .filled)
-        }
+    VStack(alignment: .leading) {
+      Text("Filled").font(.caption).foregroundStyle(.secondary)
+      IronTextField("Filled style", text: $text2, style: .filled)
+    }
 
-        VStack(alignment: .leading) {
-          Text("Underlined").font(.caption).foregroundStyle(.secondary)
-          IronTextField("Underlined style", text: $text3, style: .underlined)
-        }
-      }
-      .padding()
+    VStack(alignment: .leading) {
+      Text("Underlined").font(.caption).foregroundStyle(.secondary)
+      IronTextField("Underlined style", text: $text3, style: .underlined)
     }
   }
-
-  return Demo()
+  .padding()
 }
 
 #Preview("IronTextField - Sizes") {
-  struct Demo: View {
-    @State private var text = ""
+  @Previewable @State var text = ""
 
-    var body: some View {
-      VStack(spacing: 16) {
-        IronTextField("Small", text: $text, size: .small)
-        IronTextField("Medium", text: $text, size: .medium)
-        IronTextField("Large", text: $text, size: .large)
-      }
-      .padding()
-    }
+  return VStack(spacing: 16) {
+    IronTextField("Small", text: $text, size: .small)
+    IronTextField("Medium", text: $text, size: .medium)
+    IronTextField("Large", text: $text, size: .large)
   }
-
-  return Demo()
+  .padding()
 }
 
 #Preview("IronTextField - States") {
-  struct Demo: View {
-    @State private var normal = ""
-    @State private var success = "valid@email.com"
-    @State private var error = "invalid"
+  @Previewable @State var normal = ""
+  @Previewable @State var success = "valid@email.com"
+  @Previewable @State var error = "invalid"
 
-    var body: some View {
-      VStack(spacing: 16) {
-        IronTextField("Normal", text: $normal, state: .normal)
-        IronTextField("Success", text: $success, state: .success)
-        IronTextField("Error", text: $error, state: .error("Please enter a valid email"))
-      }
-      .padding()
-    }
+  return VStack(spacing: 16) {
+    IronTextField("Normal", text: $normal, state: .normal)
+    IronTextField("Success", text: $success, state: .success)
+    IronTextField("Error", text: $error, state: .error("Please enter a valid email"))
   }
-
-  return Demo()
+  .padding()
 }
 
 #Preview("IronTextField - With Icons") {
-  struct Demo: View {
-    @State private var email = ""
-    @State private var search = ""
-    @State private var password = ""
-    @State private var showPassword = false
+  @Previewable @State var email = ""
+  @Previewable @State var search = ""
+  @Previewable @State var password = ""
+  @Previewable @State var showPassword = false
 
-    var body: some View {
-      VStack(spacing: 16) {
-        IronTextField("Email", text: $email, leading: {
-          Image(systemName: "envelope")
-        })
+  return VStack(spacing: 16) {
+    IronTextField("Email", text: $email, leading: {
+      Image(systemName: "envelope")
+    })
 
-        IronTextField("Search", text: $search, leading: {
-          Image(systemName: "magnifyingglass")
-        }, trailing: {
-          if !search.isEmpty {
-            Button {
-              search = ""
-            } label: {
-              Image(systemName: "xmark.circle.fill")
-            }
-            .buttonStyle(.plain)
-          }
-        })
-
-        IronTextField("Password", text: $password, leading: {
-          Image(systemName: "lock")
-        }, trailing: {
-          Button {
-            showPassword.toggle()
-          } label: {
-            Image(systemName: showPassword ? "eye.slash" : "eye")
-          }
-          .buttonStyle(.plain)
-        })
+    IronTextField("Search", text: $search, leading: {
+      Image(systemName: "magnifyingglass")
+    }, trailing: {
+      if !search.isEmpty {
+        Button {
+          search = ""
+        } label: {
+          Image(systemName: "xmark.circle.fill")
+        }
+        .buttonStyle(.plain)
       }
-      .padding()
-    }
-  }
+    })
 
-  return Demo()
+    IronTextField("Password", text: $password, leading: {
+      Image(systemName: "lock")
+    }, trailing: {
+      Button {
+        showPassword.toggle()
+      } label: {
+        Image(systemName: showPassword ? "eye.slash" : "eye")
+      }
+      .buttonStyle(.plain)
+    })
+  }
+  .padding()
 }
 
 #Preview("IronTextField - Disabled") {
@@ -564,34 +534,28 @@ public enum IronTextFieldState: Sendable, Equatable {
 }
 
 #Preview("IronTextField - Form Example") {
-  struct Demo: View {
-    @State private var firstName = ""
-    @State private var lastName = ""
-    @State private var email = ""
-    @State private var phone = ""
+  @Previewable @State var firstName = ""
+  @Previewable @State var lastName = ""
+  @Previewable @State var email = ""
+  @Previewable @State var phone = ""
 
-    var body: some View {
-      VStack(spacing: 16) {
-        HStack(spacing: 12) {
-          IronTextField("First name", text: $firstName)
-          IronTextField("Last name", text: $lastName)
-        }
+  return VStack(spacing: 16) {
+    HStack(spacing: 12) {
+      IronTextField("First name", text: $firstName)
+      IronTextField("Last name", text: $lastName)
+    }
 
-        IronTextField("Email", text: $email, leading: {
-          Image(systemName: "envelope")
-        })
+    IronTextField("Email", text: $email, leading: {
+      Image(systemName: "envelope")
+    })
 
-        IronTextField("Phone", text: $phone, leading: {
-          Image(systemName: "phone")
-        })
+    IronTextField("Phone", text: $phone, leading: {
+      Image(systemName: "phone")
+    })
 
-        IronButton("Submit", isFullWidth: true) {
-          // Submit action
-        }
-      }
-      .padding()
+    IronButton("Submit", isFullWidth: true) {
+      // Submit action
     }
   }
-
-  return Demo()
+  .padding()
 }

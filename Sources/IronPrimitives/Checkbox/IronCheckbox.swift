@@ -321,126 +321,96 @@ public enum IronCheckboxColor: Sendable {
 // MARK: - Previews
 
 #Preview("IronCheckbox - Basic") {
-  struct Demo: View {
-    @State private var checked1 = false
-    @State private var checked2 = true
+  @Previewable @State var checked1 = false
+  @Previewable @State var checked2 = true
 
-    var body: some View {
-      VStack(spacing: 24) {
-        IronCheckbox(isChecked: $checked1)
-        IronCheckbox(isChecked: $checked2)
-      }
-      .padding()
-    }
+  return VStack(spacing: 24) {
+    IronCheckbox(isChecked: $checked1)
+    IronCheckbox(isChecked: $checked2)
   }
-
-  return Demo()
+  .padding()
 }
 
 #Preview("IronCheckbox - With Labels") {
-  struct Demo: View {
-    @State private var terms = false
-    @State private var privacy = false
-    @State private var newsletter = true
+  @Previewable @State var terms = false
+  @Previewable @State var privacy = false
+  @Previewable @State var newsletter = true
 
-    var body: some View {
-      VStack(alignment: .leading, spacing: 16) {
-        IronCheckbox("Accept Terms of Service", isChecked: $terms)
-        IronCheckbox("Accept Privacy Policy", isChecked: $privacy)
-        IronCheckbox("Subscribe to Newsletter", isChecked: $newsletter)
-      }
-      .padding()
-    }
+  return VStack(alignment: .leading, spacing: 16) {
+    IronCheckbox("Accept Terms of Service", isChecked: $terms)
+    IronCheckbox("Accept Privacy Policy", isChecked: $privacy)
+    IronCheckbox("Subscribe to Newsletter", isChecked: $newsletter)
   }
-
-  return Demo()
+  .padding()
 }
 
 #Preview("IronCheckbox - Custom Labels") {
-  struct Demo: View {
-    @State private var email = true
-    @State private var push = false
-    @State private var sms = false
+  @Previewable @State var email = true
+  @Previewable @State var push = false
+  @Previewable @State var sms = false
 
-    var body: some View {
-      VStack(alignment: .leading, spacing: 16) {
-        IronCheckbox(isChecked: $email) {
-          VStack(alignment: .leading) {
-            Text("Email Notifications")
-              .fontWeight(.medium)
-            Text("Receive updates via email")
-              .font(.caption)
-              .foregroundStyle(.secondary)
-          }
-        }
-
-        IronCheckbox(isChecked: $push) {
-          VStack(alignment: .leading) {
-            Text("Push Notifications")
-              .fontWeight(.medium)
-            Text("Get instant alerts on your device")
-              .font(.caption)
-              .foregroundStyle(.secondary)
-          }
-        }
-
-        IronCheckbox(isChecked: $sms) {
-          VStack(alignment: .leading) {
-            Text("SMS Notifications")
-              .fontWeight(.medium)
-            Text("Receive text message alerts")
-              .font(.caption)
-              .foregroundStyle(.secondary)
-          }
-        }
+  return VStack(alignment: .leading, spacing: 16) {
+    IronCheckbox(isChecked: $email) {
+      VStack(alignment: .leading) {
+        Text("Email Notifications")
+          .fontWeight(.medium)
+        Text("Receive updates via email")
+          .font(.caption)
+          .foregroundStyle(.secondary)
       }
-      .padding()
+    }
+
+    IronCheckbox(isChecked: $push) {
+      VStack(alignment: .leading) {
+        Text("Push Notifications")
+          .fontWeight(.medium)
+        Text("Get instant alerts on your device")
+          .font(.caption)
+          .foregroundStyle(.secondary)
+      }
+    }
+
+    IronCheckbox(isChecked: $sms) {
+      VStack(alignment: .leading) {
+        Text("SMS Notifications")
+          .fontWeight(.medium)
+        Text("Receive text message alerts")
+          .font(.caption)
+          .foregroundStyle(.secondary)
+      }
     }
   }
-
-  return Demo()
+  .padding()
 }
 
 #Preview("IronCheckbox - Sizes") {
-  struct Demo: View {
-    @State private var small = true
-    @State private var medium = true
-    @State private var large = true
+  @Previewable @State var small = true
+  @Previewable @State var medium = true
+  @Previewable @State var large = true
 
-    var body: some View {
-      VStack(alignment: .leading, spacing: 24) {
-        IronCheckbox("Small", isChecked: $small, size: .small)
-        IronCheckbox("Medium", isChecked: $medium, size: .medium)
-        IronCheckbox("Large", isChecked: $large, size: .large)
-      }
-      .padding()
-    }
+  return VStack(alignment: .leading, spacing: 24) {
+    IronCheckbox("Small", isChecked: $small, size: .small)
+    IronCheckbox("Medium", isChecked: $medium, size: .medium)
+    IronCheckbox("Large", isChecked: $large, size: .large)
   }
-
-  return Demo()
+  .padding()
 }
 
 #Preview("IronCheckbox - Colors") {
-  struct Demo: View {
-    @State private var primary = true
-    @State private var success = true
-    @State private var warning = true
-    @State private var error = true
-    @State private var custom = true
+  @Previewable @State var primary = true
+  @Previewable @State var success = true
+  @Previewable @State var warning = true
+  @Previewable @State var error = true
+  @Previewable @State var custom = true
 
-    var body: some View {
-      VStack(alignment: .leading, spacing: 16) {
-        IronCheckbox("Primary", isChecked: $primary, color: .primary)
-        IronCheckbox("Success", isChecked: $success, color: .success)
-        IronCheckbox("Warning", isChecked: $warning, color: .warning)
-        IronCheckbox("Error", isChecked: $error, color: .error)
-        IronCheckbox("Custom", isChecked: $custom, color: .custom(.purple))
-      }
-      .padding()
-    }
+  return VStack(alignment: .leading, spacing: 16) {
+    IronCheckbox("Primary", isChecked: $primary, color: .primary)
+    IronCheckbox("Success", isChecked: $success, color: .success)
+    IronCheckbox("Warning", isChecked: $warning, color: .warning)
+    IronCheckbox("Error", isChecked: $error, color: .error)
+    IronCheckbox("Custom", isChecked: $custom, color: .custom(.purple))
   }
-
-  return Demo()
+  .padding()
 }
 
 #Preview("IronCheckbox - Disabled") {
@@ -455,36 +425,30 @@ public enum IronCheckboxColor: Sendable {
 }
 
 #Preview("IronCheckbox - Form Example") {
-  struct Demo: View {
-    @State private var item1 = false
-    @State private var item2 = true
-    @State private var item3 = false
-    @State private var item4 = true
-    @State private var item5 = false
+  @Previewable @State var item1 = false
+  @Previewable @State var item2 = true
+  @Previewable @State var item3 = false
+  @Previewable @State var item4 = true
+  @Previewable @State var item5 = false
 
-    var body: some View {
-      VStack(alignment: .leading, spacing: 0) {
-        Text("Select Interests")
-          .font(.headline)
-          .padding(.bottom)
+  return VStack(alignment: .leading, spacing: 0) {
+    Text("Select Interests")
+      .font(.headline)
+      .padding(.bottom)
 
-        VStack(alignment: .leading, spacing: 12) {
-          IronCheckbox("Technology", isChecked: $item1)
-          IronCheckbox("Design", isChecked: $item2)
-          IronCheckbox("Business", isChecked: $item3)
-          IronCheckbox("Science", isChecked: $item4)
-          IronCheckbox("Arts", isChecked: $item5)
-        }
+    VStack(alignment: .leading, spacing: 12) {
+      IronCheckbox("Technology", isChecked: $item1)
+      IronCheckbox("Design", isChecked: $item2)
+      IronCheckbox("Business", isChecked: $item3)
+      IronCheckbox("Science", isChecked: $item4)
+      IronCheckbox("Arts", isChecked: $item5)
+    }
 
-        Spacer().frame(height: 24)
+    Spacer().frame(height: 24)
 
-        IronButton("Continue", isFullWidth: true) {
-          // Continue action
-        }
-      }
-      .padding()
+    IronButton("Continue", isFullWidth: true) {
+      // Continue action
     }
   }
-
-  return Demo()
+  .padding()
 }

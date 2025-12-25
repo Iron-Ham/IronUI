@@ -241,32 +241,26 @@ private enum PreviewTab: String, CaseIterable, CustomStringConvertible {
 }
 
 #Preview("IronSegmentedControl - Custom Labels") {
-  struct Demo: View {
-    @State private var selection = PreviewTab.posts
+  @Previewable @State var selection = PreviewTab.posts
 
-    var body: some View {
-      IronSegmentedControl(
-        selection: $selection,
-        options: PreviewTab.allCases,
-      ) { tab in
-        HStack(spacing: 4) {
-          Image(systemName: iconName(for: tab))
-          Text(tab.rawValue.capitalized)
-        }
-      }
-      .padding()
-    }
-
-    func iconName(for tab: PreviewTab) -> String {
-      switch tab {
-      case .posts: "doc.text"
-      case .photos: "photo"
-      case .videos: "video"
-      }
+  func iconName(for tab: PreviewTab) -> String {
+    switch tab {
+    case .posts: "doc.text"
+    case .photos: "photo"
+    case .videos: "video"
     }
   }
 
-  return Demo()
+  return IronSegmentedControl(
+    selection: $selection,
+    options: PreviewTab.allCases,
+  ) { tab in
+    HStack(spacing: 4) {
+      Image(systemName: iconName(for: tab))
+      Text(tab.rawValue.capitalized)
+    }
+  }
+  .padding()
 }
 
 #Preview("IronSegmentedControl - Sizes") {
@@ -304,64 +298,52 @@ private enum PreviewTab: String, CaseIterable, CustomStringConvertible {
 }
 
 #Preview("IronSegmentedControl - Two Options") {
-  struct Demo: View {
-    enum Mode: String, CaseIterable, CustomStringConvertible {
-      case list, grid
+  enum Mode: String, CaseIterable, CustomStringConvertible {
+    case list, grid
 
-      var description: String {
-        rawValue.capitalized
-      }
-    }
-
-    @State private var mode = Mode.list
-
-    var body: some View {
-      IronSegmentedControl(
-        selection: $mode,
-        options: Mode.allCases,
-      ) { mode in
-        HStack(spacing: 4) {
-          Image(systemName: mode == .list ? "list.bullet" : "square.grid.2x2")
-          Text(mode.rawValue.capitalized)
-        }
-      }
-      .frame(width: 200)
-      .padding()
+    var description: String {
+      rawValue.capitalized
     }
   }
 
-  return Demo()
+  @Previewable @State var mode = Mode.list
+
+  return IronSegmentedControl(
+    selection: $mode,
+    options: Mode.allCases,
+  ) { mode in
+    HStack(spacing: 4) {
+      Image(systemName: mode == .list ? "list.bullet" : "square.grid.2x2")
+      Text(mode.rawValue.capitalized)
+    }
+  }
+  .frame(width: 200)
+  .padding()
 }
 
 #if os(iOS)
 #Preview("IronSegmentedControl - In Context") {
-  struct Demo: View {
-    @State private var selection = PreviewTab.posts
+  @Previewable @State var selection = PreviewTab.posts
 
-    var body: some View {
-      VStack(spacing: 0) {
-        IronSegmentedControl(
-          selection: $selection,
-          options: PreviewTab.allCases,
-        )
-        .padding()
+  return VStack(spacing: 0) {
+    IronSegmentedControl(
+      selection: $selection,
+      options: PreviewTab.allCases,
+    )
+    .padding()
 
-        Divider()
+    Divider()
 
-        TabView(selection: $selection) {
-          ForEach(PreviewTab.allCases, id: \.self) { tab in
-            VStack {
-              IronText("\(tab.rawValue.capitalized) Content", style: .titleMedium, color: .primary)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .tag(tab)
-          }
+    TabView(selection: $selection) {
+      ForEach(PreviewTab.allCases, id: \.self) { tab in
+        VStack {
+          IronText("\(tab.rawValue.capitalized) Content", style: .titleMedium, color: .primary)
         }
-        .tabViewStyle(.page(indexDisplayMode: .never))
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .tag(tab)
       }
     }
+    .tabViewStyle(.page(indexDisplayMode: .never))
   }
-
-  return Demo()
 }
 #endif
