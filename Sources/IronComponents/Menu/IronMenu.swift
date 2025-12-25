@@ -282,7 +282,7 @@ public struct IronMenuSection<Content: View>: View {
     Section {
       content
     } header: {
-      Text(header)
+      IronText(header, style: .labelSmall, color: .secondary)
     }
   }
 
@@ -342,7 +342,7 @@ public struct IronMenuPicker<Option: Hashable, Label: View>: View {
             labelBuilder(option)
             Spacer()
             if option == selection {
-              Image(systemName: "checkmark")
+              IronIcon(systemName: "checkmark", size: .xSmall, color: .primary)
             }
           }
         }

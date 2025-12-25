@@ -331,8 +331,10 @@ struct IronSelectCell: View {
   var body: some View {
     if isEditing {
       Menu {
-        Button("Clear") {
+        Button {
           value = nil
+        } label: {
+          IronText("Clear", style: .bodyMedium, color: .primary)
         }
         Divider()
         ForEach(options) { option in
@@ -343,9 +345,9 @@ struct IronSelectCell: View {
               Circle()
                 .fill(colorForOption(option))
                 .frame(width: 8, height: 8)
-              Text(option.name)
+              IronText(option.name, style: .bodyMedium, color: .primary)
               if value == option.id {
-                Image(systemName: "checkmark")
+                IronIcon(systemName: "checkmark", size: .xSmall, color: .primary)
               }
             }
           }
@@ -426,9 +428,9 @@ struct IronMultiSelectCell: View {
               Circle()
                 .fill(colorForOption(option))
                 .frame(width: 8, height: 8)
-              Text(option.name)
+              IronText(option.name, style: .bodyMedium, color: .primary)
               if value.contains(option.id) {
-                Image(systemName: "checkmark")
+                IronIcon(systemName: "checkmark", size: .xSmall, color: .primary)
               }
             }
           }
