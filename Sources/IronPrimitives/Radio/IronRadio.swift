@@ -133,7 +133,8 @@ public struct IronRadio<Value: Hashable, Label: View>: View {
         label
           .opacity(isEnabled ? 1.0 : 0.5)
       }
-      .frame(minHeight: minTouchTarget)
+      .frame(minWidth: minTouchTarget, minHeight: minTouchTarget)
+      .contentShape(Rectangle())
     }
     .buttonStyle(.plain)
     .disabled(!isEnabled)

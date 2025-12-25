@@ -144,13 +144,14 @@ public struct IronMenuLabel: View {
     }
     .padding(.horizontal, theme.spacing.md)
     .padding(.vertical, theme.spacing.sm)
-    .frame(minHeight: minTouchTarget)
+    .frame(minWidth: minTouchTarget, minHeight: minTouchTarget)
     .background(theme.colors.surface)
     .clipShape(RoundedRectangle(cornerRadius: theme.radii.md))
     .overlay {
       RoundedRectangle(cornerRadius: theme.radii.md)
         .strokeBorder(theme.colors.onSurface.opacity(0.3), lineWidth: 1)
     }
+    .contentShape(RoundedRectangle(cornerRadius: theme.radii.md))
     .accessibilityElement(children: .combine)
     .accessibilityHint("Opens menu")
     .accessibilityAddTraits(.isButton)
