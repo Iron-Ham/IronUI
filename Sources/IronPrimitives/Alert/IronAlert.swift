@@ -282,7 +282,7 @@ public struct IronAlert<Icon: View, Actions: View>: View {
   // MARK: Public
 
   public var body: some View {
-    let alertView = HStack(alignment: .top, spacing: theme.spacing.sm) {
+    HStack(alignment: .top, spacing: theme.spacing.sm) {
       // Icon
       iconView
         .padding(.top, 2)
@@ -294,7 +294,7 @@ public struct IronAlert<Icon: View, Actions: View>: View {
             .fontWeight(.semibold)
         }
 
-        IronText(message, style: .bodyMedium, color: .secondary)
+        IronText(message, style: .bodyMedium, color: .onSurface)
 
         if let actions {
           HStack(spacing: theme.spacing.sm) {
@@ -308,7 +308,7 @@ public struct IronAlert<Icon: View, Actions: View>: View {
       // Dismiss button
       if let onDismiss {
         Button {
-          withAnimation(reduceMotion ? nil : theme.animation.snappy) {
+          withAnimation(shouldAnimate ? theme.animation.snappy : nil) {
             onDismiss()
           }
           IronLogger.ui.debug("IronAlert dismissed", metadata: ["variant": .string("\(variant)")])
@@ -316,7 +316,8 @@ public struct IronAlert<Icon: View, Actions: View>: View {
           IronIcon(systemName: "xmark", size: .xSmall, color: .secondary)
             .frame(width: 20, height: 20)
             .background(theme.colors.onSurface.opacity(0.08), in: Circle())
-            .frame(width: minTouchTarget, height: minTouchTarget)
+            .frame(minWidth: minTouchTarget, minHeight: minTouchTarget)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Dismiss")
@@ -352,20 +353,14 @@ public struct IronAlert<Icon: View, Actions: View>: View {
         .strokeBorder(borderColor, lineWidth: borderWidth)
     }
     .accessibilityElement(children: .combine)
-    .accessibilityLabel(accessibilityPrimaryLabel)
-    .accessibilityValue(accessibilitySecondaryValue)
-
-    if title != nil {
-      alertView.accessibilityHint(Text(accessibilityMessage))
-    } else {
-      alertView
-    }
+    .accessibilityLabel(accessibilityLabel)
   }
 
   // MARK: Private
 
   @Environment(\.ironTheme) private var theme
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
+  @Environment(\.ironSkipEntranceAnimations) private var skipEntranceAnimations
 
   private let title: LocalizedStringKey?
   private let message: LocalizedStringKey
@@ -424,7 +419,7 @@ public struct IronAlert<Icon: View, Actions: View>: View {
     foregroundColor.opacity(0.25)
   }
 
-  private var accessibilityMessage: String {
+  private var variantAccessibilityLabel: String {
     switch variant {
     case .info: "Information"
     case .success: "Success"
@@ -433,18 +428,19 @@ public struct IronAlert<Icon: View, Actions: View>: View {
     }
   }
 
-  private var accessibilityPrimaryLabel: Text {
+  /// Comprehensive accessibility label that announces variant, title, and message.
+  ///
+  /// Format: "Warning: Title. Message" or "Information: Message"
+  private var accessibilityLabel: Text {
     if let title {
-      return Text(title)
+      Text("\(variantAccessibilityLabel): \(Text(title)). \(Text(message))")
+    } else {
+      Text("\(variantAccessibilityLabel): \(Text(message))")
     }
-    return Text(message)
   }
 
-  private var accessibilitySecondaryValue: Text {
-    if title != nil {
-      return Text(message)
-    }
-    return Text(accessibilityMessage)
+  private var shouldAnimate: Bool {
+    !reduceMotion && !skipEntranceAnimations
   }
 }
 

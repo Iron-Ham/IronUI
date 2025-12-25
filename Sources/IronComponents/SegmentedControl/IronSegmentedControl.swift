@@ -89,14 +89,14 @@ public struct IronSegmentedControl<Option: Hashable, Label: View>: View {
           .frame(width: segmentWidth - indicatorPadding * 2)
           .padding(indicatorPadding)
           .offset(x: selectedIndex * segmentWidth)
-          .animation(theme.animation.bouncy, value: selection)
+          .animation(shouldAnimate ? theme.animation.bouncy : nil, value: selection)
           .accessibilityHidden(true)
 
         // Segments
         HStack(spacing: 0) {
           ForEach(Array(options.enumerated()), id: \.offset) { index, option in
             Button {
-              withAnimation(theme.animation.bouncy) {
+              withAnimation(shouldAnimate ? theme.animation.bouncy : nil) {
                 selection = option
               }
               IronLogger.ui.debug(
@@ -127,6 +127,8 @@ public struct IronSegmentedControl<Option: Hashable, Label: View>: View {
   // MARK: Private
 
   @Environment(\.ironTheme) private var theme
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+  @Environment(\.ironSkipEntranceAnimations) private var skipEntranceAnimations
   @Namespace private var namespace
 
   @Binding private var selection: Option
@@ -174,6 +176,10 @@ public struct IronSegmentedControl<Option: Hashable, Label: View>: View {
     case .medium: theme.typography.labelMedium
     case .large: theme.typography.labelLarge
     }
+  }
+
+  private var shouldAnimate: Bool {
+    !reduceMotion && !skipEntranceAnimations
   }
 }
 
