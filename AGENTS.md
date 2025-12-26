@@ -46,19 +46,49 @@ Exceptions: preview-only code for brevity.
 - Use `@Previewable` for state in previews.
 - Name previews descriptively (e.g., `"IronButton - Variants"`).
 
-## Developer CLI
+## Project Management: Tuist
 
-Use `swift run ironui-cli <command>` for all development tasks. Prefer the CLI over direct commands or shell scripts.
+This project uses [Tuist](https://tuist.dev) for project generation. Tuist enables:
+- Warnings-as-errors enforcement (not possible with SPM alone)
+- Unified testing across platforms
+- Better Xcode project management
+
+### Getting Started with Tuist
+
+```bash
+# Install dependencies and generate Xcode project
+tuist install
+tuist generate
+
+# Open the generated workspace
+open IronUI.xcworkspace
+```
+
+### Tuist Commands
 
 | Command | Purpose |
 |---------|---------|
-| `build` | Build the package (`--config release` for release) |
-| `clean` | Remove build artifacts (`--all` includes Package.resolved) |
+| `tuist install` | Fetch and resolve dependencies |
+| `tuist generate` | Generate Xcode workspace and projects |
+| `tuist build IronUI --platform macos` | Build for macOS |
+| `tuist build IronUI --platform ios` | Build for iOS |
+| `tuist test --platform macos` | Run all tests on macOS |
+| `tuist test --platform ios` | Run all tests on iOS |
+| `tuist clean` | Clean Tuist cache |
+
+## Developer CLI
+
+Use `swift run ironui-cli <command>` for development tasks. The CLI wraps Tuist commands for convenience.
+
+| Command | Purpose |
+|---------|---------|
+| `build` | Build the package (`--platform macos/ios`, `--spm` for SPM mode) |
+| `clean` | Remove build artifacts and Tuist cache (`--all` for full clean) |
 | `docs` | Generate documentation (`--preview` for live server) |
 | `export-snapshots` | Export snapshots to DocC Resources |
 | `format` | Format Swift sources (`--dry-run` to check only) |
-| `snapshots` | Run snapshot tests on macOS + iOS (`--record` to update baselines) |
-| `test` | Run unit tests (`--filter`, `--parallel`, `--verbose`) |
+| `snapshots` | Run snapshot tests (`--platform`, `--record`, `--spm`) |
+| `test` | Run unit tests (`--platform macos/ios`, `--spm` for SPM mode) |
 
 ## Testing
 

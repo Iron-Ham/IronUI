@@ -13,11 +13,17 @@ extension IronUICLI {
       abstract: "Runs the full IronUI test suite.",
     )
 
+    @Option(
+      name: .long,
+      help: "Platform to test on: macos or ios.",
+    )
+    var platform = "macos"
+
     @Flag(
       name: .long,
-      help: "Enable parallel test execution.",
+      help: "Use SPM test instead of Tuist (excludes snapshot tests).",
     )
-    var parallel = false
+    var spm = false
 
     @Flag(
       name: .long,
@@ -26,22 +32,46 @@ extension IronUICLI {
     var verbose = false
 
     func run() async throws {
-      var arguments = ["swift", "test"]
-
-      if parallel {
-        arguments.append("--parallel")
-      }
-
-      if verbose {
-        arguments.append("--verbose")
-      }
-
       let description = buildDescription()
-      try await runner.runTask(
-        description,
-        command: "/usr/bin/env",
-        arguments: arguments,
-      )
+
+      if spm {
+        // SPM mode - excludes snapshot tests
+        var arguments = ["swift", "test"]
+
+        if verbose {
+          arguments.append("--verbose")
+        }
+
+        try await runner.runTask(
+          description,
+          command: "/usr/bin/env",
+          arguments: arguments,
+        )
+      } else {
+        // Tuist mode - generate and test
+        try await runner.runTask(
+          "Generating Xcode project",
+          command: "/usr/bin/env",
+          arguments: ["tuist", "generate"],
+        )
+
+        var arguments = [
+          "tuist",
+          "test",
+          "--platform",
+          platform,
+        ]
+
+        if verbose {
+          arguments.append("--verbose")
+        }
+
+        try await runner.runTask(
+          description,
+          command: "/usr/bin/env",
+          arguments: arguments,
+        )
+      }
 
       noora.success(.alert("Tests passed", takeaways: ["\(description)"]))
     }
@@ -51,8 +81,10 @@ extension IronUICLI {
     private func buildDescription() -> String {
       var parts = ["Running all tests"]
 
-      if parallel {
-        parts.append("(parallel)")
+      parts.append("(\(platform))")
+
+      if spm {
+        parts.append("[SPM]")
       }
 
       return parts.joined(separator: " ")

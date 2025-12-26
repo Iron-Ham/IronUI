@@ -16,3 +16,10 @@ CLAUDE.local.md
 
 # Local planning and issue drafts
 /Issues
+
+# Tuist generated files
+*.xcodeproj
+*.xcworkspace
+Derived/
+.tuist-bin/
+Tuist/.build/

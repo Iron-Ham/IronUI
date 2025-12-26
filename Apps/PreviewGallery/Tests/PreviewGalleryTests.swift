@@ -1,14 +1,7 @@
-//
-//  SampleTests.swift
-//  SampleTests
-//
-//  Created by Hesham Salman on 12/22/25.
-//
-
 import Testing
-@testable import Sample
+@testable import PreviewGalleryApp
 
-struct SampleTests {
+struct PreviewGalleryTests {
 
   @Test
   func example() {
