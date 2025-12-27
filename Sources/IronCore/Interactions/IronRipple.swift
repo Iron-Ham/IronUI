@@ -24,13 +24,13 @@ public struct IronRippleModifier: ViewModifier {
   /// Creates a ripple modifier.
   ///
   /// - Parameters:
-  ///   - color: The ripple color. Defaults to a subtle gray.
+  ///   - color: The ripple color. If `nil`, uses a theme-derived color.
   ///   - duration: How long the ripple animation lasts.
   public init(
-    color: Color = Color.primary.opacity(0.12),
+    color: Color? = nil,
     duration: Double = 0.5,
   ) {
-    self.color = color
+    customColor = color
     self.duration = duration
   }
 
@@ -39,14 +39,31 @@ public struct IronRippleModifier: ViewModifier {
   public func body(content: Content) -> some View {
     content
       .overlay {
-        GeometryReader { _ in
+        GeometryReader { geometry in
           ZStack {
-            ForEach(ripples) { ripple in
-              Circle()
-                .fill(color)
-                .frame(width: ripple.size, height: ripple.size)
-                .position(ripple.position)
-                .opacity(ripple.opacity)
+            // Reduce motion: show a brief flash overlay instead of expanding ripple
+            if reduceMotion {
+              if flashPosition != nil {
+                Rectangle()
+                  .fill(effectiveColor)
+                  .position(
+                    x: geometry.size.width / 2,
+                    y: geometry.size.height / 2,
+                  )
+                  .frame(
+                    width: geometry.size.width,
+                    height: geometry.size.height,
+                  )
+                  .opacity(flashOpacity)
+              }
+            } else {
+              ForEach(ripples) { ripple in
+                Circle()
+                  .fill(effectiveColor)
+                  .frame(width: ripple.size, height: ripple.size)
+                  .position(ripple.position)
+                  .opacity(ripple.opacity)
+              }
             }
           }
           .allowsHitTesting(false)
@@ -59,7 +76,11 @@ public struct IronRippleModifier: ViewModifier {
           .onChanged { value in
             if !isDragging {
               isDragging = true
-              triggerRipple(at: value.location)
+              if reduceMotion {
+                triggerFlash(at: value.location)
+              } else {
+                triggerRipple(at: value.location)
+              }
             }
           }
           .onEnded { _ in
@@ -77,11 +98,21 @@ public struct IronRippleModifier: ViewModifier {
     var opacity: Double
   }
 
+  @Environment(\.ironTheme) private var theme
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
   @State private var ripples = [Ripple]()
   @State private var isDragging = false
+  @State private var flashPosition: CGPoint?
+  @State private var flashOpacity: Double = 0
 
-  private let color: Color
+  private let customColor: Color?
   private let duration: Double
+
+  /// The effective color to use, preferring custom color over theme-derived color.
+  private var effectiveColor: Color {
+    customColor ?? theme.colors.primary.opacity(0.12)
+  }
 
   private func triggerRipple(at position: CGPoint) {
     let ripple = Ripple(position: position, size: 0, opacity: 1)
@@ -100,6 +131,21 @@ public struct IronRippleModifier: ViewModifier {
       ripples.removeAll { $0.id == ripple.id }
     }
   }
+
+  private func triggerFlash(at position: CGPoint) {
+    flashPosition = position
+    flashOpacity = 1
+
+    // Brief flash without animation for reduce motion
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+      flashOpacity = 0
+    }
+
+    // Cleanup
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+      flashPosition = nil
+    }
+  }
 }
 
 // MARK: - View Extension
@@ -108,7 +154,8 @@ extension View {
   /// Adds a ripple effect that emanates from touch points.
   ///
   /// The ripple provides subtle tactile feedback, making taps feel
-  /// more responsive and satisfying.
+  /// more responsive and satisfying. Automatically uses theme-derived
+  /// colors and respects the Reduce Motion accessibility setting.
   ///
   /// ```swift
   /// Button("Action") { }
@@ -120,11 +167,11 @@ extension View {
   /// ```
   ///
   /// - Parameters:
-  ///   - color: The ripple color.
+  ///   - color: The ripple color. If `nil`, uses a theme-derived color.
   ///   - duration: Animation duration in seconds.
   /// - Returns: A view with ripple effect applied.
   public func ironRipple(
-    color: Color = Color.primary.opacity(0.12),
+    color: Color? = nil,
     duration: Double = 0.5,
   ) -> some View {
     modifier(IronRippleModifier(color: color, duration: duration))
@@ -136,7 +183,8 @@ extension View {
 /// A sequin-like ripple effect with multiple dots.
 ///
 /// Creates a more elaborate ripple with scattered dots, similar to
-/// the sequin transformation effect in Family.
+/// the sequin transformation effect in Family. Automatically uses
+/// theme-derived colors and respects the Reduce Motion accessibility setting.
 ///
 /// ```swift
 /// QRCodeView()
@@ -146,11 +194,16 @@ public struct IronSequinRippleModifier: ViewModifier {
 
   // MARK: Lifecycle
 
+  /// Creates a sequin ripple modifier.
+  ///
+  /// - Parameters:
+  ///   - color: The dot color. If `nil`, uses a theme-derived color.
+  ///   - dotCount: Number of dots in the burst.
   public init(
-    color: Color = Color.primary.opacity(0.15),
+    color: Color? = nil,
     dotCount: Int = 12,
   ) {
-    self.color = color
+    customColor = color
     self.dotCount = dotCount
   }
 
@@ -159,14 +212,31 @@ public struct IronSequinRippleModifier: ViewModifier {
   public func body(content: Content) -> some View {
     content
       .overlay {
-        GeometryReader { _ in
+        GeometryReader { geometry in
           ZStack {
-            ForEach(dots) { dot in
-              Circle()
-                .fill(color)
-                .frame(width: dot.size, height: dot.size)
-                .position(dot.position)
-                .opacity(dot.opacity)
+            // Reduce motion: show a brief flash overlay instead of scattered dots
+            if reduceMotion {
+              if flashPosition != nil {
+                Rectangle()
+                  .fill(effectiveColor)
+                  .position(
+                    x: geometry.size.width / 2,
+                    y: geometry.size.height / 2,
+                  )
+                  .frame(
+                    width: geometry.size.width,
+                    height: geometry.size.height,
+                  )
+                  .opacity(flashOpacity)
+              }
+            } else {
+              ForEach(dots) { dot in
+                Circle()
+                  .fill(effectiveColor)
+                  .frame(width: dot.size, height: dot.size)
+                  .position(dot.position)
+                  .opacity(dot.opacity)
+              }
             }
           }
           .allowsHitTesting(false)
@@ -179,7 +249,11 @@ public struct IronSequinRippleModifier: ViewModifier {
           .onChanged { value in
             if !isDragging {
               isDragging = true
-              triggerSequins(at: value.location)
+              if reduceMotion {
+                triggerFlash(at: value.location)
+              } else {
+                triggerSequins(at: value.location)
+              }
             }
           }
           .onEnded { _ in
@@ -199,11 +273,21 @@ public struct IronSequinRippleModifier: ViewModifier {
     let distance: CGFloat
   }
 
+  @Environment(\.ironTheme) private var theme
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
   @State private var dots = [Dot]()
   @State private var isDragging = false
+  @State private var flashPosition: CGPoint?
+  @State private var flashOpacity: Double = 0
 
-  private let color: Color
+  private let customColor: Color?
   private let dotCount: Int
+
+  /// The effective color to use, preferring custom color over theme-derived color.
+  private var effectiveColor: Color {
+    customColor ?? theme.colors.primary.opacity(0.15)
+  }
 
   private func triggerSequins(at center: CGPoint) {
     // Create dots radiating outward
@@ -242,20 +326,36 @@ public struct IronSequinRippleModifier: ViewModifier {
       }
     }
   }
+
+  private func triggerFlash(at position: CGPoint) {
+    flashPosition = position
+    flashOpacity = 1
+
+    // Brief flash without animation for reduce motion
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+      flashOpacity = 0
+    }
+
+    // Cleanup
+    DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+      flashPosition = nil
+    }
+  }
 }
 
 extension View {
   /// Adds a sequin-like ripple effect with scattered dots.
   ///
   /// Creates a more elaborate feedback effect with multiple dots
-  /// radiating outward from the touch point.
+  /// radiating outward from the touch point. Automatically uses
+  /// theme-derived colors and respects the Reduce Motion accessibility setting.
   ///
   /// - Parameters:
-  ///   - color: The dot color.
+  ///   - color: The dot color. If `nil`, uses a theme-derived color.
   ///   - dotCount: Number of dots in the burst.
   /// - Returns: A view with sequin ripple applied.
   public func ironSequinRipple(
-    color: Color = Color.primary.opacity(0.15),
+    color: Color? = nil,
     dotCount: Int = 12,
   ) -> some View {
     modifier(IronSequinRippleModifier(color: color, dotCount: dotCount))
