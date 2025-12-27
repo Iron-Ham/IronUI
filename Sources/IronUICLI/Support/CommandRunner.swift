@@ -185,6 +185,8 @@ struct CommandRunner {
   // MARK: Private
 
   /// Wrapper to make non-Sendable values passable across concurrency boundaries.
+  /// Thread-safety: Access is serialized through the owning serial DispatchQueue.
+  // swiftlint:disable:next no_unchecked_sendable
   private struct UncheckedSendable<T>: @unchecked Sendable {
     init(_ value: T) {
       self.value = value
@@ -193,6 +195,8 @@ struct CommandRunner {
     let value: T
   }
 
+  /// Thread-safety: All mutable state is protected by NSLock.
+  // swiftlint:disable:next no_unchecked_sendable
   private final class StreamBuffer: @unchecked Sendable {
 
     // MARK: Lifecycle
@@ -246,6 +250,8 @@ struct CommandRunner {
 
   }
 
+  /// Thread-safety: All mutable state is accessed only from the serial queue.
+  // swiftlint:disable:next no_unchecked_sendable
   private final class LineBatcher: @unchecked Sendable {
 
     // MARK: Lifecycle

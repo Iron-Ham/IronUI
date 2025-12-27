@@ -17,18 +17,17 @@ extension IronUICLI {
     var dryRun = false
 
     func run() async throws {
+      let packageDir = FileManager.default.currentDirectoryPath
+      let swiftlintConfig = "\(packageDir)/.swiftlint.yml"
+
       var arguments = [
         "swift",
         "package",
         "--allow-writing-to-package-directory",
         "format",
-        // Exclude build directories and dependencies
-        "--exclude",
-        ".build",
-        "--exclude",
-        "Tuist/.build",
-        "--exclude",
-        "Derived",
+        // Use custom SwiftLint config with excluded paths
+        "--swift-lint-config",
+        swiftlintConfig,
       ]
 
       if dryRun {
@@ -36,13 +35,11 @@ extension IronUICLI {
         noora.info(.alert("Dry run mode", takeaways: ["No files will be modified"]))
       }
 
-      try await runner.runTask(
+      _ = try await runner.runTaskWithOutput(
         dryRun ? "Checking formatting" : "Formatting Swift files",
         command: "/usr/bin/env",
         arguments: arguments,
       )
-
-      noora.success(dryRun ? "Formatting check complete" : "Formatting complete")
     }
   }
 }
