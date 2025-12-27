@@ -337,8 +337,18 @@ extension Color {
     })
     #elseif canImport(AppKit)
     let nsColor = NSColor(name: nil) { appearance in
-      let isDark = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
-      let isHighContrast = NSWorkspace.shared.accessibilityDisplayShouldIncreaseContrast
+      // Check all four appearance variants for proper automatic updates
+      let allAppearances: [NSAppearance.Name] = [
+        .aqua,
+        .darkAqua,
+        .accessibilityHighContrastAqua,
+        .accessibilityHighContrastDarkAqua,
+      ]
+
+      let match = appearance.bestMatch(from: allAppearances)
+      let isDark = match == .darkAqua || match == .accessibilityHighContrastDarkAqua
+      let isHighContrast = match == .accessibilityHighContrastAqua
+        || match == .accessibilityHighContrastDarkAqua
 
       if isDark {
         return isHighContrast && highContrastDark != nil
