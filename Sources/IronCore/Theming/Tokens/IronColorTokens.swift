@@ -98,6 +98,13 @@ public protocol IronColorTokens: Sendable {
 // MARK: - IronDefaultColorTokens
 
 /// Default color tokens providing a modern, accessible color palette.
+///
+/// This palette automatically adapts to high contrast mode when the user enables
+/// "Increase Contrast" in system accessibility settings. In high contrast mode:
+/// - Borders become more prominent
+/// - Text colors have increased contrast
+/// - Dividers are more visible
+/// - Semantic colors are more saturated
 public struct IronDefaultColorTokens: IronColorTokens {
 
   // MARK: Lifecycle
@@ -107,7 +114,13 @@ public struct IronDefaultColorTokens: IronColorTokens {
   // MARK: Public
 
   public var primary: Color {
-    Color(red: 0.2, green: 0.4, blue: 0.9) // Confident blue
+    // High contrast: deeper blue for better visibility
+    Color(
+      light: Color(red: 0.2, green: 0.4, blue: 0.9),
+      dark: Color(red: 0.2, green: 0.4, blue: 0.9),
+      highContrastLight: Color(red: 0.1, green: 0.3, blue: 0.8),
+      highContrastDark: Color(red: 0.3, green: 0.5, blue: 1.0)
+    )
   }
 
   public var primaryVariant: Color {
@@ -127,15 +140,33 @@ public struct IronDefaultColorTokens: IronColorTokens {
   }
 
   public var success: Color {
-    Color(red: 0.2, green: 0.7, blue: 0.4)
+    // High contrast: more saturated green
+    Color(
+      light: Color(red: 0.2, green: 0.7, blue: 0.4),
+      dark: Color(red: 0.2, green: 0.7, blue: 0.4),
+      highContrastLight: Color(red: 0.1, green: 0.6, blue: 0.3),
+      highContrastDark: Color(red: 0.3, green: 0.8, blue: 0.5)
+    )
   }
 
   public var warning: Color {
-    Color(red: 0.95, green: 0.7, blue: 0.2)
+    // High contrast: deeper orange-yellow
+    Color(
+      light: Color(red: 0.95, green: 0.7, blue: 0.2),
+      dark: Color(red: 0.95, green: 0.7, blue: 0.2),
+      highContrastLight: Color(red: 0.85, green: 0.55, blue: 0.0),
+      highContrastDark: Color(red: 1.0, green: 0.75, blue: 0.3)
+    )
   }
 
   public var error: Color {
-    Color(red: 0.9, green: 0.25, blue: 0.3)
+    // High contrast: more saturated red
+    Color(
+      light: Color(red: 0.9, green: 0.25, blue: 0.3),
+      dark: Color(red: 0.9, green: 0.25, blue: 0.3),
+      highContrastLight: Color(red: 0.8, green: 0.1, blue: 0.15),
+      highContrastDark: Color(red: 1.0, green: 0.35, blue: 0.4)
+    )
   }
 
   public var info: Color {
@@ -143,11 +174,23 @@ public struct IronDefaultColorTokens: IronColorTokens {
   }
 
   public var background: Color {
-    Color(light: Color(white: 0.98), dark: Color(white: 0.08))
+    // High contrast: pure white/black for maximum contrast
+    Color(
+      light: Color(white: 0.98),
+      dark: Color(white: 0.08),
+      highContrastLight: .white,
+      highContrastDark: .black
+    )
   }
 
   public var surface: Color {
-    Color(light: .white, dark: Color(white: 0.12))
+    // High contrast: pure white/near-black
+    Color(
+      light: .white,
+      dark: Color(white: 0.12),
+      highContrastLight: .white,
+      highContrastDark: Color(white: 0.05)
+    )
   }
 
   public var surfaceElevated: Color {
@@ -163,11 +206,23 @@ public struct IronDefaultColorTokens: IronColorTokens {
   }
 
   public var onBackground: Color {
-    Color(light: Color(white: 0.1), dark: Color(white: 0.95))
+    // High contrast: pure black/white
+    Color(
+      light: Color(white: 0.1),
+      dark: Color(white: 0.95),
+      highContrastLight: .black,
+      highContrastDark: .white
+    )
   }
 
   public var onSurface: Color {
-    Color(light: Color(white: 0.1), dark: Color(white: 0.95))
+    // High contrast: pure black/white
+    Color(
+      light: Color(white: 0.1),
+      dark: Color(white: 0.95),
+      highContrastLight: .black,
+      highContrastDark: .white
+    )
   }
 
   public var onError: Color {
@@ -175,23 +230,53 @@ public struct IronDefaultColorTokens: IronColorTokens {
   }
 
   public var textPrimary: Color {
-    Color(light: Color(white: 0.1), dark: Color(white: 0.95))
+    // High contrast: pure black/white for maximum readability
+    Color(
+      light: Color(white: 0.1),
+      dark: Color(white: 0.95),
+      highContrastLight: .black,
+      highContrastDark: .white
+    )
   }
 
   public var textSecondary: Color {
-    Color(light: Color(white: 0.4), dark: Color(white: 0.6))
+    // High contrast: darker/lighter for better readability
+    Color(
+      light: Color(white: 0.4),
+      dark: Color(white: 0.6),
+      highContrastLight: Color(white: 0.25),
+      highContrastDark: Color(white: 0.8)
+    )
   }
 
   public var textDisabled: Color {
-    Color(light: Color(white: 0.6), dark: Color(white: 0.4))
+    // High contrast: more visible disabled text
+    Color(
+      light: Color(white: 0.6),
+      dark: Color(white: 0.4),
+      highContrastLight: Color(white: 0.45),
+      highContrastDark: Color(white: 0.55)
+    )
   }
 
   public var textPlaceholder: Color {
-    Color(light: Color(white: 0.5), dark: Color(white: 0.5))
+    // High contrast: more visible placeholder text
+    Color(
+      light: Color(white: 0.5),
+      dark: Color(white: 0.5),
+      highContrastLight: Color(white: 0.35),
+      highContrastDark: Color(white: 0.65)
+    )
   }
 
   public var border: Color {
-    Color(light: Color(white: 0.85), dark: Color(white: 0.25))
+    // High contrast: much more prominent borders
+    Color(
+      light: Color(white: 0.85),
+      dark: Color(white: 0.25),
+      highContrastLight: Color(white: 0.5),
+      highContrastDark: Color(white: 0.6)
+    )
   }
 
   public var borderFocused: Color {
@@ -199,34 +284,73 @@ public struct IronDefaultColorTokens: IronColorTokens {
   }
 
   public var divider: Color {
-    Color(light: Color(white: 0.9), dark: Color(white: 0.2))
+    // High contrast: more visible dividers
+    Color(
+      light: Color(white: 0.9),
+      dark: Color(white: 0.2),
+      highContrastLight: Color(white: 0.6),
+      highContrastDark: Color(white: 0.5)
+    )
   }
 }
 
-// MARK: - Color Extension for Light/Dark Mode
+// MARK: - Color Extension for Light/Dark Mode and High Contrast
 
 extension Color {
   /// Creates a color that automatically adapts to light and dark mode.
   init(light: Color, dark: Color) {
+    self.init(
+      light: light,
+      dark: dark,
+      highContrastLight: nil,
+      highContrastDark: nil
+    )
+  }
+
+  /// Creates a color that automatically adapts to light/dark mode and high contrast settings.
+  ///
+  /// When the user enables "Increase Contrast" in system accessibility settings,
+  /// the high contrast variants will be used instead of the standard colors.
+  ///
+  /// - Parameters:
+  ///   - light: The color to use in light mode with standard contrast.
+  ///   - dark: The color to use in dark mode with standard contrast.
+  ///   - highContrastLight: The color to use in light mode with increased contrast.
+  ///     If `nil`, the standard light color is used.
+  ///   - highContrastDark: The color to use in dark mode with increased contrast.
+  ///     If `nil`, the standard dark color is used.
+  init(light: Color, dark: Color, highContrastLight: Color?, highContrastDark: Color?) {
     #if canImport(UIKit)
     self.init(uiColor: UIColor { traits in
-      traits.userInterfaceStyle == .dark
-        ? UIColor(dark)
-        : UIColor(light)
+      let isDark = traits.userInterfaceStyle == .dark
+      let isHighContrast = traits.accessibilityContrast == .high
+
+      if isDark {
+        return isHighContrast && highContrastDark != nil
+          ? UIColor(highContrastDark!)
+          : UIColor(dark)
+      } else {
+        return isHighContrast && highContrastLight != nil
+          ? UIColor(highContrastLight!)
+          : UIColor(light)
+      }
     })
     #elseif canImport(AppKit)
-    /// Use the adaptive NSColor approach
     let nsColor = NSColor(name: nil) { appearance in
-      appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
-        ? NSColor(dark)
-        : NSColor(light)
+      let isDark = appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+      let isHighContrast = NSWorkspace.shared.accessibilityDisplayShouldIncreaseContrast
+
+      if isDark {
+        return isHighContrast && highContrastDark != nil
+          ? NSColor(highContrastDark!)
+          : NSColor(dark)
+      } else {
+        return isHighContrast && highContrastLight != nil
+          ? NSColor(highContrastLight!)
+          : NSColor(light)
+      }
     }
-    if #available(macOS 12.0, *) {
-      self.init(nsColor: nsColor)
-    } else {
-      // Fallback for macOS 11: use cgColor
-      self.init(nsColor.cgColor)
-    }
+    self.init(nsColor: nsColor)
     #else
     self = light
     #endif

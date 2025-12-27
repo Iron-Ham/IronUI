@@ -150,7 +150,28 @@ Text("Error").foregroundColor(.red)
 
 ### High Contrast Mode
 
-Components automatically enhance contrast when the user enables high contrast mode in system settings.
+Components automatically enhance contrast when the user enables "Increase Contrast"
+in system accessibility settings (iOS: Settings > Accessibility > Display & Text Size,
+macOS: System Settings > Accessibility > Display).
+
+IronUI's default color tokens include high contrast variants for:
+- **Text colors**: Pure black/white for maximum readability
+- **Borders and dividers**: More prominent for better element separation
+- **Backgrounds**: Pure white/black for maximum contrast
+- **Semantic colors**: More saturated error, warning, and success colors
+
+```swift
+// Colors automatically adapt when accessibilityContrast is .high
+IronText("Important message", style: .bodyMedium, color: .primary)
+
+// Custom themes can also support high contrast using the Color initializer
+let customColor = Color(
+    light: Color(white: 0.4),
+    dark: Color(white: 0.6),
+    highContrastLight: Color(white: 0.2),
+    highContrastDark: Color(white: 0.85)
+)
+```
 
 ## Best Practices
 
