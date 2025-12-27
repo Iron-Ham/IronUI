@@ -22,6 +22,13 @@ extension IronUICLI {
         "package",
         "--allow-writing-to-package-directory",
         "format",
+        // Exclude build directories and dependencies
+        "--exclude",
+        ".build",
+        "--exclude",
+        "Tuist/.build",
+        "--exclude",
+        "Derived",
       ]
 
       if dryRun {
