@@ -361,8 +361,6 @@ extension Color {
       }
     }
     self.init(nsColor: nsColor)
-    #else
-    self = light
     #endif
   }
 }
