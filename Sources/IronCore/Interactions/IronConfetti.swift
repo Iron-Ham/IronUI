@@ -5,7 +5,9 @@ import SwiftUI
 /// A confetti celebration effect.
 ///
 /// Creates a burst of colorful particles to celebrate completing
-/// important tasks, like wallet backup in Family.
+/// important tasks, like wallet backup in Family. Automatically uses
+/// theme-derived colors when no custom colors are provided, and respects
+/// the Reduce Motion accessibility setting.
 ///
 /// ## Basic Usage
 ///
@@ -37,58 +39,78 @@ public struct IronConfettiModifier: ViewModifier {
   ///
   /// - Parameters:
   ///   - isActive: Binding that triggers the confetti when set to true.
-  ///   - colors: Colors for the confetti particles.
+  ///   - colors: Colors for the confetti particles. If `nil`, uses theme-derived colors.
   ///   - particleCount: Number of particles to emit.
   ///   - duration: How long the celebration lasts.
   public init(
     isActive: Binding<Bool>,
-    colors: [Color] = IronConfettiModifier.defaultColors,
+    colors: [Color]? = nil,
     particleCount: Int = 50,
     duration: Double = 2.0,
   ) {
     _isActive = isActive
-    self.colors = colors
+    customColors = colors
     self.particleCount = particleCount
     self.duration = duration
   }
 
   // MARK: Public
 
-  /// Default celebration colors.
-  public static let defaultColors: [Color] = [
-    .red,
-    .orange,
-    .yellow,
-    .green,
-    .blue,
-    .purple,
-    .pink,
-  ]
-
   public func body(content: Content) -> some View {
     content
       .overlay {
         if isActive {
-          ConfettiCanvas(
-            colors: colors,
-            particleCount: particleCount,
-            duration: duration,
-            onComplete: {
-              isActive = false
-            },
-          )
-          .allowsHitTesting(false)
+          if reduceMotion {
+            ConfettiReducedMotionView(
+              color: effectiveColors.first ?? theme.colors.primary,
+              onComplete: {
+                isActive = false
+              },
+            )
+            .allowsHitTesting(false)
+          } else {
+            ConfettiCanvas(
+              colors: effectiveColors,
+              particleCount: particleCount,
+              duration: duration,
+              onComplete: {
+                isActive = false
+              },
+            )
+            .allowsHitTesting(false)
+          }
         }
       }
   }
 
   // MARK: Private
 
+  @Environment(\.ironTheme) private var theme
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
   @Binding private var isActive: Bool
 
-  private let colors: [Color]
+  private let customColors: [Color]?
   private let particleCount: Int
   private let duration: Double
+
+  /// Theme-derived celebration colors.
+  private var themeColors: [Color] {
+    [
+      theme.colors.primary,
+      theme.colors.secondary,
+      theme.colors.accent,
+      theme.colors.success,
+      theme.colors.warning,
+      theme.colors.error,
+      theme.colors.info,
+    ]
+  }
+
+  /// The effective colors to use, preferring custom colors over theme-derived colors.
+  private var effectiveColors: [Color] {
+    customColors ?? themeColors
+  }
 }
 
 // MARK: - ConfettiCanvas
@@ -221,6 +243,46 @@ private enum ConfettiShape: CaseIterable {
   case triangle
 }
 
+// MARK: - ConfettiReducedMotionView
+
+/// A simple celebration indicator for users with Reduce Motion enabled.
+///
+/// Shows a brief checkmark with a subtle scale animation instead of
+/// the full confetti effect.
+private struct ConfettiReducedMotionView: View {
+
+  // MARK: Internal
+
+  let color: Color
+  let onComplete: () -> Void
+
+  var body: some View {
+    ZStack {
+      if isShowing {
+        Image(systemName: "checkmark.circle.fill")
+          .font(.system(size: 64, weight: .medium))
+          .foregroundStyle(color)
+          .accessibilityLabel("Celebration complete")
+      }
+    }
+    .frame(maxWidth: .infinity, maxHeight: .infinity)
+    .onAppear {
+      isShowing = true
+
+      // Complete after a brief display
+      DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+        isShowing = false
+        onComplete()
+      }
+    }
+  }
+
+  // MARK: Private
+
+  @State private var isShowing = false
+
+}
+
 // MARK: - View Extension
 
 extension View {
@@ -228,6 +290,8 @@ extension View {
   ///
   /// When `isActive` becomes true, confetti bursts from the top
   /// of the view and falls down with physics-based animation.
+  /// Automatically uses theme-derived colors and respects the
+  /// Reduce Motion accessibility setting.
   ///
   /// ```swift
   /// @State private var celebrate = false
@@ -238,13 +302,13 @@ extension View {
   ///
   /// - Parameters:
   ///   - isActive: Binding that triggers confetti when true.
-  ///   - colors: Confetti particle colors.
+  ///   - colors: Confetti particle colors. If `nil`, uses theme-derived colors.
   ///   - particleCount: Number of particles.
   ///   - duration: Celebration duration.
   /// - Returns: A view with confetti capability.
   public func ironConfetti(
     isActive: Binding<Bool>,
-    colors: [Color] = IronConfettiModifier.defaultColors,
+    colors: [Color]? = nil,
     particleCount: Int = 50,
     duration: Double = 2.0,
   ) -> some View {
@@ -263,7 +327,8 @@ extension View {
 
 /// A standalone confetti view that can be placed in a ZStack.
 ///
-/// Use this when you need more control over positioning.
+/// Use this when you need more control over positioning. Automatically
+/// uses theme-derived colors and respects the Reduce Motion accessibility setting.
 ///
 /// ```swift
 /// ZStack {
@@ -277,69 +342,84 @@ public struct IronConfettiView: View {
 
   // MARK: Lifecycle
 
+  /// Creates a standalone confetti view.
+  ///
+  /// - Parameters:
+  ///   - colors: Confetti particle colors. If `nil`, uses theme-derived colors.
+  ///   - particleCount: Number of particles to emit.
   public init(
-    colors: [Color] = IronConfettiModifier.defaultColors,
+    colors: [Color]? = nil,
     particleCount: Int = 50,
   ) {
-    self.colors = colors
+    customColors = colors
     self.particleCount = particleCount
   }
 
   // MARK: Public
 
   public var body: some View {
-    TimelineView(.animation) { timeline in
-      Canvas { context, _ in
-        let elapsed = timeline.date.timeIntervalSince(startTime)
+    Group {
+      if reduceMotion {
+        // Show static checkmark for reduce motion
+        Image(systemName: "checkmark.circle.fill")
+          .font(.system(size: 64, weight: .medium))
+          .foregroundStyle(effectiveColors.first ?? theme.colors.primary)
+          .accessibilityLabel("Celebration complete")
+      } else {
+        TimelineView(.animation) { timeline in
+          Canvas { context, _ in
+            let elapsed = timeline.date.timeIntervalSince(startTime)
 
-        for particle in particles {
-          let gravity: CGFloat = 400
+            for particle in particles {
+              let gravity: CGFloat = 400
 
-          // Calculate position
-          let x = particle.startX + particle.velocityX * elapsed
-          let y = particle.startY + particle.velocityY * elapsed + 0.5 * gravity * elapsed * elapsed
+              // Calculate position
+              let x = particle.startX + particle.velocityX * elapsed
+              let y = particle.startY + particle.velocityY * elapsed + 0.5 * gravity * elapsed * elapsed
 
-          // Calculate opacity
-          let progress = elapsed / 2.0
-          let opacity = max(0, 1 - progress)
+              // Calculate opacity
+              let progress = elapsed / 2.0
+              let opacity = max(0, 1 - progress)
 
-          // Calculate rotation
-          let rotation = Angle.degrees(particle.rotation + particle.rotationSpeed * elapsed)
+              // Calculate rotation
+              let rotation = Angle.degrees(particle.rotation + particle.rotationSpeed * elapsed)
 
-          // Draw particle
-          context.opacity = opacity
-          context.translateBy(x: x, y: y)
-          context.rotate(by: rotation)
+              // Draw particle
+              context.opacity = opacity
+              context.translateBy(x: x, y: y)
+              context.rotate(by: rotation)
 
-          let rect = CGRect(
-            x: -particle.size / 2,
-            y: -particle.size / 2,
-            width: particle.size,
-            height: particle.size * particle.aspectRatio,
-          )
+              let rect = CGRect(
+                x: -particle.size / 2,
+                y: -particle.size / 2,
+                width: particle.size,
+                height: particle.size * particle.aspectRatio,
+              )
 
-          switch particle.shape {
-          case 0:
-            context.fill(Circle().path(in: rect), with: .color(particle.color))
-          case 1:
-            context.fill(Rectangle().path(in: rect), with: .color(particle.color))
-          default:
-            var path = Path()
-            path.move(to: CGPoint(x: 0, y: -particle.size / 2))
-            path.addLine(to: CGPoint(x: particle.size / 2, y: particle.size / 2))
-            path.addLine(to: CGPoint(x: -particle.size / 2, y: particle.size / 2))
-            path.closeSubpath()
-            context.fill(path, with: .color(particle.color))
+              switch particle.shape {
+              case 0:
+                context.fill(Circle().path(in: rect), with: .color(particle.color))
+              case 1:
+                context.fill(Rectangle().path(in: rect), with: .color(particle.color))
+              default:
+                var path = Path()
+                path.move(to: CGPoint(x: 0, y: -particle.size / 2))
+                path.addLine(to: CGPoint(x: particle.size / 2, y: particle.size / 2))
+                path.addLine(to: CGPoint(x: -particle.size / 2, y: particle.size / 2))
+                path.closeSubpath()
+                context.fill(path, with: .color(particle.color))
+              }
+
+              context.rotate(by: -rotation)
+              context.translateBy(x: -x, y: -y)
+            }
           }
-
-          context.rotate(by: -rotation)
-          context.translateBy(x: -x, y: -y)
+        }
+        .onAppear {
+          startTime = Date()
+          generateParticles()
         }
       }
-    }
-    .onAppear {
-      startTime = Date()
-      generateParticles()
     }
     .allowsHitTesting(false)
   }
@@ -359,11 +439,32 @@ public struct IronConfettiView: View {
     let shape: Int
   }
 
+  @Environment(\.ironTheme) private var theme
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
   @State private var startTime = Date()
   @State private var particles = [CanvasParticle]()
 
-  private let colors: [Color]
+  private let customColors: [Color]?
   private let particleCount: Int
+
+  /// Theme-derived celebration colors.
+  private var themeColors: [Color] {
+    [
+      theme.colors.primary,
+      theme.colors.secondary,
+      theme.colors.accent,
+      theme.colors.success,
+      theme.colors.warning,
+      theme.colors.error,
+      theme.colors.info,
+    ]
+  }
+
+  /// The effective colors to use, preferring custom colors over theme-derived colors.
+  private var effectiveColors: [Color] {
+    customColors ?? themeColors
+  }
 
   private func generateParticles() {
     particles = (0 ..< particleCount).map { _ in
@@ -376,7 +477,7 @@ public struct IronConfettiView: View {
         aspectRatio: CGFloat.random(in: 1.0 ... 2.5),
         rotation: Double.random(in: 0 ... 360),
         rotationSpeed: Double.random(in: -180 ... 180),
-        color: colors.randomElement()!,
+        color: effectiveColors.randomElement()!,
         shape: Int.random(in: 0 ... 2),
       )
     }

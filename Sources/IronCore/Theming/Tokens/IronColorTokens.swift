@@ -119,7 +119,7 @@ public struct IronDefaultColorTokens: IronColorTokens {
       light: Color(red: 0.2, green: 0.4, blue: 0.9),
       dark: Color(red: 0.2, green: 0.4, blue: 0.9),
       highContrastLight: Color(red: 0.1, green: 0.3, blue: 0.8),
-      highContrastDark: Color(red: 0.3, green: 0.5, blue: 1.0)
+      highContrastDark: Color(red: 0.3, green: 0.5, blue: 1.0),
     )
   }
 
@@ -145,7 +145,7 @@ public struct IronDefaultColorTokens: IronColorTokens {
       light: Color(red: 0.2, green: 0.7, blue: 0.4),
       dark: Color(red: 0.2, green: 0.7, blue: 0.4),
       highContrastLight: Color(red: 0.1, green: 0.6, blue: 0.3),
-      highContrastDark: Color(red: 0.3, green: 0.8, blue: 0.5)
+      highContrastDark: Color(red: 0.3, green: 0.8, blue: 0.5),
     )
   }
 
@@ -155,7 +155,7 @@ public struct IronDefaultColorTokens: IronColorTokens {
       light: Color(red: 0.95, green: 0.7, blue: 0.2),
       dark: Color(red: 0.95, green: 0.7, blue: 0.2),
       highContrastLight: Color(red: 0.85, green: 0.55, blue: 0.0),
-      highContrastDark: Color(red: 1.0, green: 0.75, blue: 0.3)
+      highContrastDark: Color(red: 1.0, green: 0.75, blue: 0.3),
     )
   }
 
@@ -165,7 +165,7 @@ public struct IronDefaultColorTokens: IronColorTokens {
       light: Color(red: 0.9, green: 0.25, blue: 0.3),
       dark: Color(red: 0.9, green: 0.25, blue: 0.3),
       highContrastLight: Color(red: 0.8, green: 0.1, blue: 0.15),
-      highContrastDark: Color(red: 1.0, green: 0.35, blue: 0.4)
+      highContrastDark: Color(red: 1.0, green: 0.35, blue: 0.4),
     )
   }
 
@@ -179,7 +179,7 @@ public struct IronDefaultColorTokens: IronColorTokens {
       light: Color(white: 0.98),
       dark: Color(white: 0.08),
       highContrastLight: .white,
-      highContrastDark: .black
+      highContrastDark: .black,
     )
   }
 
@@ -189,7 +189,7 @@ public struct IronDefaultColorTokens: IronColorTokens {
       light: .white,
       dark: Color(white: 0.12),
       highContrastLight: .white,
-      highContrastDark: Color(white: 0.05)
+      highContrastDark: Color(white: 0.05),
     )
   }
 
@@ -211,7 +211,7 @@ public struct IronDefaultColorTokens: IronColorTokens {
       light: Color(white: 0.1),
       dark: Color(white: 0.95),
       highContrastLight: .black,
-      highContrastDark: .white
+      highContrastDark: .white,
     )
   }
 
@@ -221,7 +221,7 @@ public struct IronDefaultColorTokens: IronColorTokens {
       light: Color(white: 0.1),
       dark: Color(white: 0.95),
       highContrastLight: .black,
-      highContrastDark: .white
+      highContrastDark: .white,
     )
   }
 
@@ -235,7 +235,7 @@ public struct IronDefaultColorTokens: IronColorTokens {
       light: Color(white: 0.1),
       dark: Color(white: 0.95),
       highContrastLight: .black,
-      highContrastDark: .white
+      highContrastDark: .white,
     )
   }
 
@@ -245,7 +245,7 @@ public struct IronDefaultColorTokens: IronColorTokens {
       light: Color(white: 0.4),
       dark: Color(white: 0.6),
       highContrastLight: Color(white: 0.25),
-      highContrastDark: Color(white: 0.8)
+      highContrastDark: Color(white: 0.8),
     )
   }
 
@@ -255,7 +255,7 @@ public struct IronDefaultColorTokens: IronColorTokens {
       light: Color(white: 0.6),
       dark: Color(white: 0.4),
       highContrastLight: Color(white: 0.45),
-      highContrastDark: Color(white: 0.55)
+      highContrastDark: Color(white: 0.55),
     )
   }
 
@@ -265,7 +265,7 @@ public struct IronDefaultColorTokens: IronColorTokens {
       light: Color(white: 0.5),
       dark: Color(white: 0.5),
       highContrastLight: Color(white: 0.35),
-      highContrastDark: Color(white: 0.65)
+      highContrastDark: Color(white: 0.65),
     )
   }
 
@@ -275,7 +275,7 @@ public struct IronDefaultColorTokens: IronColorTokens {
       light: Color(white: 0.85),
       dark: Color(white: 0.25),
       highContrastLight: Color(white: 0.5),
-      highContrastDark: Color(white: 0.6)
+      highContrastDark: Color(white: 0.6),
     )
   }
 
@@ -289,7 +289,7 @@ public struct IronDefaultColorTokens: IronColorTokens {
       light: Color(white: 0.9),
       dark: Color(white: 0.2),
       highContrastLight: Color(white: 0.6),
-      highContrastDark: Color(white: 0.5)
+      highContrastDark: Color(white: 0.5),
     )
   }
 }
@@ -303,7 +303,7 @@ extension Color {
       light: light,
       dark: dark,
       highContrastLight: nil,
-      highContrastDark: nil
+      highContrastDark: nil,
     )
   }
 
