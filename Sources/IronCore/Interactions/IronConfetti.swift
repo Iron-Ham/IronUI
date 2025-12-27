@@ -128,6 +128,16 @@ private struct ConfettiCanvas: View {
   var body: some View {
     TimelineView(.animation) { timeline in
       Canvas { context, size in
+        // Generate particles when we first get the canvas size
+        if particles.isEmpty, canvasSize == nil {
+          DispatchQueue.main.async {
+            canvasSize = size
+            startTime = Date()
+            generateParticles(for: size)
+          }
+          return
+        }
+
         guard let startTime else { return }
 
         let elapsed = timeline.date.timeIntervalSince(startTime)
@@ -191,21 +201,22 @@ private struct ConfettiCanvas: View {
         }
       }
     }
-    .onAppear {
-      startTime = Date()
-      generateParticles()
-    }
   }
 
   // MARK: Private
 
   @State private var startTime: Date?
   @State private var particles = [ConfettiParticle]()
+  @State private var canvasSize: CGSize?
 
-  private func generateParticles() {
+  private func generateParticles(for size: CGSize) {
+    // Use the canvas width for spawn range, with some padding
+    let minX = size.width * 0.1
+    let maxX = size.width * 0.9
+
     particles = (0 ..< particleCount).map { _ in
       ConfettiParticle(
-        startX: CGFloat.random(in: 50 ... 350),
+        startX: CGFloat.random(in: minX ... maxX),
         startY: CGFloat.random(in: -50 ... -10),
         velocityX: CGFloat.random(in: -150 ... 150),
         velocityY: CGFloat.random(in: 100 ... 400),
@@ -367,7 +378,17 @@ public struct IronConfettiView: View {
           .accessibilityLabel("Celebration complete")
       } else {
         TimelineView(.animation) { timeline in
-          Canvas { context, _ in
+          Canvas { context, size in
+            // Generate particles when we first get the canvas size
+            if particles.isEmpty, canvasSize == nil {
+              DispatchQueue.main.async {
+                canvasSize = size
+                startTime = Date()
+                generateParticles(for: size)
+              }
+              return
+            }
+
             let elapsed = timeline.date.timeIntervalSince(startTime)
 
             for particle in particles {
@@ -415,10 +436,6 @@ public struct IronConfettiView: View {
             }
           }
         }
-        .onAppear {
-          startTime = Date()
-          generateParticles()
-        }
       }
     }
     .allowsHitTesting(false)
@@ -444,6 +461,7 @@ public struct IronConfettiView: View {
 
   @State private var startTime = Date()
   @State private var particles = [CanvasParticle]()
+  @State private var canvasSize: CGSize?
 
   private let customColors: [Color]?
   private let particleCount: Int
@@ -466,10 +484,14 @@ public struct IronConfettiView: View {
     customColors ?? themeColors
   }
 
-  private func generateParticles() {
+  private func generateParticles(for size: CGSize) {
+    // Use the canvas width for spawn range, with some padding
+    let minX = size.width * 0.1
+    let maxX = size.width * 0.9
+
     particles = (0 ..< particleCount).map { _ in
       CanvasParticle(
-        startX: CGFloat.random(in: 0 ... 400),
+        startX: CGFloat.random(in: minX ... maxX),
         startY: CGFloat.random(in: -50 ... -10),
         velocityX: CGFloat.random(in: -100 ... 100),
         velocityY: CGFloat.random(in: 100 ... 300),

@@ -67,26 +67,27 @@ public struct IronRippleModifier: ViewModifier {
             }
           }
           .allowsHitTesting(false)
+          .contentShape(Rectangle())
+          .simultaneousGesture(
+            DragGesture(minimumDistance: 0)
+              .onChanged { value in
+                if !isDragging {
+                  isDragging = true
+                  if reduceMotion {
+                    triggerFlash(at: value.location)
+                  } else {
+                    triggerRipple(at: value.location, in: geometry.size)
+                  }
+                }
+              }
+              .onEnded { _ in
+                isDragging = false
+              }
+          )
         }
         .clipped()
       }
       .contentShape(Rectangle())
-      .simultaneousGesture(
-        DragGesture(minimumDistance: 0)
-          .onChanged { value in
-            if !isDragging {
-              isDragging = true
-              if reduceMotion {
-                triggerFlash(at: value.location)
-              } else {
-                triggerRipple(at: value.location)
-              }
-            }
-          }
-          .onEnded { _ in
-            isDragging = false
-          }
-      )
   }
 
   // MARK: Private
@@ -114,14 +115,17 @@ public struct IronRippleModifier: ViewModifier {
     customColor ?? theme.colors.primary.opacity(0.12)
   }
 
-  private func triggerRipple(at position: CGPoint) {
+  private func triggerRipple(at position: CGPoint, in viewSize: CGSize) {
     let ripple = Ripple(position: position, size: 0, opacity: 1)
     ripples.append(ripple)
+
+    // Calculate ripple size based on view size (max dimension * 1.2)
+    let targetSize = max(viewSize.width, viewSize.height) * 1.2
 
     // Animate the ripple expanding and fading
     withAnimation(.easeOut(duration: duration)) {
       if let index = ripples.firstIndex(where: { $0.id == ripple.id }) {
-        ripples[index].size = 300
+        ripples[index].size = targetSize
         ripples[index].opacity = 0
       }
     }
