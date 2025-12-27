@@ -648,3 +648,197 @@ struct IronMenuDividerTests {
     // MenuDivider created successfully
   }
 }
+
+// MARK: - IronAccordionExpandBehaviorTests
+
+@Suite("IronAccordionExpandBehavior")
+struct IronAccordionExpandBehaviorTests {
+  @Test("all behaviors are available")
+  func allBehaviorsAvailable() {
+    let behaviors = IronAccordionExpandBehavior.allCases
+    #expect(behaviors.count == 2)
+    #expect(behaviors.contains(.independent))
+    #expect(behaviors.contains(.exclusive))
+  }
+}
+
+// MARK: - IronAccordionCoordinatorTests
+
+@Suite("IronAccordionCoordinator")
+@MainActor
+struct IronAccordionCoordinatorTests {
+
+  @Test("starts with empty expanded IDs")
+  func startsEmpty() {
+    let coordinator = IronAccordionCoordinator()
+    #expect(coordinator.expandedIDs.isEmpty)
+  }
+
+  @Test("toggles expansion in independent mode")
+  func togglesIndependent() {
+    let coordinator = IronAccordionCoordinator(expandBehavior: .independent)
+    coordinator.toggleExpansion(for: "item1")
+    #expect(coordinator.isExpanded("item1"))
+
+    coordinator.toggleExpansion(for: "item2")
+    #expect(coordinator.isExpanded("item1"))
+    #expect(coordinator.isExpanded("item2"))
+
+    coordinator.toggleExpansion(for: "item1")
+    #expect(!coordinator.isExpanded("item1"))
+    #expect(coordinator.isExpanded("item2"))
+  }
+
+  @Test("toggles expansion in exclusive mode")
+  func togglesExclusive() {
+    let coordinator = IronAccordionCoordinator(expandBehavior: .exclusive)
+    coordinator.toggleExpansion(for: "item1")
+    #expect(coordinator.isExpanded("item1"))
+
+    coordinator.toggleExpansion(for: "item2")
+    #expect(!coordinator.isExpanded("item1"))
+    #expect(coordinator.isExpanded("item2"))
+  }
+
+  @Test("collapses in exclusive mode when toggling same item")
+  func collapsesExclusive() {
+    let coordinator = IronAccordionCoordinator(expandBehavior: .exclusive)
+    coordinator.toggleExpansion(for: "item1")
+    #expect(coordinator.isExpanded("item1"))
+
+    coordinator.toggleExpansion(for: "item1")
+    #expect(!coordinator.isExpanded("item1"))
+  }
+
+  @Test("setExpanded works correctly")
+  func setExpandedWorks() {
+    let coordinator = IronAccordionCoordinator(expandBehavior: .independent)
+    coordinator.setExpanded("item1", expanded: true)
+    #expect(coordinator.isExpanded("item1"))
+
+    coordinator.setExpanded("item1", expanded: false)
+    #expect(!coordinator.isExpanded("item1"))
+  }
+
+  @Test("setExpanded respects exclusive mode")
+  func setExpandedRespectsExclusive() {
+    let coordinator = IronAccordionCoordinator(expandBehavior: .exclusive)
+    coordinator.setExpanded("item1", expanded: true)
+    coordinator.setExpanded("item2", expanded: true)
+    #expect(!coordinator.isExpanded("item1"))
+    #expect(coordinator.isExpanded("item2"))
+  }
+}
+
+// MARK: - IronAccordionTests
+
+@Suite("IronAccordion")
+@MainActor
+struct IronAccordionTests {
+
+  @Test("can be created with localized string key")
+  func createWithLocalizedStringKey() {
+    _ = IronAccordion(LocalizedStringKey("Settings")) {
+      Text("Content")
+    }
+    // Accordion created successfully
+  }
+
+  @Test("can be created with string")
+  func createWithString() {
+    _ = IronAccordion("Settings") {
+      Text("Content")
+    }
+    // Accordion created successfully
+  }
+
+  @Test("can be created with icon")
+  func createWithIcon() {
+    _ = IronAccordion("Settings", icon: "gear") {
+      Text("Content")
+    }
+    // Accordion created successfully
+  }
+
+  @Test("can be created with custom header")
+  func createWithCustomHeader() {
+    _ = IronAccordion {
+      HStack {
+        Image(systemName: "star")
+        Text("Custom Header")
+      }
+    } content: {
+      Text("Content")
+    }
+    // Accordion created successfully
+  }
+
+  @Test("can be created with external binding")
+  func createWithBinding() {
+    _ = IronAccordion("Settings", isExpanded: .constant(true)) {
+      Text("Content")
+    }
+    // Accordion created successfully
+  }
+
+  @Test("can nest accordions")
+  func canNestAccordions() {
+    _ = IronAccordion("Parent") {
+      IronAccordion("Child") {
+        Text("Nested content")
+      }
+    }
+    // Nested accordion created successfully
+  }
+}
+
+// MARK: - IronAccordionGroupTests
+
+@Suite("IronAccordionGroup")
+@MainActor
+struct IronAccordionGroupTests {
+
+  @Test("can be created with default behavior")
+  func createWithDefaults() {
+    _ = IronAccordionGroup {
+      IronAccordion("Section 1") { Text("Content 1") }
+      IronAccordion("Section 2") { Text("Content 2") }
+    }
+    // AccordionGroup created successfully
+  }
+
+  @Test("can be created with exclusive behavior")
+  func createWithExclusiveBehavior() {
+    _ = IronAccordionGroup(expandBehavior: .exclusive) {
+      IronAccordion("Section 1") { Text("Content 1") }
+      IronAccordion("Section 2") { Text("Content 2") }
+    }
+    // AccordionGroup created successfully
+  }
+
+  @Test("can be created with independent behavior")
+  func createWithIndependentBehavior() {
+    _ = IronAccordionGroup(expandBehavior: .independent) {
+      IronAccordion("Section 1") { Text("Content 1") }
+      IronAccordion("Section 2") { Text("Content 2") }
+    }
+    // AccordionGroup created successfully
+  }
+
+  @Test("can be created without dividers")
+  func createWithoutDividers() {
+    _ = IronAccordionGroup(showDividers: false) {
+      IronAccordion("Section 1") { Text("Content 1") }
+      IronAccordion("Section 2") { Text("Content 2") }
+    }
+    // AccordionGroup created successfully
+  }
+
+  @Test("supports all expand behaviors", arguments: IronAccordionExpandBehavior.allCases)
+  func supportsExpandBehavior(behavior: IronAccordionExpandBehavior) {
+    _ = IronAccordionGroup(expandBehavior: behavior) {
+      IronAccordion("Test") { Text("Content") }
+    }
+    // AccordionGroup created successfully with behavior
+  }
+}

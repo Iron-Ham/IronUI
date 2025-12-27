@@ -339,3 +339,153 @@ struct IronSkeletonSnapshotTests {
   }
 
 }
+
+// MARK: - IronAccordionSnapshotTests
+
+@Suite("IronAccordion Snapshots")
+struct IronAccordionSnapshotTests {
+
+  @Test("Accordion - Collapsed")
+  @MainActor
+  func accordionCollapsed() {
+    let view = IronAccordion("Settings") {
+      Text("Settings content goes here.")
+    }
+    .padding()
+    .environment(\.ironSkipEntranceAnimations, true)
+
+    ironAssertSnapshots(of: view, configurations: SnapshotConfiguration.quick, width: 300)
+  }
+
+  @Test("Accordion - Expanded")
+  @MainActor
+  func accordionExpanded() {
+    let view = IronAccordion("Settings", isExpanded: .constant(true)) {
+      VStack(alignment: .leading, spacing: 8) {
+        Text("This is the accordion content.")
+        Text("It can contain any views.")
+      }
+    }
+    .padding()
+    .environment(\.ironSkipEntranceAnimations, true)
+
+    ironAssertSnapshots(of: view, configurations: SnapshotConfiguration.quick, width: 300)
+  }
+
+  @Test("Accordion - With Icon")
+  @MainActor
+  func accordionWithIcon() {
+    let view = VStack(spacing: 0) {
+      IronAccordion("General", icon: "gearshape") {
+        Text("General settings")
+      }
+      IronAccordion("Privacy", icon: "lock.shield", isExpanded: .constant(true)) {
+        Text("Privacy settings")
+      }
+    }
+    .padding()
+    .environment(\.ironSkipEntranceAnimations, true)
+
+    ironAssertSnapshots(of: view, configurations: SnapshotConfiguration.quick, width: 300)
+  }
+
+  @Test("Accordion - Custom Header")
+  @MainActor
+  func accordionCustomHeader() {
+    let view = IronAccordion {
+      HStack(spacing: 8) {
+        IronIcon(systemName: "star.fill", color: .warning)
+        IronText("Premium Features", style: .headlineSmall, color: .primary)
+        Spacer()
+        Text("PRO")
+          .font(.caption)
+          .fontWeight(.semibold)
+          .foregroundStyle(.white)
+          .padding(.horizontal, 8)
+          .padding(.vertical, 4)
+          .background(Capsule().fill(.blue))
+      }
+    } content: {
+      Text("Premium content here")
+    }
+    .padding()
+    .environment(\.ironSkipEntranceAnimations, true)
+
+    ironAssertSnapshots(of: view, configurations: SnapshotConfiguration.quick, width: 320)
+  }
+
+  @Test("AccordionGroup - With Dividers")
+  @MainActor
+  func accordionGroupWithDividers() {
+    let view = IronAccordionGroup {
+      IronAccordion("General") {
+        Text("General settings")
+      }
+      IronAccordion("Privacy") {
+        Text("Privacy settings")
+      }
+      IronAccordion("Notifications") {
+        Text("Notification settings")
+      }
+    }
+    .padding()
+    .environment(\.ironSkipEntranceAnimations, true)
+
+    ironAssertSnapshots(of: view, configurations: SnapshotConfiguration.quick, width: 300)
+  }
+
+  @Test("AccordionGroup - No Dividers")
+  @MainActor
+  func accordionGroupNoDividers() {
+    let view = IronAccordionGroup(showDividers: false) {
+      IronAccordion("Section 1") {
+        Text("Content 1")
+      }
+      IronAccordion("Section 2") {
+        Text("Content 2")
+      }
+    }
+    .padding()
+    .environment(\.ironSkipEntranceAnimations, true)
+
+    ironAssertSnapshots(of: view, configurations: SnapshotConfiguration.quick, width: 300)
+  }
+
+  @Test("AccordionGroup - Expanded State")
+  @MainActor
+  func accordionGroupExpanded() {
+    let view = IronAccordionGroup {
+      IronAccordion("General", isExpanded: .constant(true)) {
+        VStack(alignment: .leading, spacing: 4) {
+          Text("General settings content")
+          Text("More content here")
+        }
+      }
+      IronAccordion("Privacy") {
+        Text("Privacy settings")
+      }
+    }
+    .padding()
+    .environment(\.ironSkipEntranceAnimations, true)
+
+    ironAssertSnapshots(of: view, configurations: SnapshotConfiguration.quick, width: 300)
+  }
+
+  @Test("Accordion - Nested")
+  @MainActor
+  func accordionNested() {
+    let view = IronAccordion("Parent", isExpanded: .constant(true)) {
+      VStack(alignment: .leading, spacing: 8) {
+        Text("Parent content")
+
+        IronAccordion("Child", isExpanded: .constant(true)) {
+          Text("Nested content with indentation")
+        }
+      }
+    }
+    .padding()
+    .environment(\.ironSkipEntranceAnimations, true)
+
+    ironAssertSnapshots(of: view, configurations: SnapshotConfiguration.quick, width: 320)
+  }
+}

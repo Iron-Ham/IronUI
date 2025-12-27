@@ -1,5 +1,5 @@
 // IronComponents - Composed UI components
-// Contains: Avatar, Chip, Skeleton, SegmentedControl, Menu, etc.
+// Contains: Accordion, Avatar, Chip, Skeleton, SegmentedControl, Menu, etc.
 
 @_exported import IronCore
 @_exported import IronPrimitives
@@ -7,6 +7,8 @@
 /// The IronComponents module provides composed UI components.
 ///
 /// These are molecule-level components built from primitives:
+/// - ``IronAccordion`` - Collapsible sections with headers
+/// - ``IronAccordionGroup`` - Coordinated accordion containers
 /// - ``IronAvatar`` - User profile images with fallback initials
 /// - ``IronChip`` - Tags, filters, and selections
 /// - ``IronSkeleton`` - Loading placeholders with shimmer
@@ -19,6 +21,12 @@
 /// composed components that are commonly used in applications.
 ///
 /// ```swift
+/// // Accordion group
+/// IronAccordionGroup(expandBehavior: .exclusive) {
+///   IronAccordion("General") { Text("Settings") }
+///   IronAccordion("Privacy") { Text("Options") }
+/// }
+///
 /// // Avatar with status
 /// IronAvatar(name: "John Doe", status: .online)
 ///
