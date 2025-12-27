@@ -166,6 +166,14 @@ let package = Package(
         .product(name: "SnapshotTesting", package: "swift-snapshot-testing"),
       ],
       path: "Tests/IronUISnapshotTests",
+      exclude: [
+        "Components/__Snapshots__",
+        "DataDisplay/__Snapshots__",
+        "Forms/__Snapshots__",
+        "Layouts/__Snapshots__",
+        "Navigation/__Snapshots__",
+        "Primitives/__Snapshots__",
+      ],
     ),
 
     // MARK: - Integration Tests
