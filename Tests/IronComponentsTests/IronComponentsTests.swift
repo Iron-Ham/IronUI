@@ -530,6 +530,18 @@ struct IronSegmentedControlTests {
     // SegmentedControl created successfully with custom label
   }
 
+  @Test("handles empty options gracefully")
+  func handlesEmptyOptions() {
+    // Empty options should not crash (previously caused divide-by-zero)
+    _ = IronSegmentedControl(
+      selection: .constant(TestOption.first),
+      options: [],
+    ) { option in
+      Text(option.rawValue)
+    }
+    // SegmentedControl created successfully with empty options
+  }
+
   // MARK: Private
 
   private enum TestOption: String, CaseIterable, CustomStringConvertible {
