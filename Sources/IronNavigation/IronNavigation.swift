@@ -9,7 +9,7 @@ import IronPrimitives
 ///
 /// This module focuses on:
 /// - Custom navigation transitions
-/// - Presentation modifiers (IronTray)
+/// - Presentation modifiers (IronTray, IronToast)
 /// - Navigation chrome (accessories, back buttons)
 /// - Hero transitions
 /// - Matched geometry presentations
@@ -25,6 +25,32 @@ import IronPrimitives
 ///   .ironTray(isPresented: $showTray, detents: [.medium, .large]) {
 ///     TrayContent()
 ///   }
+/// ```
+///
+/// ## IronToast
+///
+/// Ephemeral notification messages that auto-dismiss:
+///
+/// ```swift
+/// @State private var showToast = false
+///
+/// Button("Save") { showToast = true }
+///   .ironToast(isPresented: $showToast) {
+///     IronToast("Saved!", variant: .success)
+///   }
+/// ```
+///
+/// For queue-managed toasts:
+///
+/// ```swift
+/// @State private var toasts = IronToastContainer()
+///
+/// ContentView()
+///   .ironToastContainer(toasts)
+///
+/// func save() {
+///   toasts.show("Saved!", variant: .success)
+/// }
 /// ```
 ///
 /// > Important: This module does NOT provide replacements for system navigation

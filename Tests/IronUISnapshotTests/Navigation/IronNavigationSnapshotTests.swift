@@ -1,6 +1,7 @@
 import SnapshotTesting
 import SwiftUI
 import Testing
+@testable import IronCore
 @testable import IronNavigation
 @testable import IronPrimitives
 
@@ -130,6 +131,88 @@ struct IronTraySnapshotTests {
         topTrailingRadius: 20,
       )
     )
+    .padding()
+
+    ironAssertSnapshots(of: view, configurations: SnapshotConfiguration.quick, width: 350)
+  }
+}
+
+// MARK: - IronToastSnapshotTests
+
+@Suite("IronToast Snapshots")
+struct IronToastSnapshotTests {
+
+  @Test("Toast - Variants")
+  @MainActor
+  func toastVariants() {
+    let view = VStack(spacing: 16) {
+      IronToast("This is an informational message", variant: .info)
+      IronToast("Your changes have been saved successfully", variant: .success)
+      IronToast("Please review the highlighted fields", variant: .warning)
+      IronToast("An error occurred while processing", variant: .error)
+    }
+    .padding()
+
+    ironAssertSnapshots(of: view, configurations: SnapshotConfiguration.quick, width: 350)
+  }
+
+  @Test("Toast - With Titles")
+  @MainActor
+  func toastWithTitles() {
+    let view = VStack(spacing: 16) {
+      IronToast("Update Available", message: "A new version is ready", variant: .info)
+      IronToast("Payment Successful", message: "Your order has been confirmed", variant: .success)
+      IronToast("Low Storage", message: "Less than 500MB remaining", variant: .warning)
+      IronToast("Connection Failed", message: "Check your internet", variant: .error)
+    }
+    .padding()
+
+    ironAssertSnapshots(of: view, configurations: SnapshotConfiguration.quick, width: 350)
+  }
+
+  @Test("Toast - With Actions")
+  @MainActor
+  func toastWithActions() {
+    let view = VStack(spacing: 16) {
+      IronToast(
+        "Item deleted",
+        variant: .info,
+        action: IronToastAction("Undo") { },
+      )
+
+      IronToast(
+        "Network error",
+        variant: .error,
+        action: IronToastAction("Retry") { },
+      )
+
+      IronToast(
+        "File Uploaded",
+        message: "document.pdf uploaded successfully",
+        variant: .success,
+        action: IronToastAction("View") { },
+      )
+    }
+    .padding()
+
+    ironAssertSnapshots(of: view, configurations: SnapshotConfiguration.quick, width: 350)
+  }
+
+  @Test("Toast - Custom Icons")
+  @MainActor
+  func toastCustomIcons() {
+    let view = VStack(spacing: 16) {
+      IronToast("Celebration time!", variant: .success, icon: {
+        Text("🎉")
+          .font(.title3)
+      })
+
+      IronToast("Sparkly success", variant: .success, icon: {
+        Image(systemName: "sparkles")
+          .foregroundStyle(.yellow)
+          .font(.title3)
+      })
+    }
     .padding()
 
     ironAssertSnapshots(of: view, configurations: SnapshotConfiguration.quick, width: 350)
