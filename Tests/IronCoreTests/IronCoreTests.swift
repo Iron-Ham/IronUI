@@ -264,6 +264,29 @@ struct IronShadowTokensTests {
     #expect(shadows.xl.layers.count >= 2)
   }
 
+  @Test("IronShadow.none static property returns empty shadow")
+  func ironShadowNoneIsEmpty() {
+    let emptyShadow = IronShadow.none
+    #expect(emptyShadow.layers.isEmpty)
+  }
+
+  @Test("IronShadow single-layer initializer works")
+  func ironShadowSingleLayerInit() {
+    let shadow = IronShadow(color: .black, radius: 4, x: 0, y: 2)
+    #expect(shadow.layers.count == 1)
+    #expect(shadow.layers[0].radius == 4)
+    #expect(shadow.layers[0].y == 2)
+  }
+
+  @MainActor
+  @Test("IronShadowModifier can be created")
+  func ironShadowModifierCreation() {
+    let shadow = IronShadow(color: .black, radius: 4, y: 2)
+    let modifier = IronShadowModifier(shadow)
+    // Verify the modifier can be created without crashing
+    _ = modifier
+  }
+
   // MARK: Private
 
   private let shadows = IronDefaultShadowTokens()

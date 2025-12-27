@@ -89,23 +89,42 @@ public struct IronShadow: Sendable {
 // MARK: - IronShadowModifier
 
 /// A view modifier that applies an IronShadow.
+///
+/// This modifier respects `accessibilityReduceTransparency` by removing
+/// shadow layers when the user has enabled that setting, as shadows rely
+/// on transparency effects.
 public struct IronShadowModifier: ViewModifier {
+
+  // MARK: Lifecycle
+
   public init(_ shadow: IronShadow) {
     self.shadow = shadow
   }
 
+  // MARK: Public
+
   public func body(content: Content) -> some View {
-    shadow.layers.reduce(AnyView(content)) { view, layer in
-      AnyView(
-        view.shadow(
-          color: layer.color,
-          radius: layer.radius,
-          x: layer.x,
-          y: layer.y,
+    // When reduce transparency is enabled, skip shadows entirely
+    // as they rely on transparency effects
+    if reduceTransparency {
+      content
+    } else {
+      shadow.layers.reduce(AnyView(content)) { view, layer in
+        AnyView(
+          view.shadow(
+            color: layer.color,
+            radius: layer.radius,
+            x: layer.x,
+            y: layer.y
+          )
         )
-      )
+      }
     }
   }
+
+  // MARK: Internal
+
+  @Environment(\.accessibilityReduceTransparency) var reduceTransparency
 
   let shadow: IronShadow
 
