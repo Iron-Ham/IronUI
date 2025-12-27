@@ -474,10 +474,10 @@ func ironAssertSnapshots(
           drawHierarchyInKeyWindow: true,
           precision: 0.99,
           perceptualPrecision: 0.98,
-          traits: UITraitCollection(traitsFrom: [
-            UITraitCollection(userInterfaceStyle: configuration.colorScheme == .light ? .light : .dark),
-            UITraitCollection(preferredContentSizeCategory: configuration.dynamicType.contentSizeCategory),
-          ]),
+          traits: UITraitCollection { mutableTraits in
+            mutableTraits.userInterfaceStyle = configuration.colorScheme == .light ? .light : .dark
+            mutableTraits.preferredContentSizeCategory = configuration.dynamicType.contentSizeCategory
+          },
         ),
         named: configuration.name,
         record: record,
@@ -556,10 +556,10 @@ func ironAssertSnapshots(
           drawHierarchyInKeyWindow: true,
           precision: 0.99,
           perceptualPrecision: 0.98,
-          traits: UITraitCollection(traitsFrom: [
-            UITraitCollection(userInterfaceStyle: configuration.colorScheme == .light ? .light : .dark),
-            UITraitCollection(preferredContentSizeCategory: configuration.dynamicType.contentSizeCategory),
-          ]),
+          traits: UITraitCollection { mutableTraits in
+            mutableTraits.userInterfaceStyle = configuration.colorScheme == .light ? .light : .dark
+            mutableTraits.preferredContentSizeCategory = configuration.dynamicType.contentSizeCategory
+          },
         ),
         named: configuration.name,
         record: record,
