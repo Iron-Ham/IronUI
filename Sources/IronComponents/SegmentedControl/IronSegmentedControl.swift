@@ -69,6 +69,27 @@ public struct IronSegmentedControl<Option: Hashable, Label: View>: View {
   // MARK: Public
 
   public var body: some View {
+    if options.isEmpty {
+      EmptyView()
+    } else {
+      bodyContent
+    }
+  }
+
+  // MARK: Private
+
+  @Environment(\.ironTheme) private var theme
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
+  @Environment(\.ironSkipEntranceAnimations) private var skipEntranceAnimations
+  @Namespace private var namespace
+
+  @Binding private var selection: Option
+
+  private let options: [Option]
+  private let size: IronSegmentedControlSize
+  private let labelBuilder: (Option) -> Label
+
+  private var bodyContent: some View {
     GeometryReader { geometry in
       let segmentWidth = geometry.size.width / CGFloat(options.count)
 
@@ -123,19 +144,6 @@ public struct IronSegmentedControl<Option: Hashable, Label: View>: View {
     .accessibilityElement(children: .contain)
     .accessibilityLabel("Segmented control")
   }
-
-  // MARK: Private
-
-  @Environment(\.ironTheme) private var theme
-  @Environment(\.accessibilityReduceMotion) private var reduceMotion
-  @Environment(\.ironSkipEntranceAnimations) private var skipEntranceAnimations
-  @Namespace private var namespace
-
-  @Binding private var selection: Option
-
-  private let options: [Option]
-  private let size: IronSegmentedControlSize
-  private let labelBuilder: (Option) -> Label
 
   private var selectedIndex: CGFloat {
     guard let index = options.firstIndex(of: selection) else { return 0 }
