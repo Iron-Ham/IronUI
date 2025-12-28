@@ -7,7 +7,7 @@ let project = Project(
   settings: .ironUISettings(),
   targets: [
     .target(
-      name: "PreviewGallery",
+      name: "PreviewGalleryApp",
       destinations: [.iPhone, .iPad, .mac],
       product: .app,
       bundleId: "dev.ironui.previewgallery",
@@ -37,7 +37,7 @@ let project = Project(
       deploymentTargets: .multiplatform(iOS: "26.0", macOS: "26.0"),
       sources: ["Tests/**/*.swift"],
       dependencies: [
-        .target(name: "PreviewGallery"),
+        .target(name: "PreviewGalleryApp"),
         .external(name: "SnapshotTesting"),
       ],
     ),
@@ -46,7 +46,7 @@ let project = Project(
     .scheme(
       name: "PreviewGallery",
       shared: true,
-      buildAction: .buildAction(targets: [.target("PreviewGallery")]),
+      buildAction: .buildAction(targets: [.target("PreviewGalleryApp")]),
       testAction: .targets([
         .testableTarget(target: .target("PreviewGalleryTests"))
       ]),
@@ -55,7 +55,7 @@ let project = Project(
     .scheme(
       name: "PreviewGallery-RecordSnapshots",
       shared: true,
-      buildAction: .buildAction(targets: [.target("PreviewGallery")]),
+      buildAction: .buildAction(targets: [.target("PreviewGalleryApp")]),
       testAction: .targets(
         [.testableTarget(target: .target("PreviewGalleryTests"))],
         arguments: .arguments(

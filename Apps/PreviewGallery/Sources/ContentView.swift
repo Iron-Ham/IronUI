@@ -1,4 +1,4 @@
-import PreviewGallery
+import struct PreviewGallery.PreviewGallery
 import SwiftUI
 
 struct ContentView: View {
