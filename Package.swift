@@ -54,10 +54,10 @@ let package = Package(
       url: "https://github.com/swiftlang/swift-docc-plugin",
       from: "1.4.0",
     ),
-    // Code Formatting (Airbnb Style Guide)
+    // Code Formatting (Airbnb Style Guide) - using fork with updated SwiftLint
     .package(
-      url: "https://github.com/airbnb/swift",
-      from: "1.2.0",
+      url: "https://github.com/Iron-Ham/swift",
+      branch: "master",
     ),
     // Snapshot Testing (test-only)
     .package(

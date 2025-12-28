@@ -18,6 +18,7 @@ excluded:
   - Derived
   - Carthage
   - Pods
+  - "**/*.docc"
 
 indentation: 2
 
