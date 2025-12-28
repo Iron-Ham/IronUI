@@ -1,0 +1,18 @@
+#!/bin/sh
+# Pre-commit hook for IronUI
+# Formats Swift files using the Airbnb Swift Style Guide via ironui-cli
+#
+# Install this hook by running:
+#   ln -sf ../../Scripts/pre-commit .git/hooks/pre-commit
+
+set -e
+
+echo "Running swift-format..."
+
+# Run the CLI format command
+swift run ironui-cli format
+
+# Stage any formatting changes
+git add -u
+
+echo "Formatting complete."

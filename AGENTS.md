@@ -60,6 +60,9 @@ This project uses [Tuist](https://tuist.dev) for project generation. Tuist enabl
 tuist install
 tuist generate
 
+# Install git hooks (formats code on commit)
+ln -sf ../../Scripts/pre-commit .git/hooks/pre-commit
+
 # Open the generated workspace
 open IronUI.xcworkspace
 ```

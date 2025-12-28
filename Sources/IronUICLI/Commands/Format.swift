@@ -6,6 +6,8 @@ import Noora
 extension IronUICLI {
   struct Format: AsyncParsableCommand, IronUICommand {
 
+    // MARK: Internal
+
     static let configuration = CommandConfiguration(
       abstract: "Formats Swift sources using the Airbnb Swift Style Guide."
     )
@@ -25,7 +27,6 @@ extension IronUICLI {
         "package",
         "--allow-writing-to-package-directory",
         "format",
-        // Use custom SwiftLint config with excluded paths
         "--swift-lint-config",
         swiftlintConfig,
       ]
@@ -35,12 +36,29 @@ extension IronUICLI {
         noora.info(.alert("Dry run mode", takeaways: ["No files will be modified"]))
       }
 
+      // Add source directories to format
+      for dir in Self.sourceDirectories {
+        arguments.append("\(packageDir)/\(dir)")
+      }
+
       _ = try await runner.runTaskWithOutput(
         dryRun ? "Checking formatting" : "Formatting Swift files",
         command: "/usr/bin/env",
         arguments: arguments,
       )
     }
+
+    // MARK: Private
+
+    /// Directories containing source code to format.
+    /// Excludes Tuist (uses DSL that swift-format can't parse), Derived, docs, etc.
+    private static let sourceDirectories = [
+      "Sources",
+      "Tests",
+      "Sample",
+      "Apps",
+    ]
+
   }
 }
 #endif
