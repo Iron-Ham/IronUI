@@ -1,5 +1,5 @@
 {
-  "originHash" : "a2fd6bf7057f78b48dadd13a9f7fb4b7185977b60710c8ac562d88996e59525d",
+  "originHash" : "81f20426adf3044023617ccee885a404f6d543e0eaa35d0214c269db68997f9f",
   "pins" : [
     {
       "identity" : "noora",
@@ -31,10 +31,10 @@
     {
       "identity" : "swift",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/airbnb/swift",
+      "location" : "https://github.com/Iron-Ham/swift",
       "state" : {
-        "revision" : "6c09dd57c2254b14bb48c15e209ed6e93058104f",
-        "version" : "1.2.0"
+        "branch" : "master",
+        "revision" : "e43b6b420d9e01f2c84aad239ae4a638d51bd039"
       }
     },
     {
