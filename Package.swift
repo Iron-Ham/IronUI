@@ -106,6 +106,11 @@ let package = Package(
       dependencies: ["IronCore"],
       path: "Sources/IronLayouts",
     ),
+    .testTarget(
+      name: "IronLayoutsTests",
+      dependencies: ["IronLayouts"],
+      path: "Tests/IronLayoutsTests",
+    ),
 
     // MARK: - Components Module
     .target(
@@ -128,6 +133,11 @@ let package = Package(
       dependencies: ["IronCore", "IronPrimitives", "IronComponents"],
       path: "Sources/IronNavigation",
     ),
+    .testTarget(
+      name: "IronNavigationTests",
+      dependencies: ["IronNavigation"],
+      path: "Tests/IronNavigationTests",
+    ),
 
     // MARK: - Forms Module
     .target(
@@ -135,12 +145,22 @@ let package = Package(
       dependencies: ["IronCore", "IronPrimitives", "IronComponents"],
       path: "Sources/IronForms",
     ),
+    .testTarget(
+      name: "IronFormsTests",
+      dependencies: ["IronForms"],
+      path: "Tests/IronFormsTests",
+    ),
 
     // MARK: - Data Display Module
     .target(
       name: "IronDataDisplay",
       dependencies: ["IronCore", "IronPrimitives", "IronComponents"],
       path: "Sources/IronDataDisplay",
+    ),
+    .testTarget(
+      name: "IronDataDisplayTests",
+      dependencies: ["IronDataDisplay"],
+      path: "Tests/IronDataDisplayTests",
     ),
 
     // MARK: - Umbrella Module

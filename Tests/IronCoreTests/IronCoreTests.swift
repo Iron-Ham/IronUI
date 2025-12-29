@@ -563,3 +563,165 @@ struct IronLoggerTests {
     // Just verify it doesn't crash and returns a Bool
   }
 }
+
+// MARK: - IronHapticsTests
+
+@Suite("IronHaptics")
+struct IronHapticsTests {
+
+  @Test("ImpactStyle has all expected cases")
+  func impactStyleHasAllCases() {
+    let styles: [IronHaptics.ImpactStyle] = [
+      .light,
+      .medium,
+      .heavy,
+      .soft,
+      .rigid,
+    ]
+    #expect(styles.count == 5)
+  }
+
+  @Test("ImpactStyle is Sendable")
+  func impactStyleIsSendable() {
+    let style = IronHaptics.ImpactStyle.medium
+    Task {
+      _ = style
+    }
+  }
+
+  @Test("NotificationType has all expected cases")
+  func notificationTypeHasAllCases() {
+    let types: [IronHaptics.NotificationType] = [
+      .success,
+      .warning,
+      .error,
+    ]
+    #expect(types.count == 3)
+  }
+
+  @Test("NotificationType is Sendable")
+  func notificationTypeIsSendable() {
+    let type = IronHaptics.NotificationType.success
+    Task {
+      _ = type
+    }
+  }
+
+  @MainActor
+  @Test("impact methods are accessible")
+  func impactMethodsAccessible() {
+    // Verify API is callable (actual haptics may not work in test env)
+    IronHaptics.impact(.light)
+    IronHaptics.impact(.medium, intensity: 0.5)
+  }
+
+  @MainActor
+  @Test("notification method is accessible")
+  func notificationMethodAccessible() {
+    IronHaptics.notification(.success)
+    IronHaptics.notification(.warning)
+    IronHaptics.notification(.error)
+  }
+
+  @MainActor
+  @Test("selection method is accessible")
+  func selectionMethodAccessible() {
+    IronHaptics.selection()
+  }
+
+  @MainActor
+  @Test("convenience pattern methods are accessible")
+  func convenienceMethodsAccessible() {
+    IronHaptics.tap()
+    IronHaptics.buttonPress()
+    IronHaptics.toggle()
+  }
+
+  @MainActor
+  @Test("composite pattern methods are accessible")
+  func compositeMethodsAccessible() {
+    // These use DispatchQueue.main.asyncAfter internally
+    IronHaptics.success()
+    IronHaptics.error()
+    IronHaptics.heartbeat()
+    IronHaptics.celebrate()
+  }
+}
+
+// MARK: - IronHapticTapModifierTests
+
+@Suite("IronHapticTapModifier")
+@MainActor
+struct IronHapticTapModifierTests {
+
+  @Test("modifier can be instantiated with default style")
+  func modifierWithDefaultStyle() {
+    let modifier = IronHapticTapModifier()
+    _ = modifier
+  }
+
+  @Test("modifier can be instantiated with custom style")
+  func modifierWithCustomStyle() {
+    let modifier = IronHapticTapModifier(style: .heavy)
+    _ = modifier
+  }
+
+  @Test("view extension applies modifier")
+  func viewExtensionAppliesModifier() {
+    let view = Text("Tap me")
+      .ironHapticTap(.medium)
+
+    _ = view
+  }
+
+  @Test("view extension works with all styles")
+  func viewExtensionWorksWithAllStyles() {
+    _ = Text("Light").ironHapticTap(.light)
+    _ = Text("Medium").ironHapticTap(.medium)
+    _ = Text("Heavy").ironHapticTap(.heavy)
+    _ = Text("Soft").ironHapticTap(.soft)
+    _ = Text("Rigid").ironHapticTap(.rigid)
+  }
+}
+
+// MARK: - IronSensoryFeedbackModifierTests
+
+@Suite("IronSensoryFeedbackModifier")
+@MainActor
+struct IronSensoryFeedbackModifierTests {
+
+  @Test("modifier can be instantiated")
+  func modifierCanBeInstantiated() {
+    var triggered = false
+    let modifier = IronSensoryFeedbackModifier(
+      isTriggered: false,
+      onTrigger: { triggered = true },
+    )
+    _ = modifier
+    #expect(triggered == false)
+  }
+
+  @Test("view extension applies modifier")
+  func viewExtensionAppliesModifier() {
+    var hapticCount = 0
+    let view = Text("Content")
+      .ironSensoryFeedback(isTriggered: false) {
+        hapticCount += 1
+      }
+
+    _ = view
+    #expect(hapticCount == 0)
+  }
+}
+
+// MARK: - IronEnvironmentValuesTests
+
+@Suite("IronEnvironmentValues")
+struct IronEnvironmentValuesTests {
+
+  @Test("ironTheme environment key is accessible")
+  func ironThemeKeyAccessible() {
+    // Verify the environment key exists
+    _ = \EnvironmentValues.ironTheme
+  }
+}
