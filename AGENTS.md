@@ -81,7 +81,14 @@ open IronUI.xcworkspace
 
 ## Developer CLI
 
-Use `swift run ironui-cli <command>` for development tasks. The CLI wraps Tuist commands for convenience.
+For faster execution, use the cached wrapper script:
+```bash
+./Scripts/ironui-cli <command>
+```
+
+The wrapper caches the compiled CLI binary and validates it against a checksum of the source files. This avoids recompilation on every invocation (~30-60s savings).
+
+Alternatively, `swift run ironui-cli <command>` works but recompiles the CLI each time.
 
 | Command | Purpose |
 |---------|---------|

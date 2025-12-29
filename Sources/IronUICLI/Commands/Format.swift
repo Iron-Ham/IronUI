@@ -55,7 +55,6 @@ extension IronUICLI {
     private static let sourceDirectories = [
       "Sources",
       "Tests",
-      "Sample",
       "Apps",
     ]
 
