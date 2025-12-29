@@ -1,0 +1,55 @@
+#!/bin/bash
+# Cached wrapper for ironui-cli
+# Avoids recompiling the CLI on every invocation by caching the binary
+# and validating against a checksum of the source files.
+#
+# Usage: ./Scripts/ironui-cli <command> [options]
+# Example: ./Scripts/ironui-cli format
+#          ./Scripts/ironui-cli build --platform ios
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+CACHE_DIR="$REPO_ROOT/.build/cached-cli"
+CACHED_BINARY="$CACHE_DIR/ironui-cli"
+CHECKSUM_FILE="$CACHE_DIR/checksum"
+
+# Compute checksum of CLI source files
+compute_checksum() {
+    # Include all Swift files in the CLI source directory
+    # Sort for deterministic ordering across systems
+    find "$REPO_ROOT/Sources/IronUICLI" -name "*.swift" -type f | \
+        sort | \
+        xargs cat | \
+        shasum -a 256 | \
+        cut -d' ' -f1
+}
+
+# Ensure cache directory exists
+mkdir -p "$CACHE_DIR"
+
+CURRENT_CHECKSUM=$(compute_checksum)
+
+# Check if we need to rebuild
+NEED_REBUILD=true
+if [ -f "$CACHED_BINARY" ] && [ -f "$CHECKSUM_FILE" ]; then
+    STORED_CHECKSUM=$(cat "$CHECKSUM_FILE")
+    if [ "$CURRENT_CHECKSUM" = "$STORED_CHECKSUM" ]; then
+        NEED_REBUILD=false
+    fi
+fi
+
+if [ "$NEED_REBUILD" = true ]; then
+    echo "Building ironui-cli (source changed or first run)..."
+    cd "$REPO_ROOT"
+    swift build -c release --product ironui-cli 2>&1 | grep -v "^Build complete" || true
+
+    # Copy the built binary to cache
+    cp "$REPO_ROOT/.build/release/ironui-cli" "$CACHED_BINARY"
+    echo "$CURRENT_CHECKSUM" > "$CHECKSUM_FILE"
+    echo "CLI cached successfully."
+fi
+
+# Execute the cached binary with all passed arguments
+exec "$CACHED_BINARY" "$@"

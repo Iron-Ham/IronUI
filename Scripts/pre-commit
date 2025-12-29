@@ -7,10 +7,19 @@
 
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# Handle both direct execution and symlink from .git/hooks
+if [ -f "$SCRIPT_DIR/ironui-cli" ]; then
+    CLI="$SCRIPT_DIR/ironui-cli"
+else
+    # When run from .git/hooks/pre-commit symlink
+    CLI="$(cd "$SCRIPT_DIR/../.." && pwd)/Scripts/ironui-cli"
+fi
+
 echo "Running swift-format..."
 
-# Run the CLI format command
-swift run ironui-cli format
+# Run the CLI format command (uses cached binary)
+"$CLI" format
 
 # Stage any formatting changes
 git add -u
