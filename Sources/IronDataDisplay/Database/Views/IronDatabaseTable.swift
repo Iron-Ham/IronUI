@@ -63,22 +63,26 @@ public struct IronDatabaseTable: View {
   // MARK: Public
 
   public var body: some View {
-    ScrollView([.horizontal, .vertical], showsIndicators: true) {
+    ScrollView(.horizontal, showsIndicators: true) {
       VStack(alignment: .leading, spacing: 0) {
-        // Header row
+        // Header row - stays fixed at top
         headerRow
 
         IronDivider()
 
-        // Data rows
-        ForEach(database.rows) { row in
-          dataRow(for: row)
-          IronDivider()
-        }
+        // Data rows - vertical scroll only
+        ScrollView(.vertical, showsIndicators: true) {
+          VStack(alignment: .leading, spacing: 0) {
+            ForEach(database.rows) { row in
+              dataRow(for: row)
+              IronDivider()
+            }
 
-        // Add row button
-        if onAddRow != nil {
-          addRowButton
+            // Add row button
+            if onAddRow != nil {
+              addRowButton
+            }
+          }
         }
       }
       .frame(minWidth: totalWidth)

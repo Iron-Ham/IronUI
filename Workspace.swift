@@ -6,6 +6,7 @@ let workspace = Workspace(
     ".",
     "Apps/PreviewGallery",
     "Apps/IronUIDemo",
+    "Apps/Housekeepr",
   ],
   schemes: [
     .scheme(

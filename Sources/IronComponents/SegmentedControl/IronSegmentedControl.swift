@@ -107,7 +107,7 @@ public struct IronSegmentedControl<Option: Hashable, Label: View>: View {
             RoundedRectangle(cornerRadius: innerCornerRadius)
               .strokeBorder(theme.colors.primary.opacity(0.3), lineWidth: 1)
           }
-          .frame(width: segmentWidth - indicatorPadding * 2)
+          .frame(width: max(0, segmentWidth - indicatorPadding * 2))
           .padding(indicatorPadding)
           .offset(x: selectedIndex * segmentWidth)
           .animation(shouldAnimate ? theme.animation.bouncy : nil, value: selection)

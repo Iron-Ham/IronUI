@@ -210,7 +210,7 @@ private struct KanbanColumn<
                 .draggable(item.id) {
                   // Drag preview
                   cardBuilder(item)
-                    .frame(width: columnWidth)
+                    .frame(width: max(0, columnWidth))
                     .opacity(0.8)
                 }
             }
@@ -218,7 +218,7 @@ private struct KanbanColumn<
         }
         .padding(.vertical, theme.spacing.xs)
       }
-      .frame(maxHeight: .infinity)
+      .frame(minHeight: 200)
       .dropDestination(for: Item.ID.self) { droppedIDs, _ in
         handleDrop(droppedIDs)
       } isTargeted: { isTargeted in
@@ -228,18 +228,19 @@ private struct KanbanColumn<
       }
     }
     .padding(theme.spacing.sm)
-    .frame(width: columnWidth)
+    .frame(width: max(0, columnWidth))
     .background(
       RoundedRectangle(cornerRadius: theme.radii.md)
-        .fill(isDropTargeted ? theme.colors.primary.opacity(0.1) : theme.colors.surface)
+        .fill(isDropTargeted ? theme.colors.primary.opacity(0.1) : theme.colors.surfaceElevated)
     )
     .overlay(
       RoundedRectangle(cornerRadius: theme.radii.md)
         .strokeBorder(
-          isDropTargeted ? theme.colors.primary : Color.clear,
-          style: StrokeStyle(lineWidth: 2, dash: isDropTargeted ? [5, 5] : []),
+          isDropTargeted ? theme.colors.primary : theme.colors.border,
+          lineWidth: isDropTargeted ? 2 : 1,
         )
     )
+    .shadow(color: .black.opacity(0.06), radius: 4, x: 0, y: 2)
     .accessibilityElement(children: .contain)
     .accessibilityLabel("Column with \(items.count) items")
   }
@@ -331,9 +332,13 @@ public struct IronKanbanCard<Content: View>: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
     .padding(theme.spacing.md)
-    .background(theme.colors.surfaceElevated)
+    .background(theme.colors.background)
     .clipShape(RoundedRectangle(cornerRadius: theme.radii.md))
-    .shadow(color: .black.opacity(0.05), radius: 2, x: 0, y: 1)
+    .overlay(
+      RoundedRectangle(cornerRadius: theme.radii.md)
+        .strokeBorder(theme.colors.border.opacity(0.5), lineWidth: 1)
+    )
+    .shadow(color: .black.opacity(0.08), radius: 3, x: 0, y: 2)
   }
 
   // MARK: Private
