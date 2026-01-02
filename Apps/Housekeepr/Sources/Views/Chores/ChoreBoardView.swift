@@ -52,7 +52,7 @@ struct ChoreBoardView: View {
             IronAvatar(
               name: assignee.avatarEmoji,
               size: .small,
-              backgroundColor: Color(hex: assignee.colorHex),
+              backgroundColor: Color(hex: assignee.colorHex)?.opacity(0.2),
             )
           }
         }

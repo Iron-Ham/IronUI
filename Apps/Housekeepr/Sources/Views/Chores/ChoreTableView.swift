@@ -296,8 +296,8 @@ struct ChoreTableView: View {
   ChoreTableView(
     chores: SampleData.chores,
     members: SampleData.members,
-  ) { chore in
-    print("Edit chore: \(chore.title)")
+  ) { _ in
+    // Preview - no-op
   }
   .ironTheme(IronDefaultTheme())
 }

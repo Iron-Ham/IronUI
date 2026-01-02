@@ -11,6 +11,8 @@ struct ContentView: View {
 
   @FetchAll var activities: [ChoreActivity]
 
+  @FetchAll var chores: [Chore]
+
   var body: some View {
     TabView(selection: $selectedTab) {
       Tab("Dashboard", systemImage: "house.fill", value: 0) {
@@ -22,7 +24,7 @@ struct ContentView: View {
       }
 
       Tab("Activity", systemImage: "clock.arrow.circlepath", value: 2) {
-        ActivityTimelineView(activities: activities, members: members)
+        ActivityTimelineView(activities: activities, members: members, chores: chores)
       }
 
       Tab("Members", systemImage: "person.2.fill", value: 3) {
