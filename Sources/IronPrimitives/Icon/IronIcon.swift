@@ -78,9 +78,14 @@ public struct IronIcon: View {
   // MARK: Public
 
   public var body: some View {
-    iconView
-      .foregroundStyle(foregroundColor)
-      .accessibilityHidden(true)
+    if color == .inherit {
+      iconView
+        .accessibilityHidden(true)
+    } else {
+      iconView
+        .foregroundStyle(foregroundColor)
+        .accessibilityHidden(true)
+    }
   }
 
   // MARK: Private
@@ -157,6 +162,7 @@ public struct IronIcon: View {
 
   private var foregroundColor: Color {
     switch color {
+    case .inherit: .clear // Never reached - handled separately in body
     case .primary: theme.colors.textPrimary
     case .secondary: theme.colors.textSecondary
     case .disabled: theme.colors.textDisabled
@@ -206,7 +212,9 @@ public enum IronIconSize: Sendable, CaseIterable {
 ///
 /// Use semantic colors to ensure icons remain visible and
 /// meaningful across light and dark modes.
-public enum IronIconColor: Sendable {
+public enum IronIconColor: Sendable, Equatable {
+  /// Inherit color from parent view's foreground style.
+  case inherit
   /// Primary icon color for main content.
   case primary
   /// Secondary icon color for supporting content.
