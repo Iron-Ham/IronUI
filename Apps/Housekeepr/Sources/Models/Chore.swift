@@ -1,5 +1,23 @@
 import Foundation
+import GRDB
 import SQLiteData
+
+// MARK: - ChoreStatus
+
+/// Workflow status for kanban-style chore management
+enum ChoreStatus: String, CaseIterable, Sendable, Hashable, Codable, DatabaseValueConvertible, QueryRepresentable, QueryBindable {
+  case todo = "To Do"
+  case inProgress = "In Progress"
+  case done = "Done"
+
+  // MARK: Internal
+
+  static var _columnWidth: Int? {
+    nil
+  }
+}
+
+// MARK: - Chore
 
 /// A household chore that can be assigned and tracked
 @Table
@@ -14,6 +32,7 @@ struct Chore: Identifiable, Sendable {
     category: ChoreCategory = .general,
     frequency: ChoreFrequency = .once,
     dueDate: Date? = nil,
+    status: ChoreStatus = .todo,
     isCompleted: Bool = false,
     completedAt: Date? = nil,
     assigneeId: UUID? = nil,
@@ -24,6 +43,7 @@ struct Chore: Identifiable, Sendable {
     self.category = category
     self.frequency = frequency
     self.dueDate = dueDate
+    self.status = status
     self.isCompleted = isCompleted
     self.completedAt = completedAt
     self.assigneeId = assigneeId
@@ -37,6 +57,7 @@ struct Chore: Identifiable, Sendable {
   var category: ChoreCategory
   var frequency: ChoreFrequency
   var dueDate: Date?
+  var status: ChoreStatus
   var isCompleted: Bool
   var completedAt: Date?
   var assigneeId: UUID?

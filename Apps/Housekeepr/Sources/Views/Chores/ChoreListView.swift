@@ -1,9 +1,28 @@
 import IronComponents
 import IronCore
+import IronDataDisplay
 import IronNavigation
 import IronPrimitives
 import SQLiteData
 import SwiftUI
+
+// MARK: - ChoreViewMode
+
+enum ChoreViewMode: String, CaseIterable {
+  case list = "List"
+  case board = "Board"
+
+  // MARK: Internal
+
+  var icon: String {
+    switch self {
+    case .list: "list.bullet"
+    case .board: "rectangle.split.3x1"
+    }
+  }
+}
+
+// MARK: - ChoreListView
 
 struct ChoreListView: View {
 
@@ -17,42 +36,16 @@ struct ChoreListView: View {
 
   var body: some View {
     NavigationStack {
-      List {
-        Section("Pending") {
-          ForEach(pendingChores) { chore in
-            ChoreRow(
-              chore: chore,
-              member: members.first { $0.id == chore.assigneeId },
-              showCheckbox: true,
-              showEditButton: true,
-              onToggle: { toggleChore(chore) },
-              onEdit: { choreToEdit = chore },
-            )
-            .padding(.vertical, theme.spacing.xs)
-          }
-          .onDelete { indexSet in
-            deleteChores(at: indexSet, from: pendingChores)
-          }
-        }
+      VStack(spacing: 0) {
+        viewModePicker
 
-        Section("Completed") {
-          ForEach(completedChores) { chore in
-            ChoreRow(
-              chore: chore,
-              member: members.first { $0.id == chore.assigneeId },
-              showCheckbox: true,
-              showEditButton: true,
-              onToggle: { toggleChore(chore) },
-              onEdit: { choreToEdit = chore },
-            )
-            .padding(.vertical, theme.spacing.xs)
-          }
-          .onDelete { indexSet in
-            deleteChores(at: indexSet, from: completedChores)
-          }
+        switch viewMode {
+        case .list:
+          listView
+        case .board:
+          boardView
         }
       }
-      .animation(.smooth, value: chores.map(\.isCompleted))
       .navigationTitle("Chores")
       .toolbar {
         ToolbarItem(placement: .primaryAction) {
@@ -74,6 +67,15 @@ struct ChoreListView: View {
           choreToEdit: chore,
         )
       }
+      .onChange(of: chores) { _, newChores in
+        boardChores = newChores
+      }
+      .onChange(of: boardChores) { oldChores, newChores in
+        syncBoardChangesToDatabase(oldChores: oldChores, newChores: newChores)
+      }
+      .onAppear {
+        boardChores = chores
+      }
     }
   }
 
@@ -81,8 +83,10 @@ struct ChoreListView: View {
 
   @Environment(\.ironTheme) private var theme
 
+  @State private var viewMode = ChoreViewMode.list
   @State private var showAddChore = false
   @State private var choreToEdit: Chore?
+  @State private var boardChores = [Chore]()
 
   private var pendingChores: [Chore] {
     chores.filter { !$0.isCompleted }
@@ -90,6 +94,88 @@ struct ChoreListView: View {
 
   private var completedChores: [Chore] {
     chores.filter(\.isCompleted)
+  }
+
+  private var viewModePicker: some View {
+    IronSegmentedControl(
+      options: ChoreViewMode.allCases,
+      selection: $viewMode,
+    ) { mode in
+      HStack(spacing: theme.spacing.xs) {
+        IronIcon(systemName: mode.icon, size: .small, color: .inherit)
+        IronText(LocalizedStringKey(mode.rawValue), style: .labelMedium, color: .inherit)
+      }
+    }
+    .padding(.horizontal, theme.spacing.md)
+    .padding(.vertical, theme.spacing.sm)
+  }
+
+  private var listView: some View {
+    List {
+      Section("Pending") {
+        ForEach(pendingChores) { chore in
+          ChoreRow(
+            chore: chore,
+            member: members.first { $0.id == chore.assigneeId },
+            showCheckbox: true,
+            showEditButton: true,
+            onToggle: { toggleChore(chore) },
+            onEdit: { choreToEdit = chore },
+          )
+          .padding(.vertical, theme.spacing.xs)
+        }
+        .onDelete { indexSet in
+          deleteChores(at: indexSet, from: pendingChores)
+        }
+      }
+
+      Section("Completed") {
+        ForEach(completedChores) { chore in
+          ChoreRow(
+            chore: chore,
+            member: members.first { $0.id == chore.assigneeId },
+            showCheckbox: true,
+            showEditButton: true,
+            onToggle: { toggleChore(chore) },
+            onEdit: { choreToEdit = chore },
+          )
+          .padding(.vertical, theme.spacing.xs)
+        }
+        .onDelete { indexSet in
+          deleteChores(at: indexSet, from: completedChores)
+        }
+      }
+    }
+    .animation(.smooth, value: chores.map(\.isCompleted))
+  }
+
+  private var boardView: some View {
+    ChoreBoardView(chores: $boardChores, members: members)
+  }
+
+  private func syncBoardChangesToDatabase(oldChores: [Chore], newChores: [Chore]) {
+    for newChore in newChores {
+      if
+        let oldChore = oldChores.first(where: { $0.id == newChore.id }),
+        oldChore.status != newChore.status
+      {
+        try? database.write { db in
+          try Chore
+            .find(newChore.id)
+            .update {
+              $0.status = newChore.status
+              if newChore.status == .done {
+                $0.isCompleted = true
+                $0.completedAt = Date()
+              } else if oldChore.status == .done {
+                $0.isCompleted = false
+                $0.completedAt = nil
+              }
+            }
+            .execute(db)
+        }
+      }
+    }
   }
 
   private func toggleChore(_ chore: Chore) {
@@ -100,6 +186,7 @@ struct ChoreListView: View {
           .update {
             $0.isCompleted.toggle()
             $0.completedAt = !chore.isCompleted ? Date() : nil
+            $0.status = !chore.isCompleted ? .done : .todo
           }
           .execute(db)
       }

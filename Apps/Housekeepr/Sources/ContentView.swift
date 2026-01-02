@@ -1,10 +1,15 @@
 import IronCore
 import IronPrimitives
+import SQLiteData
 import SwiftUI
 
 struct ContentView: View {
 
   // MARK: Internal
+
+  @FetchAll var members: [HouseholdMember]
+
+  @FetchAll var activities: [ChoreActivity]
 
   var body: some View {
     TabView(selection: $selectedTab) {
@@ -16,11 +21,15 @@ struct ContentView: View {
         ChoreListView()
       }
 
-      Tab("Members", systemImage: "person.2.fill", value: 2) {
+      Tab("Activity", systemImage: "clock.arrow.circlepath", value: 2) {
+        ActivityTimelineView(activities: activities, members: members)
+      }
+
+      Tab("Members", systemImage: "person.2.fill", value: 3) {
         MembersView()
       }
 
-      Tab("Settings", systemImage: "gearshape.fill", value: 3) {
+      Tab("Settings", systemImage: "gearshape.fill", value: 4) {
         SettingsView()
       }
     }
