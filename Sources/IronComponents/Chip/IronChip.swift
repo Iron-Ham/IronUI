@@ -101,7 +101,7 @@ public struct IronChip<LeadingIcon: View>: View {
     self.variant = variant
     self.size = size
     self.onDismiss = onDismiss
-    leadingIcon = IronIcon(systemName: icon, size: Self.iconSize(for: size), color: .primary)
+    leadingIcon = IronIcon(systemName: icon, size: Self.iconSize(for: size), color: .inherit)
     _isSelected = .constant(nil)
   }
 
@@ -144,6 +144,30 @@ public struct IronChip<LeadingIcon: View>: View {
     self.size = size
     onDismiss = nil
     leadingIcon = nil
+    _isSelected = Binding(
+      get: { isSelected.wrappedValue },
+      set: { isSelected.wrappedValue = $0 ?? false },
+    )
+  }
+
+  /// Creates a selectable chip with a system icon.
+  ///
+  /// - Parameters:
+  ///   - title: The chip label.
+  ///   - icon: The SF Symbol name.
+  ///   - isSelected: Binding to the selection state.
+  ///   - size: The size of the chip.
+  public init(
+    _ title: LocalizedStringKey,
+    icon: String,
+    isSelected: Binding<Bool>,
+    size: IronChipSize = .medium,
+  ) where LeadingIcon == IronIcon {
+    self.title = title
+    variant = .outlined
+    self.size = size
+    onDismiss = nil
+    leadingIcon = IronIcon(systemName: icon, size: Self.iconSize(for: size), color: .inherit)
     _isSelected = Binding(
       get: { isSelected.wrappedValue },
       set: { isSelected.wrappedValue = $0 ?? false },
@@ -477,6 +501,19 @@ public enum IronChipSize: Sendable, CaseIterable {
     IronChip("Swift", isSelected: $swift)
     IronChip("SwiftUI", isSelected: $swiftUI)
     IronChip("Combine", isSelected: $combine)
+  }
+  .padding()
+}
+
+#Preview("IronChip - Selectable with Icons") {
+  @Previewable @State var kitchen = true
+  @Previewable @State var bathroom = false
+  @Previewable @State var outdoor = false
+
+  HStack(spacing: 8) {
+    IronChip("Kitchen", icon: "fork.knife", isSelected: $kitchen)
+    IronChip("Bathroom", icon: "shower", isSelected: $bathroom)
+    IronChip("Outdoor", icon: "leaf", isSelected: $outdoor)
   }
   .padding()
 }
