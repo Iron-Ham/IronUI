@@ -329,36 +329,33 @@ struct IronSelectCell: View {
   let isEditing: Bool
 
   var body: some View {
-    if isEditing {
-      Menu {
+    // Menu is always active - single tap opens it directly
+    Menu {
+      Button {
+        value = nil
+      } label: {
+        IronText("Clear", style: .bodyMedium, color: .primary)
+      }
+      Divider()
+      ForEach(options) { option in
         Button {
-          value = nil
+          value = option.id
         } label: {
-          IronText("Clear", style: .bodyMedium, color: .primary)
-        }
-        Divider()
-        ForEach(options) { option in
-          Button {
-            value = option.id
-          } label: {
-            HStack {
-              Circle()
-                .fill(colorForOption(option))
-                .frame(width: 8, height: 8)
-              IronText(option.name, style: .bodyMedium, color: .primary)
-              if value == option.id {
-                IronIcon(systemName: "checkmark", size: .xSmall, color: .primary)
-              }
+          HStack {
+            Circle()
+              .fill(colorForOption(option))
+              .frame(width: 8, height: 8)
+            IronText(option.name, style: .bodyMedium, color: .primary)
+            if value == option.id {
+              IronIcon(systemName: "checkmark", size: .xSmall, color: .primary)
             }
           }
         }
-      } label: {
-        selectLabel
       }
-      .menuStyle(.button)
-    } else {
+    } label: {
       selectLabel
     }
+    .menuStyle(.button)
   }
 
   // MARK: Private
@@ -414,34 +411,31 @@ struct IronMultiSelectCell: View {
   let isEditing: Bool
 
   var body: some View {
-    if isEditing {
-      Menu {
-        ForEach(options) { option in
-          Button {
+    // Menu is always active - single tap opens it directly
+    Menu {
+      ForEach(options) { option in
+        Button {
+          if value.contains(option.id) {
+            value.remove(option.id)
+          } else {
+            value.insert(option.id)
+          }
+        } label: {
+          HStack {
+            Circle()
+              .fill(colorForOption(option))
+              .frame(width: 8, height: 8)
+            IronText(option.name, style: .bodyMedium, color: .primary)
             if value.contains(option.id) {
-              value.remove(option.id)
-            } else {
-              value.insert(option.id)
-            }
-          } label: {
-            HStack {
-              Circle()
-                .fill(colorForOption(option))
-                .frame(width: 8, height: 8)
-              IronText(option.name, style: .bodyMedium, color: .primary)
-              if value.contains(option.id) {
-                IronIcon(systemName: "checkmark", size: .xSmall, color: .primary)
-              }
+              IronIcon(systemName: "checkmark", size: .xSmall, color: .primary)
             }
           }
         }
-      } label: {
-        tagsView
       }
-      .menuStyle(.button)
-    } else {
+    } label: {
       tagsView
     }
+    .menuStyle(.button)
   }
 
   // MARK: Private

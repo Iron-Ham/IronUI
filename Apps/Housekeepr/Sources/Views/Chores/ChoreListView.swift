@@ -11,6 +11,7 @@ import SwiftUI
 enum ChoreViewMode: String, CaseIterable {
   case list = "List"
   case board = "Board"
+  case table = "Table"
 
   // MARK: Internal
 
@@ -18,6 +19,7 @@ enum ChoreViewMode: String, CaseIterable {
     switch self {
     case .list: "list.bullet"
     case .board: "rectangle.split.3x1"
+    case .table: "tablecells"
     }
   }
 }
@@ -44,6 +46,7 @@ struct ChoreListView: View {
         }
         .sheet(item: $choreToEdit) { chore in
           editChoreSheet(for: chore)
+            .presentationDetents([.medium, .large])
         }
         .onChange(of: chores) { _, newChores in
           boardChores = newChores
@@ -75,6 +78,8 @@ struct ChoreListView: View {
         listView
       case .board:
         boardView
+      case .table:
+        tableView
       }
     }
   }
@@ -152,6 +157,12 @@ struct ChoreListView: View {
 
   private var boardView: some View {
     ChoreBoardView(chores: $boardChores, members: members)
+  }
+
+  private var tableView: some View {
+    ChoreTableView(chores: chores, members: members) { chore in
+      choreToEdit = chore
+    }
   }
 
   private func editChoreSheet(for chore: Chore) -> some View {
