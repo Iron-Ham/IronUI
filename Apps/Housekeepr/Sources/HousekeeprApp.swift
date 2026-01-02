@@ -1,8 +1,13 @@
 import GRDB
 import IronCore
 import IronUI
+import OSLog
 import SQLiteData
 import SwiftUI
+
+private let logger = Logger(subsystem: "Housekeepr", category: "Database")
+
+// MARK: - HousekeeprApp
 
 @main
 struct HousekeeprApp: App {
@@ -36,29 +41,71 @@ struct HousekeeprApp: App {
         create: true,
       )
       let dbURL = appSupport.appendingPathComponent("housekeepr.sqlite")
-      let db = try DatabaseQueue(path: dbURL.path)
 
-      try db.write { db in
-        try db.create(table: "householdMembers", ifNotExists: true) { t in
-          t.column("id", .text).primaryKey()
-          t.column("name", .text).notNull()
-          t.column("avatarEmoji", .text).notNull()
-          t.column("colorHex", .text).notNull()
-        }
-
-        try db.create(table: "chores", ifNotExists: true) { t in
-          t.column("id", .text).primaryKey()
-          t.column("title", .text).notNull()
-          t.column("notes", .text).notNull()
-          t.column("category", .text).notNull()
-          t.column("frequency", .text).notNull()
-          t.column("dueDate", .datetime)
-          t.column("isCompleted", .boolean).notNull()
-          t.column("completedAt", .datetime)
-          t.column("assigneeId", .text)
+      var configuration = Configuration()
+      #if DEBUG
+      configuration.prepareDatabase { db in
+        db.trace(options: .profile) {
+          logger.debug("\($0.expandedDescription)")
         }
       }
+      #endif
 
+      let db = try DatabaseQueue(path: dbURL.path, configuration: configuration)
+      logger.info("Opened database at '\(dbURL.path)'")
+
+      var migrator = DatabaseMigrator()
+      #if DEBUG
+      migrator.eraseDatabaseOnSchemaChange = true
+      #endif
+
+      migrator.registerMigration("v2_create_tables") { db in
+        // Drop existing tables to ensure clean schema (sample app only)
+        try #sql("DROP TABLE IF EXISTS \"householdMembers\"").execute(db)
+        try #sql("DROP TABLE IF EXISTS \"chores\"").execute(db)
+        try #sql("DROP TABLE IF EXISTS \"choreActivities\"").execute(db)
+
+        try #sql("""
+          CREATE TABLE "householdMembers" (
+            "id" TEXT NOT NULL PRIMARY KEY,
+            "name" TEXT NOT NULL,
+            "avatarEmoji" TEXT NOT NULL,
+            "colorHex" TEXT NOT NULL
+          )
+          """)
+        .execute(db)
+
+        try #sql("""
+          CREATE TABLE "chores" (
+            "id" TEXT NOT NULL PRIMARY KEY,
+            "title" TEXT NOT NULL,
+            "notes" TEXT NOT NULL,
+            "category" TEXT NOT NULL,
+            "frequency" TEXT NOT NULL,
+            "dueDate" TEXT,
+            "status" TEXT NOT NULL DEFAULT 'To Do',
+            "isCompleted" INTEGER NOT NULL,
+            "completedAt" TEXT,
+            "assigneeId" TEXT
+          )
+          """)
+        .execute(db)
+
+        try #sql("""
+          CREATE TABLE "choreActivities" (
+            "id" TEXT NOT NULL PRIMARY KEY,
+            "choreId" TEXT NOT NULL,
+            "choreTitle" TEXT NOT NULL,
+            "activityType" TEXT NOT NULL,
+            "performedById" TEXT NOT NULL,
+            "timestamp" TEXT NOT NULL,
+            "details" TEXT
+          )
+          """)
+        .execute(db)
+      }
+
+      try migrator.migrate(db)
       try SampleData.seedIfNeeded(db: db)
 
       return db
