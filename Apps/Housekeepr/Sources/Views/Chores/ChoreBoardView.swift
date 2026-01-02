@@ -19,7 +19,7 @@ struct ChoreBoardView: View {
       columns: ChoreStatus.allCases,
       items: $chores,
       columnKeyPath: \.status,
-      spacing: .standard,
+      spacing: .spacious,
     ) { chore in
       choreCard(for: chore)
     } header: { status, count in
