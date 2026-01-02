@@ -53,5 +53,10 @@ let package = Package(
       url: "https://github.com/EmergeTools/SnapshotPreviews",
       from: "0.11.0",
     ),
+    // SQLiteData (for Housekeepr sample app)
+    .package(
+      url: "https://github.com/pointfreeco/sqlite-data",
+      from: "1.4.2",
+    ),
   ],
 )
