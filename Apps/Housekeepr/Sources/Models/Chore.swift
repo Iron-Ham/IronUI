@@ -21,7 +21,7 @@ enum ChoreStatus: String, CaseIterable, Sendable, Hashable, Codable, DatabaseVal
 
 /// A household chore that can be assigned and tracked
 @Table
-struct Chore: Identifiable, Sendable {
+struct Chore: Identifiable, Sendable, Equatable {
 
   // MARK: Lifecycle
 

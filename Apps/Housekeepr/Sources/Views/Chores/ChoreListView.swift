@@ -36,46 +36,24 @@ struct ChoreListView: View {
 
   var body: some View {
     NavigationStack {
-      VStack(spacing: 0) {
-        viewModePicker
-
-        switch viewMode {
-        case .list:
-          listView
-        case .board:
-          boardView
+      choreContent
+        .navigationTitle("Chores")
+        .toolbar { addChoreToolbar }
+        .sheet(isPresented: $showAddChore) {
+          AddChoreSheet(isPresented: $showAddChore, members: members)
         }
-      }
-      .navigationTitle("Chores")
-      .toolbar {
-        ToolbarItem(placement: .primaryAction) {
-          Button("Add") {
-            showAddChore = true
-          }
+        .sheet(item: $choreToEdit) { chore in
+          editChoreSheet(for: chore)
         }
-      }
-      .sheet(isPresented: $showAddChore) {
-        AddChoreSheet(isPresented: $showAddChore, members: members)
-      }
-      .sheet(item: $choreToEdit) { chore in
-        AddChoreSheet(
-          isPresented: Binding(
-            get: { choreToEdit != nil },
-            set: { if !$0 { choreToEdit = nil } },
-          ),
-          members: members,
-          choreToEdit: chore,
-        )
-      }
-      .onChange(of: chores) { _, newChores in
-        boardChores = newChores
-      }
-      .onChange(of: boardChores) { oldChores, newChores in
-        syncBoardChangesToDatabase(oldChores: oldChores, newChores: newChores)
-      }
-      .onAppear {
-        boardChores = chores
-      }
+        .onChange(of: chores) { _, newChores in
+          boardChores = newChores
+        }
+        .onChange(of: boardChores) { oldChores, newChores in
+          syncBoardChangesToDatabase(oldChores: oldChores, newChores: newChores)
+        }
+        .onAppear {
+          boardChores = chores
+        }
     }
   }
 
@@ -88,6 +66,28 @@ struct ChoreListView: View {
   @State private var choreToEdit: Chore?
   @State private var boardChores = [Chore]()
 
+  private var choreContent: some View {
+    VStack(spacing: 0) {
+      viewModePicker
+
+      switch viewMode {
+      case .list:
+        listView
+      case .board:
+        boardView
+      }
+    }
+  }
+
+  @ToolbarContentBuilder
+  private var addChoreToolbar: some ToolbarContent {
+    ToolbarItem(placement: .primaryAction) {
+      Button("Add") {
+        showAddChore = true
+      }
+    }
+  }
+
   private var pendingChores: [Chore] {
     chores.filter { !$0.isCompleted }
   }
@@ -98,12 +98,13 @@ struct ChoreListView: View {
 
   private var viewModePicker: some View {
     IronSegmentedControl(
-      options: ChoreViewMode.allCases,
       selection: $viewMode,
+      options: ChoreViewMode.allCases,
+      size: .medium,
     ) { mode in
       HStack(spacing: theme.spacing.xs) {
         IronIcon(systemName: mode.icon, size: .small, color: .inherit)
-        IronText(LocalizedStringKey(mode.rawValue), style: .labelMedium, color: .inherit)
+        IronText(LocalizedStringKey(mode.rawValue), style: .labelMedium, color: .primary)
       }
     }
     .padding(.horizontal, theme.spacing.md)
@@ -151,6 +152,17 @@ struct ChoreListView: View {
 
   private var boardView: some View {
     ChoreBoardView(chores: $boardChores, members: members)
+  }
+
+  private func editChoreSheet(for chore: Chore) -> some View {
+    AddChoreSheet(
+      isPresented: Binding(
+        get: { choreToEdit != nil },
+        set: { if !$0 { choreToEdit = nil } },
+      ),
+      members: members,
+      choreToEdit: chore,
+    )
   }
 
   private func syncBoardChangesToDatabase(oldChores: [Chore], newChores: [Chore]) {
