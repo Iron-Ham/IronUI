@@ -523,3 +523,324 @@ struct IronSemanticColorTests {
     }
   }
 }
+
+// MARK: - IronDatabaseFilterTests
+
+@Suite("IronDatabaseFilter")
+struct IronDatabaseFilterTests {
+
+  @Test("text filter contains matches substring")
+  func textFilterContainsMatchesSubstring() {
+    let filter = IronDatabaseFilter.text(.contains("hello"))
+
+    #expect(filter.evaluate(.text("hello world")))
+    #expect(filter.evaluate(.text("say HELLO"))) // case insensitive
+    #expect(!filter.evaluate(.text("hi there")))
+  }
+
+  @Test("text filter equals matches exact string")
+  func textFilterEqualsMatchesExact() {
+    let filter = IronDatabaseFilter.text(.equals("hello"))
+
+    #expect(filter.evaluate(.text("hello")))
+    #expect(filter.evaluate(.text("HELLO"))) // case insensitive
+    #expect(!filter.evaluate(.text("hello world")))
+  }
+
+  @Test("text filter startsWith matches prefix")
+  func textFilterStartsWithMatchesPrefix() {
+    let filter = IronDatabaseFilter.text(.startsWith("hello"))
+
+    #expect(filter.evaluate(.text("hello world")))
+    #expect(filter.evaluate(.text("HELLO")))
+    #expect(!filter.evaluate(.text("say hello")))
+  }
+
+  @Test("text filter endsWith matches suffix")
+  func textFilterEndsWithMatchesSuffix() {
+    let filter = IronDatabaseFilter.text(.endsWith("world"))
+
+    #expect(filter.evaluate(.text("hello world")))
+    #expect(filter.evaluate(.text("WORLD")))
+    #expect(!filter.evaluate(.text("world peace")))
+  }
+
+  @Test("text filter isEmpty checks emptiness")
+  func textFilterIsEmptyChecksEmptiness() {
+    let filter = IronDatabaseFilter.text(.isEmpty)
+
+    #expect(filter.evaluate(.text("")))
+    #expect(filter.evaluate(.empty))
+    #expect(!filter.evaluate(.text("hello")))
+  }
+
+  @Test("text filter isNotEmpty checks non-emptiness")
+  func textFilterIsNotEmptyChecksNonEmptiness() {
+    let filter = IronDatabaseFilter.text(.isNotEmpty)
+
+    #expect(filter.evaluate(.text("hello")))
+    #expect(!filter.evaluate(.text("")))
+    #expect(!filter.evaluate(.empty))
+  }
+
+  @Test("number filter equals matches value")
+  func numberFilterEqualsMatchesValue() {
+    let filter = IronDatabaseFilter.number(.equals(42))
+
+    #expect(filter.evaluate(.number(42)))
+    #expect(!filter.evaluate(.number(43)))
+  }
+
+  @Test("number filter greaterThan compares correctly")
+  func numberFilterGreaterThanComparesCorrectly() {
+    let filter = IronDatabaseFilter.number(.greaterThan(10))
+
+    #expect(filter.evaluate(.number(11)))
+    #expect(filter.evaluate(.number(100)))
+    #expect(!filter.evaluate(.number(10)))
+    #expect(!filter.evaluate(.number(5)))
+  }
+
+  @Test("number filter lessThan compares correctly")
+  func numberFilterLessThanComparesCorrectly() {
+    let filter = IronDatabaseFilter.number(.lessThan(10))
+
+    #expect(filter.evaluate(.number(9)))
+    #expect(filter.evaluate(.number(0)))
+    #expect(!filter.evaluate(.number(10)))
+    #expect(!filter.evaluate(.number(15)))
+  }
+
+  @Test("number filter between checks inclusive range")
+  func numberFilterBetweenChecksInclusiveRange() {
+    let filter = IronDatabaseFilter.number(.between(min: 10, max: 20))
+
+    #expect(filter.evaluate(.number(10)))
+    #expect(filter.evaluate(.number(15)))
+    #expect(filter.evaluate(.number(20)))
+    #expect(!filter.evaluate(.number(9)))
+    #expect(!filter.evaluate(.number(21)))
+  }
+
+  @Test("checkbox filter checked matches true")
+  func checkboxFilterCheckedMatchesTrue() {
+    let filter = IronDatabaseFilter.checkbox(.checked)
+
+    #expect(filter.evaluate(.checkbox(true)))
+    #expect(!filter.evaluate(.checkbox(false)))
+  }
+
+  @Test("checkbox filter unchecked matches false")
+  func checkboxFilterUncheckedMatchesFalse() {
+    let filter = IronDatabaseFilter.checkbox(.unchecked)
+
+    #expect(filter.evaluate(.checkbox(false)))
+    #expect(!filter.evaluate(.checkbox(true)))
+  }
+
+  @Test("select filter includes checks for any matching ID")
+  func selectFilterIncludesChecksForAnyMatchingID() {
+    let id1 = UUID()
+    let id2 = UUID()
+    let id3 = UUID()
+
+    let filter = IronDatabaseFilter.select(.includes([id1, id2]))
+
+    #expect(filter.evaluate(.select(id1)))
+    #expect(filter.evaluate(.select(id2)))
+    #expect(!filter.evaluate(.select(id3)))
+    #expect(filter.evaluate(.multiSelect([id1, id3])))
+    #expect(!filter.evaluate(.multiSelect([id3])))
+  }
+
+  @Test("select filter excludes checks for no matching IDs")
+  func selectFilterExcludesChecksForNoMatchingIDs() {
+    let id1 = UUID()
+    let id2 = UUID()
+    let id3 = UUID()
+
+    let filter = IronDatabaseFilter.select(.excludes([id1, id2]))
+
+    #expect(!filter.evaluate(.select(id1)))
+    #expect(!filter.evaluate(.select(id2)))
+    #expect(filter.evaluate(.select(id3)))
+    #expect(!filter.evaluate(.multiSelect([id1, id3])))
+    #expect(filter.evaluate(.multiSelect([id3])))
+  }
+
+  @Test("filter state combines filters with AND logic")
+  func filterStateCombinesFiltersWithAndLogic() throws {
+    var database = IronDatabase(name: "Test")
+    let numCol = database.addColumn(name: "Number", type: .number)
+    let textCol = database.addColumn(name: "Text", type: .text)
+
+    let addedRow = database.addRow()
+    database.setValue(.number(15), for: addedRow.id, column: numCol.id)
+    database.setValue(.text("hello"), for: addedRow.id, column: textCol.id)
+
+    // Get the actual row from the database (not the copy returned by addRow)
+    let row = try #require(database.row(addedRow.id))
+
+    var filterState = IronDatabaseFilterState()
+    filterState.mode = .and
+    filterState.filters[numCol.id] = .number(.greaterThan(10))
+    filterState.filters[textCol.id] = .text(.contains("hello"))
+
+    #expect(filterState.evaluate(row: row, in: database))
+
+    // Change filter to fail
+    filterState.filters[numCol.id] = .number(.greaterThan(20))
+    #expect(!filterState.evaluate(row: row, in: database))
+  }
+
+  @Test("filter state combines filters with OR logic")
+  func filterStateCombinesFiltersWithOrLogic() throws {
+    var database = IronDatabase(name: "Test")
+    let numCol = database.addColumn(name: "Number", type: .number)
+    let textCol = database.addColumn(name: "Text", type: .text)
+
+    let addedRow = database.addRow()
+    database.setValue(.number(5), for: addedRow.id, column: numCol.id)
+    database.setValue(.text("hello"), for: addedRow.id, column: textCol.id)
+
+    // Get the actual row from the database (not the copy returned by addRow)
+    let row = try #require(database.row(addedRow.id))
+
+    var filterState = IronDatabaseFilterState()
+    filterState.mode = .or
+    filterState.filters[numCol.id] = .number(.greaterThan(10)) // fails
+    filterState.filters[textCol.id] = .text(.contains("hello")) // passes
+
+    #expect(filterState.evaluate(row: row, in: database)) // passes because OR
+
+    // Both fail
+    filterState.filters[textCol.id] = .text(.contains("world"))
+    #expect(!filterState.evaluate(row: row, in: database))
+  }
+}
+
+// MARK: - IronDatabaseSortStateTests
+
+@Suite("IronDatabaseSortState")
+struct IronDatabaseSortStateTests {
+
+  @Test("toggle direction switches between ascending and descending")
+  func toggleDirectionSwitches() {
+    var sortState = IronDatabaseSortState(columnID: UUID(), direction: .ascending)
+
+    #expect(sortState.direction == .ascending)
+
+    sortState.toggleDirection()
+    #expect(sortState.direction == .descending)
+
+    sortState.toggleDirection()
+    #expect(sortState.direction == .ascending)
+  }
+
+  @Test("toggled returns new state with opposite direction")
+  func toggledReturnsNewState() {
+    let original = IronDatabaseSortState(columnID: UUID(), direction: .ascending)
+    let toggled = original.toggled()
+
+    #expect(original.direction == .ascending)
+    #expect(toggled.direction == .descending)
+    #expect(original.columnID == toggled.columnID)
+  }
+
+  @Test("compare sorts text values correctly")
+  func compareSortsTextValuesCorrectly() {
+    let a = IronCellValue.text("Apple")
+    let b = IronCellValue.text("Banana")
+
+    #expect(IronDatabaseSortState.compare(a, b, direction: .ascending))
+    #expect(!IronDatabaseSortState.compare(a, b, direction: .descending))
+  }
+
+  @Test("compare sorts number values correctly")
+  func compareSortsNumberValuesCorrectly() {
+    let a = IronCellValue.number(10)
+    let b = IronCellValue.number(20)
+
+    #expect(IronDatabaseSortState.compare(a, b, direction: .ascending))
+    #expect(!IronDatabaseSortState.compare(a, b, direction: .descending))
+  }
+
+  @Test("compare sorts date values correctly")
+  func compareSortsDateValuesCorrectly() {
+    let earlier = IronCellValue.date(Date(timeIntervalSince1970: 0))
+    let later = IronCellValue.date(Date(timeIntervalSince1970: 1000))
+
+    #expect(IronDatabaseSortState.compare(earlier, later, direction: .ascending))
+    #expect(!IronDatabaseSortState.compare(earlier, later, direction: .descending))
+  }
+
+  @Test("compare handles empty values correctly")
+  func compareHandlesEmptyValuesCorrectly() {
+    let value = IronCellValue.text("Hello")
+    let empty = IronCellValue.empty
+
+    // In ascending, value should come before empty (value < empty)
+    #expect(IronDatabaseSortState.compare(value, empty, direction: .ascending))
+
+    // In descending, value vs empty: ascending returns true, descending negates it
+    // This means empty will sort after value in both directions (correct behavior)
+    // The compare function returns true if lhs < rhs in sorted order
+    // For descending, we want larger values first, but empty always last
+    // Since ascending puts value before empty (true), descending puts empty after value (false)
+    #expect(!IronDatabaseSortState.compare(value, empty, direction: .descending))
+
+    // Two empty values should be equal
+    #expect(!IronDatabaseSortState.compare(empty, empty, direction: .ascending))
+  }
+
+  @Test("sort direction icon names are correct")
+  func sortDirectionIconNamesAreCorrect() {
+    #expect(IronDatabaseSortState.SortDirection.ascending.iconName == "chevron.up")
+    #expect(IronDatabaseSortState.SortDirection.descending.iconName == "chevron.down")
+  }
+}
+
+// MARK: - IronColumnWidthModeTests
+
+@Suite("IronColumnWidthMode")
+struct IronColumnWidthModeTests {
+
+  @Test("fixed width mode has correct bounds")
+  func fixedWidthModeHasCorrectBounds() {
+    let mode = IronColumnWidthMode.fixed(100)
+
+    #expect(mode.minimumWidth == 100)
+    #expect(mode.maximumWidth == 100)
+    #expect(!mode.allowsUserResizing)
+  }
+
+  @Test("flexible width mode has correct bounds")
+  func flexibleWidthModeHasCorrectBounds() {
+    let mode = IronColumnWidthMode.flexible(min: 80, max: 400)
+
+    #expect(mode.minimumWidth == 80)
+    #expect(mode.maximumWidth == 400)
+    #expect(mode.allowsUserResizing)
+  }
+
+  @Test("fill width mode has correct defaults")
+  func fillWidthModeHasCorrectDefaults() {
+    let mode = IronColumnWidthMode.fill(weight: 1.0)
+
+    // Fill mode should have minimum but no maximum
+    #expect(mode.minimumWidth >= 0)
+    #expect(mode.maximumWidth == nil)
+  }
+
+  @Test("default mode is flexible")
+  func defaultModeIsFlexible() {
+    let mode = IronColumnWidthMode.default
+
+    if case .flexible(let min, let max) = mode {
+      #expect(min > 0)
+      #expect(max > min)
+    } else {
+      Issue.record("Expected default to be .flexible")
+    }
+  }
+}

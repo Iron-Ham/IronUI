@@ -1,5 +1,6 @@
 import Foundation
 import IronCore
+import SwiftUI
 
 // MARK: - IronDatabase
 
@@ -214,20 +215,29 @@ public struct IronColumn: Identifiable, Sendable, Equatable {
   ///   - id: The unique identifier (auto-generated if not provided).
   ///   - name: The column header name.
   ///   - type: The data type for cells.
-  ///   - width: Optional fixed width.
+  ///   - width: Optional fixed width (legacy, prefer `widthMode`).
+  ///   - widthMode: The column width mode.
   ///   - options: Select options (for select types).
+  ///   - isResizable: Whether the user can resize this column.
+  ///   - isSortable: Whether this column can be sorted.
   public init(
     id: UUID = UUID(),
     name: String,
     type: IronColumnType,
     width: CGFloat? = nil,
+    widthMode: IronColumnWidthMode = .default,
     options: [IronSelectOption] = [],
+    isResizable: Bool = true,
+    isSortable: Bool = true,
   ) {
     self.id = id
     self.name = name
     self.type = type
     self.width = width
+    self.widthMode = widthMode
     self.options = options
+    self.isResizable = isResizable
+    self.isSortable = isSortable
   }
 
   // MARK: Public
@@ -241,11 +251,38 @@ public struct IronColumn: Identifiable, Sendable, Equatable {
   /// The data type for cells in this column.
   public var type: IronColumnType
 
-  /// Optional fixed width for the column.
+  /// Optional fixed width for the column (legacy).
+  ///
+  /// Prefer using `widthMode` for more flexible column sizing.
+  /// If set, this takes precedence over `widthMode`.
   public var width: CGFloat?
+
+  /// The width mode for this column.
+  ///
+  /// Determines how the column width is calculated. If `width` is set,
+  /// it takes precedence over this property.
+  public var widthMode: IronColumnWidthMode
 
   /// Select options (for `.select` and `.multiSelect` types).
   public var options: [IronSelectOption]
+
+  /// Whether the user can resize this column by dragging.
+  public var isResizable: Bool
+
+  /// Whether this column can be sorted.
+  public var isSortable: Bool
+
+  /// The resolved width for this column.
+  ///
+  /// Returns the explicit `width` if set, otherwise calculates
+  /// based on `widthMode`. For modes that require container width
+  /// or content measurement, returns the minimum width.
+  public var resolvedWidth: CGFloat {
+    if let width {
+      return width
+    }
+    return widthMode.minimumWidth
+  }
 }
 
 // MARK: - IronColumnType
@@ -527,4 +564,26 @@ public enum IronSemanticColor: String, Sendable, CaseIterable, Equatable {
   case info
   /// Accent color.
   case accent
+
+  // MARK: Public
+
+  /// Returns a SwiftUI Color representation of this semantic color.
+  public var swiftUIColor: Color {
+    switch self {
+    case .primary:
+      .blue
+    case .secondary:
+      .gray
+    case .success:
+      .green
+    case .warning:
+      .orange
+    case .error:
+      .red
+    case .info:
+      .cyan
+    case .accent:
+      .purple
+    }
+  }
 }

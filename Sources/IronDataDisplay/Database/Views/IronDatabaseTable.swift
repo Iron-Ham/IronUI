@@ -6,8 +6,11 @@ import SwiftUI
 
 /// A Notion-style table view for displaying and editing database content.
 ///
-/// `IronDatabaseTable` provides a grid-based view of an `IronDatabase` with
-/// support for inline editing, row selection, and column management.
+/// `IronDatabaseTable` provides a high-performance grid-based view of an `IronDatabase`
+/// with support for inline editing, row selection, sorting, filtering, and column management.
+///
+/// On macOS, this uses `NSTableView` for optimal performance with large datasets.
+/// On iOS, this uses `UICollectionView` with compositional layout.
 ///
 /// ## Basic Usage
 ///
@@ -25,6 +28,19 @@ import SwiftUI
 /// IronDatabaseTable(
 ///   database: $database,
 ///   selection: $selection
+/// )
+/// ```
+///
+/// ## With Sorting and Filtering
+///
+/// ```swift
+/// @State private var sortState: IronDatabaseSortState?
+/// @State private var filterState = IronDatabaseFilterState()
+///
+/// IronDatabaseTable(
+///   database: $database,
+///   sortState: $sortState,
+///   filterState: $filterState
 /// )
 /// ```
 ///
@@ -46,53 +62,49 @@ public struct IronDatabaseTable: View {
   /// - Parameters:
   ///   - database: Binding to the database.
   ///   - selection: Binding to selected row IDs.
+  ///   - sortState: Binding to the current sort state.
+  ///   - filterState: Binding to the current filter state.
   ///   - onAddRow: Callback when the add row button is tapped.
   ///   - onAddColumn: Callback when the add column button is tapped.
+  ///   - onRowAction: Callback for row context menu actions.
   public init(
     database: Binding<IronDatabase>,
     selection: Binding<Set<IronRow.ID>> = .constant([]),
+    sortState: Binding<IronDatabaseSortState?> = .constant(nil),
+    filterState: Binding<IronDatabaseFilterState> = .constant(IronDatabaseFilterState()),
     onAddRow: (() -> Void)? = nil,
     onAddColumn: (() -> Void)? = nil,
+    onRowAction: ((IronDatabaseRowAction, IronRow.ID) -> Void)? = nil,
   ) {
     _database = database
     _selection = selection
+    _sortState = sortState
+    _filterState = filterState
     self.onAddRow = onAddRow
     self.onAddColumn = onAddColumn
+    self.onRowAction = onRowAction
   }
 
   // MARK: Public
 
   public var body: some View {
-    ScrollView(.horizontal, showsIndicators: true) {
-      VStack(alignment: .leading, spacing: 0) {
-        // Header row - stays fixed at top
-        headerRow
-
-        IronDivider()
-
-        // Data rows - vertical scroll only
-        ScrollView(.vertical, showsIndicators: true) {
-          VStack(alignment: .leading, spacing: 0) {
-            ForEach(database.rows) { row in
-              dataRow(for: row)
-              IronDivider()
-            }
-
-            // Add row button
-            if onAddRow != nil {
-              addRowButton
-            }
-          }
-        }
-      }
-      .frame(minWidth: totalWidth)
-    }
-    .background(theme.colors.surface)
-    .clipShape(RoundedRectangle(cornerRadius: theme.radii.md))
-    .overlay(
-      RoundedRectangle(cornerRadius: theme.radii.md)
-        .strokeBorder(theme.colors.border, lineWidth: 1)
-    )
+    #if os(macOS)
+    IronDatabaseTableMacOS(configuration: configuration)
+      .background(theme.colors.surface)
+      .clipShape(RoundedRectangle(cornerRadius: theme.radii.md))
+      .overlay(
+        RoundedRectangle(cornerRadius: theme.radii.md)
+          .strokeBorder(theme.colors.border, lineWidth: 1)
+      )
+    #else
+    IronDatabaseTableIOS(configuration: configuration)
+      .background(theme.colors.surface)
+      .clipShape(RoundedRectangle(cornerRadius: theme.radii.md))
+      .overlay(
+        RoundedRectangle(cornerRadius: theme.radii.md)
+          .strokeBorder(theme.colors.border, lineWidth: 1)
+      )
+    #endif
   }
 
   // MARK: Private
@@ -101,232 +113,24 @@ public struct IronDatabaseTable: View {
 
   @Binding private var database: IronDatabase
   @Binding private var selection: Set<IronRow.ID>
-
-  @State private var editingCell: CellID?
-  @State private var hoveredRow: IronRow.ID?
-
-  @ScaledMetric(relativeTo: .body)
-  private var defaultColumnWidth: CGFloat = 150
-  @ScaledMetric(relativeTo: .body)
-  private var rowHeight: CGFloat = 40
-  @ScaledMetric(relativeTo: .body)
-  private var selectionColumnWidth: CGFloat = 40
+  @Binding private var sortState: IronDatabaseSortState?
+  @Binding private var filterState: IronDatabaseFilterState
 
   private let onAddRow: (() -> Void)?
   private let onAddColumn: (() -> Void)?
+  private let onRowAction: ((IronDatabaseRowAction, IronRow.ID) -> Void)?
 
-  private var totalWidth: CGFloat {
-    let columnsWidth = database.columns.reduce(0) { $0 + ($1.width ?? defaultColumnWidth) }
-    let addColumnWidth: CGFloat = onAddColumn != nil ? 44 : 0
-    return selectionColumnWidth + columnsWidth + addColumnWidth + theme.spacing.md * 2
-  }
-
-  private var headerRow: some View {
-    HStack(spacing: 0) {
-      // Selection column header
-      Rectangle()
-        .fill(Color.clear)
-        .frame(width: selectionColumnWidth)
-
-      // Column headers
-      ForEach(database.columns) { column in
-        columnHeader(for: column)
-      }
-
-      // Add column button
-      if onAddColumn != nil {
-        addColumnButton
-      }
-    }
-    .frame(height: rowHeight)
-    .background(theme.colors.surfaceElevated)
-  }
-
-  private var addColumnButton: some View {
-    Button {
-      onAddColumn?()
-    } label: {
-      IronIcon(systemName: "plus", size: .small, color: .secondary)
-    }
-    .buttonStyle(.plain)
-    .frame(width: 44, height: rowHeight)
-    .contentShape(Rectangle())
-    .accessibilityLabel("Add column")
-  }
-
-  private var addRowButton: some View {
-    Button {
-      onAddRow?()
-    } label: {
-      HStack(spacing: theme.spacing.sm) {
-        IronIcon(systemName: "plus", size: .small, color: .secondary)
-        IronText("New", style: .bodyMedium, color: .secondary)
-      }
-      .frame(maxWidth: .infinity, alignment: .leading)
-      .padding(.horizontal, theme.spacing.md)
-      .frame(height: rowHeight)
-    }
-    .buttonStyle(.plain)
-    .accessibilityLabel("Add row")
-  }
-
-  private func columnHeader(for column: IronColumn) -> some View {
-    HStack(spacing: theme.spacing.xs) {
-      IronIcon(systemName: column.type.iconName, size: .small, color: .secondary)
-      IronText(column.name, style: .labelMedium, color: .secondary)
-      Spacer()
-    }
-    .padding(.horizontal, theme.spacing.sm)
-    .frame(width: column.width ?? defaultColumnWidth, height: rowHeight)
-    .contentShape(Rectangle())
-    .contextMenu {
-      columnContextMenu(for: column)
-    }
-  }
-
-  @ViewBuilder
-  private func columnContextMenu(for column: IronColumn) -> some View {
-    Button {
-      // Edit column name - could show a popover
-    } label: {
-      Label("Rename", systemImage: "pencil")
-    }
-
-    Menu("Change Type") {
-      ForEach(IronColumnType.allCases, id: \.self) { type in
-        Button {
-          if let index = database.columns.firstIndex(where: { $0.id == column.id }) {
-            database.columns[index].type = type
-          }
-        } label: {
-          Label(type.displayName, systemImage: type.iconName)
-        }
-      }
-    }
-
-    Divider()
-
-    Button(role: .destructive) {
-      database.removeColumn(column.id)
-    } label: {
-      Label("Delete Column", systemImage: "trash")
-    }
-  }
-
-  private func dataRow(for row: IronRow) -> some View {
-    HStack(spacing: 0) {
-      // Selection checkbox
-      selectionCell(for: row)
-
-      // Data cells
-      ForEach(database.columns) { column in
-        dataCell(for: row, column: column)
-      }
-
-      // Spacer for add column
-      if onAddColumn != nil {
-        Spacer()
-          .frame(width: 44)
-      }
-    }
-    .frame(height: rowHeight)
-    .background(rowBackground(for: row))
-    .onHover { isHovered in
-      hoveredRow = isHovered ? row.id : nil
-    }
-    .contextMenu {
-      rowContextMenu(for: row)
-    }
-  }
-
-  private func selectionCell(for row: IronRow) -> some View {
-    Button {
-      if selection.contains(row.id) {
-        selection.remove(row.id)
-      } else {
-        selection.insert(row.id)
-      }
-    } label: {
-      IronIcon(
-        systemName: selection.contains(row.id) ? "checkmark.square.fill" : "square",
-        size: .small,
-        color: selection.contains(row.id) ? .primary : .secondary,
-      )
-    }
-    .buttonStyle(.plain)
-    .frame(width: selectionColumnWidth, height: rowHeight)
-    .opacity(selection.contains(row.id) || hoveredRow == row.id ? 1 : 0)
-    .animation(.easeInOut(duration: 0.15), value: hoveredRow)
-    .accessibilityLabel(selection.contains(row.id) ? "Selected" : "Not selected")
-  }
-
-  private func dataCell(for row: IronRow, column: IronColumn) -> some View {
-    let cellID = CellID(rowID: row.id, columnID: column.id)
-    let isEditing = editingCell == cellID
-
-    return IronDatabaseCell(
-      column: column,
-      value: cellValueBinding(row: row.id, column: column.id),
-      isEditing: isEditing,
-    )
-    .padding(.horizontal, theme.spacing.sm)
-    .frame(width: column.width ?? defaultColumnWidth, height: rowHeight, alignment: .leading)
-    .contentShape(Rectangle())
-    .onTapGesture {
-      // Only allow editing for editable column types
-      if column.type != .checkbox {
-        editingCell = cellID
-      }
-    }
-    .onSubmit {
-      editingCell = nil
-    }
-  }
-
-  private func cellValueBinding(row rowID: IronRow.ID, column columnID: IronColumn.ID) -> Binding<IronCellValue> {
-    Binding(
-      get: { database.value(for: rowID, column: columnID) },
-      set: { database.setValue($0, for: rowID, column: columnID) },
+  private var configuration: IronDatabaseTableConfiguration {
+    IronDatabaseTableConfiguration(
+      database: $database,
+      selection: $selection,
+      sortState: $sortState,
+      filterState: $filterState,
+      onAddRow: onAddRow,
+      onAddColumn: onAddColumn,
+      onRowAction: onRowAction,
     )
   }
-
-  private func rowBackground(for row: IronRow) -> some View {
-    Group {
-      if selection.contains(row.id) {
-        theme.colors.primary.opacity(0.1)
-      } else if hoveredRow == row.id {
-        theme.colors.surface.opacity(0.5)
-      } else {
-        Color.clear
-      }
-    }
-  }
-
-  @ViewBuilder
-  private func rowContextMenu(for row: IronRow) -> some View {
-    Button {
-      database.addRow()
-    } label: {
-      Label("Insert Row Below", systemImage: "plus")
-    }
-
-    Divider()
-
-    Button(role: .destructive) {
-      selection.remove(row.id)
-      database.removeRow(row.id)
-    } label: {
-      Label("Delete Row", systemImage: "trash")
-    }
-  }
-
-}
-
-// MARK: - CellID
-
-private struct CellID: Equatable, Hashable {
-  let rowID: IronRow.ID
-  let columnID: IronColumn.ID
 }
 
 // MARK: - Previews
@@ -358,6 +162,31 @@ private struct CellID: Equatable, Hashable {
   .padding()
 }
 
+#Preview("IronDatabaseTable - With Sorting") {
+  @Previewable @State var database = createPreviewDatabase()
+  @Previewable @State var sortState: IronDatabaseSortState? = IronDatabaseSortState(
+    columnID: UUID(), // Will be set properly in createPreviewDatabase
+    direction: .ascending,
+  )
+
+  IronDatabaseTable(
+    database: $database,
+    sortState: $sortState,
+    onAddRow: { database.addRow() },
+  )
+  .padding()
+}
+
+#Preview("IronDatabaseTable - Large Dataset") {
+  @Previewable @State var database = createLargePreviewDatabase(rowCount: 500)
+
+  IronDatabaseTable(
+    database: $database,
+    onAddRow: { database.addRow() },
+  )
+  .padding()
+}
+
 #Preview("IronDatabaseTable - Empty") {
   @Previewable @State var database = IronDatabase(name: "Empty Database")
 
@@ -365,6 +194,136 @@ private struct CellID: Equatable, Hashable {
     database: $database,
     onAddRow: { database.addRow() },
     onAddColumn: { database.addColumn(name: "Column", type: .text) },
+  )
+  .padding()
+}
+
+#Preview("IronDatabaseTable - With Filtering") {
+  @Previewable @State var database = createLargePreviewDatabase(rowCount: 50)
+  @Previewable @State var filterState = IronDatabaseFilterState()
+  @Previewable @State var showFilterPopover = false
+
+  VStack(alignment: .leading, spacing: 16) {
+    HStack {
+      IronText("Rows: \(database.rows.count) total", style: .bodyMedium, color: .secondary)
+
+      Spacer()
+
+      Button {
+        // Apply a filter to show only completed tasks
+        if filterState.hasActiveFilters {
+          filterState.clear()
+        } else if let completeColumn = database.columns.first(where: { $0.name == "Complete" }) {
+          filterState.filters[completeColumn.id] = .checkbox(.checked)
+        }
+      } label: {
+        Label(
+          filterState.hasActiveFilters ? "Clear Filter" : "Show Completed Only",
+          systemImage: filterState.hasActiveFilters ? "xmark.circle" : "line.3.horizontal.decrease.circle",
+        )
+      }
+    }
+
+    IronDatabaseTable(
+      database: $database,
+      filterState: $filterState,
+      onAddRow: { database.addRow() },
+    )
+  }
+  .padding()
+}
+
+#Preview("IronDatabaseTable - All Features") {
+  @Previewable @State var database = createLargePreviewDatabase(rowCount: 100)
+  @Previewable @State var selection = Set<IronRow.ID>()
+  @Previewable @State var sortState: IronDatabaseSortState?
+  @Previewable @State var filterState = IronDatabaseFilterState()
+
+  VStack(alignment: .leading, spacing: 16) {
+    HStack {
+      VStack(alignment: .leading, spacing: 4) {
+        IronText("Selected: \(selection.count) rows", style: .caption, color: .secondary)
+
+        if let sortState {
+          IronText(
+            "Sorted by column: \(sortState.direction == .ascending ? "↑" : "↓")",
+            style: .caption,
+            color: .secondary,
+          )
+        }
+
+        if filterState.hasActiveFilters {
+          IronText("Filters active: \(filterState.activeFilterCount)", style: .caption, color: .secondary)
+        }
+      }
+
+      Spacer()
+
+      HStack(spacing: 8) {
+        Button("Select All") {
+          selection = Set(database.rows.map(\.id))
+        }
+
+        Button("Clear Selection") {
+          selection.removeAll()
+        }
+
+        Button("Clear Filters") {
+          filterState.clear()
+        }
+        .disabled(!filterState.hasActiveFilters)
+      }
+      .buttonStyle(.bordered)
+    }
+
+    IronDatabaseTable(
+      database: $database,
+      selection: $selection,
+      sortState: $sortState,
+      filterState: $filterState,
+      onAddRow: { database.addRow() },
+      onAddColumn: { database.addColumn(name: "New Column", type: .text) },
+    )
+  }
+  .padding()
+}
+
+#Preview("IronDatabaseTable - Column Width Modes") {
+  @Previewable @State var database: IronDatabase = {
+    var db = IronDatabase(name: "Width Test")
+
+    // Fixed width column
+    var fixedCol = db.addColumn(name: "Fixed (100pt)", type: .text)
+    if let idx = db.columns.firstIndex(where: { $0.id == fixedCol.id }) {
+      db.columns[idx].widthMode = .fixed(100)
+    }
+
+    // Flexible width column
+    var flexCol = db.addColumn(name: "Flexible", type: .text)
+    if let idx = db.columns.firstIndex(where: { $0.id == flexCol.id }) {
+      db.columns[idx].widthMode = .flexible(min: 80, max: 300)
+    }
+
+    // Fill column
+    var fillCol = db.addColumn(name: "Fill", type: .text)
+    if let idx = db.columns.firstIndex(where: { $0.id == fillCol.id }) {
+      db.columns[idx].widthMode = .fill(weight: 1.0)
+    }
+
+    // Add sample data
+    for i in 1 ... 5 {
+      let row = db.addRow()
+      db.setValue(.text("Row \(i) - Fixed"), for: row.id, column: fixedCol.id)
+      db.setValue(.text("Row \(i) - This text might be long"), for: row.id, column: flexCol.id)
+      db.setValue(.text("Row \(i) - Fills remaining space"), for: row.id, column: fillCol.id)
+    }
+
+    return db
+  }()
+
+  IronDatabaseTable(
+    database: $database,
+    onAddRow: { database.addRow() },
   )
   .padding()
 }
@@ -402,9 +361,50 @@ private func createPreviewDatabase() -> IronDatabase {
   let row3 = database.addRow()
   database.setValue(.text("Fix login bug"), for: row3.id, column: titleColumn.id)
   database.setValue(.select(statusColumn.options[2].id), for: row3.id, column: statusColumn.id)
-  database.setValue(.date(Calendar.current.date(byAdding: .day, value: -2, to: Date())!), for: row3.id, column: dueDateColumn.id)
+  database.setValue(
+    .date(Calendar.current.date(byAdding: .day, value: -2, to: Date())!),
+    for: row3.id,
+    column: dueDateColumn.id,
+  )
   database.setValue(.number(1), for: row3.id, column: priorityColumn.id)
   database.setValue(.checkbox(true), for: row3.id, column: doneColumn.id)
+
+  return database
+}
+
+private func createLargePreviewDatabase(rowCount: Int) -> IronDatabase {
+  var database = IronDatabase(name: "Large Dataset")
+
+  // Add columns
+  let titleColumn = database.addColumn(name: "Title", type: .text)
+  let statusColumn = database.addColumn(name: "Status", type: .select, options: [
+    IronSelectOption(name: "To Do", color: .secondary),
+    IronSelectOption(name: "In Progress", color: .warning),
+    IronSelectOption(name: "Done", color: .success),
+  ])
+  let dueDateColumn = database.addColumn(name: "Due Date", type: .date)
+  let priorityColumn = database.addColumn(name: "Priority", type: .number)
+  let doneColumn = database.addColumn(name: "Complete", type: .checkbox)
+
+  // Add many rows
+  for i in 0..<rowCount {
+    let row = database.addRow()
+    database.setValue(.text("Task \(i + 1)"), for: row.id, column: titleColumn.id)
+    database.setValue(
+      .select(statusColumn.options[i % 3].id),
+      for: row.id,
+      column: statusColumn.id,
+    )
+    if i % 2 == 0 {
+      database.setValue(
+        .date(Calendar.current.date(byAdding: .day, value: i % 30, to: Date())!),
+        for: row.id,
+        column: dueDateColumn.id,
+      )
+    }
+    database.setValue(.number(Double((i % 5) + 1)), for: row.id, column: priorityColumn.id)
+    database.setValue(.checkbox(i % 4 == 0), for: row.id, column: doneColumn.id)
+  }
 
   return database
 }
