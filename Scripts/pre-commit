@@ -16,6 +16,14 @@ else
     CLI="$(cd "$SCRIPT_DIR/../.." && pwd)/Scripts/ironui-cli"
 fi
 
+# Check if any Swift files are staged
+STAGED_SWIFT_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep '\.swift$' || true)
+
+if [ -z "$STAGED_SWIFT_FILES" ]; then
+    echo "No Swift files staged, skipping format."
+    exit 0
+fi
+
 echo "Running swift-format..."
 
 # Run the CLI format command (uses cached binary)
