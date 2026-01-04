@@ -7,9 +7,12 @@ A modern, playful SwiftUI component library for iOS 26+ and macOS 26+, inspired 
 [![macOS 26+](https://img.shields.io/badge/macOS-26+-blue.svg)](https://developer.apple.com/macos/)
 [![MIT License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
+> [!WARNING]
+> **Pre-Release Software** — IronUI has not yet had its first stable release. APIs may change without notice. Use at your own risk until we reach 1.0, at which point we can commit to stable, production-ready components.
+
 ## Features
 
-- **60+ Production-Ready Components** - Buttons, forms, data display, navigation, and more
+- **60+ Components** - Buttons, forms, data display, navigation, and more
 - **Liquid Glass Aesthetic** - Designed for iOS 26 and macOS 26's visual language
 - **Complete Theming System** - 6 token categories with automatic light/dark mode adaptation
 - **Full Accessibility** - VoiceOver, Dynamic Type, and reduced motion support
@@ -32,9 +35,11 @@ Or add it to your `Package.swift`:
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/Iron-Ham/IronUI", from: "1.0.0")
+    .package(url: "https://github.com/Iron-Ham/IronUI", branch: "main")
 ]
 ```
+
+> **Note:** Until 1.0 is released, pin to `main` or a specific commit hash for stability.
 
 ## Quick Start
 
