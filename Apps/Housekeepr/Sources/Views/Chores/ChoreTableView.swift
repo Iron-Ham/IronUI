@@ -26,7 +26,7 @@ struct ChoreTableView: View {
 
   var body: some View {
     IronDatabaseTable(
-      database: $database,
+      database: database,
       selection: $selection,
       onAddRow: nil,
       onAddColumn: nil,
@@ -34,11 +34,10 @@ struct ChoreTableView: View {
     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     .onChange(of: chores) { _, newChores in
       // Rebuild database when chores change externally
-      database = Self.buildDatabase(from: newChores, members: members)
-    }
-    .onChange(of: database) { oldDatabase, newDatabase in
-      // Sync changes back to SQLiteData
-      syncChangesToDatabase(oldDatabase: oldDatabase, newDatabase: newDatabase)
+      // Note: With @Observable IronDatabase, we update in-place
+      let newDb = Self.buildDatabase(from: newChores, members: members)
+      database.columns = newDb.columns
+      database.rows = newDb.rows
     }
     .onChange(of: selection) { _, newSelection in
       // When a row is selected, open the edit sheet
@@ -87,8 +86,9 @@ struct ChoreTableView: View {
 
   @Dependency(\.defaultDatabase) private var sqliteDatabase
 
+  @MainActor
   private static func buildDatabase(from chores: [Chore], members: [HouseholdMember]) -> IronDatabase {
-    var db = IronDatabase(name: "Chores")
+    let db = IronDatabase(name: "Chores")
 
     // Add columns
     db.columns = [
@@ -190,106 +190,9 @@ struct ChoreTableView: View {
     }
   }
 
-  private func syncChangesToDatabase(oldDatabase: IronDatabase, newDatabase: IronDatabase) {
-    // Find rows that changed
-    for newRow in newDatabase.rows {
-      guard let oldRow = oldDatabase.rows.first(where: { $0.id == newRow.id }) else { continue }
-      guard oldRow != newRow else { continue }
-
-      // Find corresponding chore
-      guard let chore = chores.first(where: { $0.id == newRow.id }) else { continue }
-
-      // Determine what changed and update
-      var updatedChore = chore
-
-      // Title
-      if
-        let newValue = newRow.cells[Self.titleColumnID],
-        case .text(let title) = newValue,
-        title != chore.title
-      {
-        updatedChore.title = title
-      }
-
-      // Category
-      if
-        let newValue = newRow.cells[Self.categoryColumnID],
-        case .select(let optionID) = newValue,
-        let optionID,
-        let category = Self.categoryOptionIDs.first(where: { $0.value == optionID })?.key,
-        category != chore.category
-      {
-        updatedChore.category = category
-      }
-
-      // Status
-      if
-        let newValue = newRow.cells[Self.statusColumnID],
-        case .select(let optionID) = newValue,
-        let optionID,
-        let status = Self.statusOptionIDs.first(where: { $0.value == optionID })?.key,
-        status != chore.status
-      {
-        updatedChore.status = status
-        // Also update completion state based on status
-        if status == .done {
-          updatedChore.isCompleted = true
-          updatedChore.completedAt = Date()
-        } else if chore.status == .done {
-          updatedChore.isCompleted = false
-          updatedChore.completedAt = nil
-        }
-      }
-
-      // Due Date
-      if let newValue = newRow.cells[Self.dueDateColumnID] {
-        switch newValue {
-        case .date(let date):
-          if chore.dueDate != date {
-            updatedChore.dueDate = date
-          }
-
-        case .empty:
-          if chore.dueDate != nil {
-            updatedChore.dueDate = nil
-          }
-
-        default:
-          break
-        }
-      }
-
-      // Assignee
-      if
-        let newValue = newRow.cells[Self.assigneeColumnID],
-        case .select(let optionID) = newValue
-      {
-        let newAssigneeId = (optionID == Self.unassignedOptionID) ? nil : optionID
-        if newAssigneeId != chore.assigneeId {
-          updatedChore.assigneeId = newAssigneeId
-        }
-      }
-
-      // Completed
-      if
-        let newValue = newRow.cells[Self.completedColumnID],
-        case .checkbox(let isCompleted) = newValue,
-        isCompleted != chore.isCompleted
-      {
-        updatedChore.isCompleted = isCompleted
-        updatedChore.completedAt = isCompleted ? Date() : nil
-        // Also update status
-        updatedChore.status = isCompleted ? .done : .todo
-      }
-
-      // Save if changed
-      if updatedChore != chore {
-        try? sqliteDatabase.write { db in
-          try Chore.upsert { updatedChore }.execute(db)
-        }
-      }
-    }
-  }
+  // TODO: Add cell-level callbacks to sync changes back to SQLite
+  // The previous pattern using onChange(of: database) doesn't work with @Observable
+  // since IronDatabase is now a reference type without Equatable conformance.
 }
 
 #Preview("ChoreTableView") {

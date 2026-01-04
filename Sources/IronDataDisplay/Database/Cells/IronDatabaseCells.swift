@@ -248,7 +248,7 @@ struct IronNumberCell: View {
 
 // MARK: - IronDateCell
 
-/// A date cell with popover picker.
+/// A date cell with popover picker and clear functionality.
 struct IronDateCell: View {
 
   // MARK: Internal
@@ -259,13 +259,33 @@ struct IronDateCell: View {
 
   var body: some View {
     if isEditing {
-      DatePicker(
-        "",
-        selection: dateBinding,
-        displayedComponents: .date,
-      )
-      .datePickerStyle(.compact)
-      .labelsHidden()
+      HStack(spacing: theme.spacing.xs) {
+        // Clear button first (so it's visible even in narrow columns)
+        if value != nil {
+          Button {
+            IronHaptics.impact(.light)
+            value = nil
+          } label: {
+            Image(systemName: "xmark.circle.fill")
+              .font(.system(size: 20))
+              .foregroundStyle(.secondary)
+          }
+          .buttonStyle(.plain)
+          .frame(width: 44, height: 44)
+          .contentShape(Rectangle())
+          .accessibilityLabel("Clear date")
+          .accessibilityHint("Removes the date value")
+        }
+
+        DatePicker(
+          "",
+          selection: dateBinding,
+          displayedComponents: .date,
+        )
+        .datePickerStyle(.compact)
+        .labelsHidden()
+        .fixedSize()
+      }
     } else {
       if let value {
         IronText(value.formatted(date: .abbreviated, time: .omitted), style: .bodyMedium, color: .primary)
@@ -298,6 +318,7 @@ struct IronCheckboxCell: View {
 
   var body: some View {
     Button {
+      IronHaptics.toggle()
       value.toggle()
     } label: {
       IronIcon(
