@@ -439,30 +439,33 @@ final class IronDatabaseNSDataCell: NSTableCellView {
     onTap: @escaping () -> Void,
     onSubmit: @escaping () -> Void,
   ) {
-    // Remove existing hosting view
-    hostingView?.removeFromSuperview()
-
     let cellView = AnyView(
       IronDatabaseCell(column: column, value: value, isEditing: isEditing)
         .onSubmit { onSubmit() }
     )
 
-    let hosting = NSHostingView(rootView: cellView)
-    hosting.translatesAutoresizingMaskIntoConstraints = false
-    addSubview(hosting)
+    // Reuse existing hosting view for better performance
+    if let existingHosting = hostingView {
+      existingHosting.rootView = cellView
+    } else {
+      let hosting = NSHostingView(rootView: cellView)
+      hosting.translatesAutoresizingMaskIntoConstraints = false
+      addSubview(hosting)
 
-    NSLayoutConstraint.activate([
-      hosting.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8),
-      hosting.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -8),
-      hosting.topAnchor.constraint(equalTo: topAnchor),
-      hosting.bottomAnchor.constraint(equalTo: bottomAnchor),
-    ])
+      NSLayoutConstraint.activate([
+        hosting.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 8),
+        hosting.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -8),
+        hosting.topAnchor.constraint(equalTo: topAnchor),
+        hosting.bottomAnchor.constraint(equalTo: bottomAnchor),
+      ])
 
-    hostingView = hosting
+      // Add click gesture only once
+      let clickGesture = NSClickGestureRecognizer(target: self, action: #selector(handleClick))
+      hosting.addGestureRecognizer(clickGesture)
 
-    // Add click gesture
-    let clickGesture = NSClickGestureRecognizer(target: self, action: #selector(handleClick))
-    hosting.addGestureRecognizer(clickGesture)
+      hostingView = hosting
+    }
+
     self.onTap = onTap
   }
 

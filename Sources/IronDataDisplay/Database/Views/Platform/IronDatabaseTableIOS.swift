@@ -752,7 +752,7 @@ extension IronDatabaseTableContainerView: UICollectionViewDataSource {
 
 // MARK: - IronDatabaseHeaderCollectionCell
 
-/// Collection view cell for header items.
+/// Collection view cell for header items using modern UIHostingConfiguration.
 final class IronDatabaseHeaderCollectionCell: UICollectionViewCell {
 
   // MARK: Lifecycle
@@ -770,35 +770,22 @@ final class IronDatabaseHeaderCollectionCell: UICollectionViewCell {
   // MARK: Internal
 
   func configureEmpty() {
-    hostingController?.view.removeFromSuperview()
-    hostingController = nil
+    contentConfiguration = UIHostingConfiguration {
+      Color.clear
+    }
+    .background(.clear)
   }
 
   func configureAddButton(onTap: @escaping () -> Void) {
-    hostingController?.view.removeFromSuperview()
-
-    let view = AnyView(
+    contentConfiguration = UIHostingConfiguration {
       Button(action: onTap) {
         Image(systemName: "plus")
           .foregroundStyle(.secondary)
       }
       .buttonStyle(.plain)
       .frame(maxWidth: .infinity, maxHeight: .infinity)
-    )
-
-    let controller = UIHostingController(rootView: view)
-    controller.view.backgroundColor = .clear
-    controller.view.translatesAutoresizingMaskIntoConstraints = false
-    contentView.addSubview(controller.view)
-
-    NSLayoutConstraint.activate([
-      controller.view.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-      controller.view.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-      controller.view.topAnchor.constraint(equalTo: contentView.topAnchor),
-      controller.view.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
-    ])
-
-    hostingController = controller
+    }
+    .background(.clear)
   }
 
   func configure(
@@ -816,9 +803,7 @@ final class IronDatabaseHeaderCollectionCell: UICollectionViewCell {
     onRename: (() -> Void)? = nil,
     onDelete: (() -> Void)? = nil,
   ) {
-    hostingController?.view.removeFromSuperview()
-
-    let headerView = AnyView(
+    contentConfiguration = UIHostingConfiguration {
       IronDatabaseHeaderCellContent(
         column: column,
         isSorted: isSorted,
@@ -834,45 +819,16 @@ final class IronDatabaseHeaderCollectionCell: UICollectionViewCell {
         onRename: onRename,
         onDelete: onDelete,
       )
-    )
-
-    let controller = UIHostingController(rootView: headerView)
-    controller.view.backgroundColor = .clear
-    controller.view.translatesAutoresizingMaskIntoConstraints = false
-    contentView.addSubview(controller.view)
-
-    NSLayoutConstraint.activate([
-      controller.view.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-      controller.view.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-      controller.view.topAnchor.constraint(equalTo: contentView.topAnchor),
-      controller.view.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
-    ])
-
-    hostingController = controller
+      .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+    .background(.clear)
   }
-
-  // MARK: Private
-
-  private var hostingController: UIHostingController<AnyView>?
 }
 
 // MARK: - IronDatabaseDataCollectionCell
 
-/// Collection view cell for data items.
+/// Collection view cell for data items using modern UIHostingConfiguration.
 final class IronDatabaseDataCollectionCell: UICollectionViewCell {
-
-  // MARK: Lifecycle
-
-  override init(frame: CGRect) {
-    super.init(frame: frame)
-  }
-
-  @available(*, unavailable)
-  required init?(coder _: NSCoder) {
-    fatalError("init(coder:) has not been implemented")
-  }
-
-  // MARK: Internal
 
   func configure(
     column: IronColumn,
@@ -886,8 +842,6 @@ final class IronDatabaseDataCollectionCell: UICollectionViewCell {
     onClear: (() -> Void)? = nil,
     onRowAction: ((IronDatabaseRowAction) -> Void)? = nil,
   ) {
-    hostingController?.view.removeFromSuperview()
-
     // Build accessibility label: "Column Name: value" or "Column Name: empty"
     let accessibilityLabel = "\(column.name): \(value.wrappedValue.accessibilityLabel)"
     let accessibilityHint =
@@ -895,7 +849,7 @@ final class IronDatabaseDataCollectionCell: UICollectionViewCell {
         ? "Double tap to toggle"
         : "Double tap to edit, hold for options"
 
-    let cellView = AnyView(
+    contentConfiguration = UIHostingConfiguration {
       IronDatabaseDataCellContainer(
         column: column,
         value: value,
@@ -908,81 +862,36 @@ final class IronDatabaseDataCollectionCell: UICollectionViewCell {
         onClear: onClear,
         onRowAction: onRowAction,
       )
+      .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
       .accessibilityElement(children: .ignore)
       .accessibilityLabel(accessibilityLabel)
       .accessibilityHint(accessibilityHint)
       .accessibilityAddTraits(column.type == .checkbox ? .isButton : [])
-    )
-
-    let controller = UIHostingController(rootView: cellView)
-    controller.view.backgroundColor = .clear
-    controller.view.translatesAutoresizingMaskIntoConstraints = false
-    contentView.addSubview(controller.view)
-
-    NSLayoutConstraint.activate([
-      controller.view.leadingAnchor.constraint(equalTo: contentView.leadingAnchor, constant: 8),
-      controller.view.trailingAnchor.constraint(equalTo: contentView.trailingAnchor, constant: -8),
-      controller.view.topAnchor.constraint(equalTo: contentView.topAnchor),
-      controller.view.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
-    ])
-
-    hostingController = controller
+    }
+    .margins(.horizontal, 8)
+    .background(.clear)
   }
-
-  // MARK: Private
-
-  private var hostingController: UIHostingController<AnyView>?
 }
 
 // MARK: - IronDatabaseSelectionCollectionCell
 
-/// Collection view cell for selection checkboxes.
+/// Collection view cell for selection checkboxes using modern UIHostingConfiguration.
 final class IronDatabaseSelectionCollectionCell: UICollectionViewCell {
 
-  // MARK: Lifecycle
-
-  override init(frame: CGRect) {
-    super.init(frame: frame)
-  }
-
-  @available(*, unavailable)
-  required init?(coder _: NSCoder) {
-    fatalError("init(coder:) has not been implemented")
-  }
-
-  // MARK: Internal
-
   func configure(isSelected: Bool, rowNumber: Int, onToggle: @escaping () -> Void) {
-    hostingController?.view.removeFromSuperview()
-
-    let view = Button(action: onToggle) {
-      Image(systemName: isSelected ? "checkmark.square.fill" : "square")
-        .foregroundStyle(isSelected ? .blue : .secondary)
+    contentConfiguration = UIHostingConfiguration {
+      Button(action: onToggle) {
+        Image(systemName: isSelected ? "checkmark.square.fill" : "square")
+          .foregroundStyle(isSelected ? .blue : .secondary)
+      }
+      .buttonStyle(.plain)
+      .frame(maxWidth: .infinity, maxHeight: .infinity)
+      .accessibilityLabel("Select row \(rowNumber)")
+      .accessibilityValue(isSelected ? "Selected" : "Not selected")
+      .accessibilityAddTraits(.isButton)
     }
-    .buttonStyle(.plain)
-    .frame(maxWidth: .infinity, maxHeight: .infinity)
-    .accessibilityLabel("Select row \(rowNumber)")
-    .accessibilityValue(isSelected ? "Selected" : "Not selected")
-    .accessibilityAddTraits(.isButton)
-
-    let controller = UIHostingController(rootView: AnyView(view))
-    controller.view.backgroundColor = .clear
-    controller.view.translatesAutoresizingMaskIntoConstraints = false
-    contentView.addSubview(controller.view)
-
-    NSLayoutConstraint.activate([
-      controller.view.leadingAnchor.constraint(equalTo: contentView.leadingAnchor),
-      controller.view.trailingAnchor.constraint(equalTo: contentView.trailingAnchor),
-      controller.view.topAnchor.constraint(equalTo: contentView.topAnchor),
-      controller.view.bottomAnchor.constraint(equalTo: contentView.bottomAnchor),
-    ])
-
-    hostingController = controller
+    .background(.clear)
   }
-
-  // MARK: Private
-
-  private var hostingController: UIHostingController<AnyView>?
 }
 
 // MARK: - IronDatabaseDataCellContainer
