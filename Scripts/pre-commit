@@ -7,6 +7,13 @@
 
 set -e
 
+# Check if any Swift files are staged FIRST (before resolving CLI)
+if ! git diff --cached --name-only --diff-filter=ACM | grep -q '\.swift$'; then
+    echo "No Swift files staged, skipping format."
+    exit 0
+fi
+
+# Only resolve CLI path when we actually need to format
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 # Handle both direct execution and symlink from .git/hooks
 if [ -f "$SCRIPT_DIR/ironui-cli" ]; then
@@ -14,14 +21,6 @@ if [ -f "$SCRIPT_DIR/ironui-cli" ]; then
 else
     # When run from .git/hooks/pre-commit symlink
     CLI="$(cd "$SCRIPT_DIR/../.." && pwd)/Scripts/ironui-cli"
-fi
-
-# Check if any Swift files are staged
-STAGED_SWIFT_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep '\.swift$' || true)
-
-if [ -z "$STAGED_SWIFT_FILES" ]; then
-    echo "No Swift files staged, skipping format."
-    exit 0
 fi
 
 echo "Running swift-format..."
