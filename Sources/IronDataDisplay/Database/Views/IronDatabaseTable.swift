@@ -393,7 +393,7 @@ public struct IronDatabaseTable: View {
   .padding()
 }
 
-#Preview("IronDatabaseTable - Edit Mode (Two-Finger Selection)") {
+#Preview("IronDatabaseTable - Edit Mode") {
   @Previewable @State var database = createLargePreviewDatabase(rowCount: 20)
   @Previewable @State var selection = Set<IronRow.ID>()
   @Previewable @State var isEditing = false
@@ -401,9 +401,7 @@ public struct IronDatabaseTable: View {
   NavigationStack {
     VStack(alignment: .leading, spacing: 12) {
       IronText(
-        isEditing
-          ? "Use two-finger swipe to select multiple rows"
-          : "Tap Edit to enable selection mode",
+        "Tap Edit to enable selection mode",
         style: .caption,
         color: .secondary,
       )
