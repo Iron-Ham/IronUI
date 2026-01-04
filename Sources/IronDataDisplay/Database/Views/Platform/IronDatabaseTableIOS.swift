@@ -56,6 +56,9 @@ struct IronDatabaseTableIOS: UIViewRepresentable {
   func updateUIView(_ containerView: IronDatabaseTableContainerView, context: Context) {
     let coordinator = context.coordinator
 
+    // Track previous editing state before updating configuration
+    let wasEditing = coordinator.configuration.isEditing
+
     // Update coordinator's configuration (updates bindings to selection/sort/filter)
     coordinator.configuration = configuration
 
@@ -71,6 +74,11 @@ struct IronDatabaseTableIOS: UIViewRepresentable {
     if needsDataReload {
       coordinator.recomputeDisplayIndices()
       containerView.reloadData()
+    }
+
+    // Sync edit mode state
+    if configuration.isEditing != wasEditing {
+      containerView.setEditing(configuration.isEditing, animated: true)
     }
 
     // Update tracked state for next comparison
@@ -406,6 +414,50 @@ final class IronDatabaseTableContainerView: UIView {
     reloadData()
   }
 
+  /// Sets the collection view's editing state to enable two-finger swipe selection.
+  ///
+  /// When editing, `allowsMultipleSelectionDuringEditing` enables the system's
+  /// two-finger pan gesture for selecting multiple rows.
+  func setEditing(_ editing: Bool, animated: Bool) {
+    bodyCollectionView.isEditing = editing
+
+    // When entering edit mode, sync current selection to collection view
+    if editing {
+      syncSelectionToCollectionView()
+    } else {
+      // When exiting edit mode, clear collection view selection
+      // (the binding retains the selection state)
+      bodyCollectionView.indexPathsForSelectedItems?.forEach {
+        bodyCollectionView.deselectItem(at: $0, animated: animated)
+      }
+    }
+  }
+
+  /// Syncs the selection binding to the collection view's selected index paths.
+  ///
+  /// Call this when entering edit mode or when the selection binding changes externally.
+  func syncSelectionToCollectionView() {
+    guard bodyCollectionView.isEditing else { return }
+    guard let coordinator else { return }
+
+    // Clear current collection view selection
+    bodyCollectionView.indexPathsForSelectedItems?.forEach {
+      bodyCollectionView.deselectItem(at: $0, animated: false)
+    }
+
+    // Select items for each selected row
+    for rowID in configuration.selection {
+      guard let displayIndex = coordinator.displayIndex(for: rowID) else { continue }
+
+      // Select all items in the row's section
+      let sectionItemCount = bodyDataSource?.snapshot().itemIdentifiers(inSection: displayIndex).count ?? 0
+      for itemIndex in 0..<sectionItemCount {
+        let indexPath = IndexPath(item: itemIndex, section: displayIndex)
+        bodyCollectionView.selectItem(at: indexPath, animated: false, scrollPosition: [])
+      }
+    }
+  }
+
   /// Invalidates layout during live resize for smooth real-time feedback.
   /// This is lighter-weight than `rebuildLayout()` and avoids data source reloads.
   func invalidateLayoutForResize() {
@@ -590,6 +642,10 @@ final class IronDatabaseTableContainerView: UIView {
     collectionView.showsHorizontalScrollIndicator = true
     collectionView.showsVerticalScrollIndicator = true
     collectionView.translatesAutoresizingMaskIntoConstraints = false
+    // Enable system edit mode with two-finger swipe selection
+    collectionView.allowsSelection = true
+    collectionView.allowsMultipleSelection = false
+    collectionView.allowsMultipleSelectionDuringEditing = true
     // Note: No register() calls needed - using modern CellRegistration API
     return collectionView
   }()
@@ -1122,7 +1178,7 @@ final class IronDatabaseTableContainerView: UIView {
   }
 }
 
-// MARK: - UIScrollViewDelegate
+// MARK: - UIScrollViewDelegate & UICollectionViewDelegate
 
 extension IronDatabaseTableContainerView: UICollectionViewDelegate {
   func scrollViewDidScroll(_ scrollView: UIScrollView) {
@@ -1130,6 +1186,51 @@ extension IronDatabaseTableContainerView: UICollectionViewDelegate {
       // Sync header horizontal scroll with body
       headerScrollView.contentOffset.x = scrollView.contentOffset.x
     }
+  }
+
+  func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+    guard collectionView === bodyCollectionView, collectionView.isEditing else { return }
+    guard let coordinator else { return }
+    guard let row = coordinator.row(at: indexPath.section) else { return }
+
+    // Add to selection binding
+    configuration.selection.insert(row.id)
+    IronHaptics.selection()
+
+    // Select all items in this row (section) for visual consistency
+    let sectionItemCount = bodyDataSource?.snapshot().itemIdentifiers(inSection: indexPath.section).count ?? 0
+    for itemIndex in 0..<sectionItemCount where itemIndex != indexPath.item {
+      collectionView.selectItem(at: IndexPath(item: itemIndex, section: indexPath.section), animated: false, scrollPosition: [])
+    }
+  }
+
+  func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath) {
+    guard collectionView === bodyCollectionView, collectionView.isEditing else { return }
+    guard let coordinator else { return }
+    guard let row = coordinator.row(at: indexPath.section) else { return }
+
+    // Remove from selection binding
+    configuration.selection.remove(row.id)
+    IronHaptics.selection()
+
+    // Deselect all items in this row (section)
+    let sectionItemCount = bodyDataSource?.snapshot().itemIdentifiers(inSection: indexPath.section).count ?? 0
+    for itemIndex in 0..<sectionItemCount where itemIndex != indexPath.item {
+      collectionView.deselectItem(at: IndexPath(item: itemIndex, section: indexPath.section), animated: false)
+    }
+  }
+
+  func collectionView(
+    _ collectionView: UICollectionView,
+    shouldBeginMultipleSelectionInteractionAt _: IndexPath,
+  ) -> Bool {
+    // Enable two-finger pan selection when in edit mode
+    collectionView === bodyCollectionView && collectionView.isEditing
+  }
+
+  func collectionView(_: UICollectionView, didBeginMultipleSelectionInteractionAt _: IndexPath) {
+    // Provide haptic feedback when starting multi-selection gesture
+    IronHaptics.impact(.light)
   }
 }
 

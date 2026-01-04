@@ -16,6 +16,7 @@ public struct IronDatabaseTableConfiguration {
   /// - Parameters:
   ///   - database: The database to display (observed automatically).
   ///   - selection: Binding to selected row IDs.
+  ///   - isEditing: Binding to edit mode state (enables two-finger swipe selection).
   ///   - sortState: Binding to the current sort state.
   ///   - filterState: Binding to the current filter state.
   ///   - onAddRow: Callback when add row is requested.
@@ -24,6 +25,7 @@ public struct IronDatabaseTableConfiguration {
   public init(
     database: IronDatabase,
     selection: Binding<Set<IronRow.ID>>,
+    isEditing: Binding<Bool> = .constant(false),
     sortState: Binding<IronDatabaseSortState?>,
     filterState: Binding<IronDatabaseFilterState>,
     onAddRow: (() -> Void)?,
@@ -32,6 +34,7 @@ public struct IronDatabaseTableConfiguration {
   ) {
     self.database = database
     _selection = selection
+    _isEditing = isEditing
     _sortState = sortState
     _filterState = filterState
     self.onAddRow = onAddRow
@@ -43,6 +46,12 @@ public struct IronDatabaseTableConfiguration {
 
   /// Binding to selected row IDs.
   @Binding public var selection: Set<IronRow.ID>
+
+  /// Binding to edit mode state.
+  ///
+  /// When true, enables iOS system edit mode with two-finger swipe selection.
+  /// Consumers can control this via a toolbar Edit button or programmatically.
+  @Binding public var isEditing: Bool
 
   /// Binding to the current sort state.
   @Binding public var sortState: IronDatabaseSortState?

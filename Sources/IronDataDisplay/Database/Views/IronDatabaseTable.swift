@@ -62,6 +62,7 @@ public struct IronDatabaseTable: View {
   /// - Parameters:
   ///   - database: The database to display (observed automatically).
   ///   - selection: Binding to selected row IDs.
+  ///   - isEditing: Binding to edit mode (enables two-finger swipe selection on iOS).
   ///   - sortState: Binding to the current sort state.
   ///   - filterState: Binding to the current filter state.
   ///   - onAddRow: Callback when the add row button is tapped.
@@ -70,6 +71,7 @@ public struct IronDatabaseTable: View {
   public init(
     database: IronDatabase,
     selection: Binding<Set<IronRow.ID>> = .constant([]),
+    isEditing: Binding<Bool> = .constant(false),
     sortState: Binding<IronDatabaseSortState?> = .constant(nil),
     filterState: Binding<IronDatabaseFilterState> = .constant(IronDatabaseFilterState()),
     onAddRow: (() -> Void)? = nil,
@@ -78,6 +80,7 @@ public struct IronDatabaseTable: View {
   ) {
     self.database = database
     _selection = selection
+    _isEditing = isEditing
     _sortState = sortState
     _filterState = filterState
     self.onAddRow = onAddRow
@@ -112,6 +115,7 @@ public struct IronDatabaseTable: View {
   @Environment(\.ironTheme) private var theme
 
   @Binding private var selection: Set<IronRow.ID>
+  @Binding private var isEditing: Bool
   @Binding private var sortState: IronDatabaseSortState?
   @Binding private var filterState: IronDatabaseFilterState
 
@@ -125,6 +129,7 @@ public struct IronDatabaseTable: View {
     IronDatabaseTableConfiguration(
       database: database,
       selection: $selection,
+      isEditing: $isEditing,
       sortState: $sortState,
       filterState: $filterState,
       onAddRow: onAddRow,
@@ -386,6 +391,57 @@ public struct IronDatabaseTable: View {
     )
   }
   .padding()
+}
+
+#Preview("IronDatabaseTable - Edit Mode (Two-Finger Selection)") {
+  @Previewable @State var database = createLargePreviewDatabase(rowCount: 20)
+  @Previewable @State var selection = Set<IronRow.ID>()
+  @Previewable @State var isEditing = false
+
+  NavigationStack {
+    VStack(alignment: .leading, spacing: 12) {
+      IronText(
+        isEditing
+          ? "Use two-finger swipe to select multiple rows"
+          : "Tap Edit to enable selection mode",
+        style: .caption,
+        color: .secondary,
+      )
+
+      if !selection.isEmpty {
+        IronText("Selected: \(selection.count) rows", style: .bodyMedium, color: .primary)
+      }
+
+      IronDatabaseTable(
+        database: database,
+        selection: $selection,
+        isEditing: $isEditing,
+        onAddRow: { database.addRow() },
+      )
+    }
+    .padding()
+    .navigationTitle("Tasks")
+    .toolbar {
+      ToolbarItem(placement: .primaryAction) {
+        Button(isEditing ? "Done" : "Edit") {
+          withAnimation {
+            isEditing.toggle()
+          }
+        }
+      }
+
+      if isEditing, !selection.isEmpty {
+        ToolbarItem(placement: .bottomBar) {
+          Button("Delete \(selection.count) items", role: .destructive) {
+            for rowID in selection {
+              database.removeRow(rowID)
+            }
+            selection.removeAll()
+          }
+        }
+      }
+    }
+  }
 }
 
 // MARK: - Preview Helpers
