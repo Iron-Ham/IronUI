@@ -38,9 +38,9 @@ public enum IronColumnWidthMode: Sendable, Equatable, Hashable {
   /// allowing for responsive layouts.
   ///
   /// - Parameters:
-  ///   - min: Minimum width (default: 80 points).
+  ///   - min: Minimum width (default: 100 points).
   ///   - max: Maximum width (default: 400 points).
-  case flexible(min: CGFloat = 80, max: CGFloat = 400)
+  case flexible(min: CGFloat = 100, max: CGFloat = 400)
 
   /// Width calculated to fit content.
   ///

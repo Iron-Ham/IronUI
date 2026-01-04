@@ -33,14 +33,21 @@ public struct IronDatabaseFilterPopover: View {
   ///   - column: The column to filter.
   ///   - filter: Binding to the current filter.
   ///   - selectOptions: Available options for select columns.
+  ///   - filterMode: Optional binding to the global filter mode (AND/OR).
+  ///   - activeFilterCount: The number of active filters across all columns.
   public init(
     column: IronColumn,
     filter: Binding<IronDatabaseFilter?>,
     selectOptions: [IronSelectOption] = [],
+    filterMode: Binding<IronDatabaseFilterState.FilterMode>? = nil,
+    activeFilterCount: Int = 0,
   ) {
     self.column = column
     _filter = filter
     self.selectOptions = selectOptions
+    _filterMode = filterMode ?? .constant(.and)
+    self.activeFilterCount = activeFilterCount
+    hasFilterModeBinding = filterMode != nil
   }
 
   // MARK: Public
@@ -51,6 +58,7 @@ public struct IronDatabaseFilterPopover: View {
       HStack {
         Label(column.name, systemImage: column.type.iconName)
           .font(.headline)
+          .accessibilityLabel("Filter for \(column.name) column")
 
         Spacer()
 
@@ -59,7 +67,36 @@ public struct IronDatabaseFilterPopover: View {
             filter = nil
           }
           .font(.subheadline)
+          .accessibilityLabel("Clear filter")
+          .accessibilityHint("Removes the filter from this column")
         }
+      }
+
+      // Filter mode toggle (AND/OR) when multiple filters are active
+      if showsFilterModeToggle {
+        HStack(spacing: theme.spacing.sm) {
+          IronText("Match:", style: .labelSmall, color: .secondary)
+            .accessibilityHidden(true)
+
+          Picker("Filter mode", selection: $filterMode) {
+            Text("All").tag(IronDatabaseFilterState.FilterMode.and)
+            Text("Any").tag(IronDatabaseFilterState.FilterMode.or)
+          }
+          .pickerStyle(.segmented)
+          .accessibilityLabel("Filter combination mode")
+          .accessibilityValue(filterMode.accessibilityLabel)
+          .accessibilityHint("Choose how multiple filters combine")
+
+          Spacer()
+
+          // Active filter count badge
+          IronText("\(activeFilterCount) active", style: .caption, color: .secondary)
+            .accessibilityLabel("\(activeFilterCount) filters active")
+        }
+        .padding(.vertical, theme.spacing.xs)
+        .padding(.horizontal, theme.spacing.sm)
+        .background(theme.colors.surface)
+        .clipShape(RoundedRectangle(cornerRadius: theme.radii.sm))
       }
 
       Divider()
@@ -74,10 +111,20 @@ public struct IronDatabaseFilterPopover: View {
   // MARK: Private
 
   @Binding private var filter: IronDatabaseFilter?
+  @Binding private var filterMode: IronDatabaseFilterState.FilterMode
   @Environment(\.ironTheme) private var theme
 
   private let column: IronColumn
   private let selectOptions: [IronSelectOption]
+  private let activeFilterCount: Int
+  private let hasFilterModeBinding: Bool
+
+  /// Whether to show the filter mode toggle.
+  /// Shows when there are multiple active filters OR when this filter is being added
+  /// (and there's already at least one other filter).
+  private var showsFilterModeToggle: Bool {
+    hasFilterModeBinding && (activeFilterCount > 1 || (activeFilterCount == 1 && filter == nil))
+  }
 
   @ViewBuilder
   private var filterControls: some View {
@@ -242,16 +289,22 @@ struct TextFilterControls: View {
       }
       .pickerStyle(.menu)
       .labelsHidden()
+      .accessibilityLabel("Filter condition")
+      .accessibilityValue(operation.displayName)
 
       if operation.requiresInput {
         TextField("Value", text: $query)
           .textFieldStyle(.roundedBorder)
           .onSubmit { applyFilter() }
+          .accessibilityLabel("Filter value")
+          .accessibilityHint("Enter text to filter by")
       }
 
       Button("Apply") { applyFilter() }
         .buttonStyle(.borderedProminent)
         .disabled(operation.requiresInput && query.isEmpty)
+        .accessibilityLabel("Apply filter")
+        .accessibilityHint("Applies the \(operation.displayName) filter")
     }
     .onAppear { loadCurrentFilter() }
   }
@@ -360,22 +413,33 @@ struct NumberFilterControls: View {
       }
       .pickerStyle(.menu)
       .labelsHidden()
+      .accessibilityLabel("Filter condition")
+      .accessibilityValue(operation.displayName)
 
       if operation == .between {
         HStack {
           TextField("Min", value: $minValue, format: .number)
             .textFieldStyle(.roundedBorder)
+            .accessibilityLabel("Minimum value")
           Text("to")
+            .accessibilityHidden(true)
           TextField("Max", value: $maxValue, format: .number)
             .textFieldStyle(.roundedBorder)
+            .accessibilityLabel("Maximum value")
         }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Range filter")
       } else if operation.requiresInput {
         TextField("Value", value: $value, format: .number)
           .textFieldStyle(.roundedBorder)
+          .accessibilityLabel("Filter value")
+          .accessibilityHint("Enter a number to filter by")
       }
 
       Button("Apply") { applyFilter() }
         .buttonStyle(.borderedProminent)
+        .accessibilityLabel("Apply filter")
+        .accessibilityHint("Applies the \(operation.displayName) filter")
     }
     .onAppear { loadCurrentFilter() }
   }
@@ -496,18 +560,29 @@ struct DateFilterControls: View {
       }
       .pickerStyle(.menu)
       .labelsHidden()
+      .accessibilityLabel("Filter condition")
+      .accessibilityValue(operation.displayName)
 
       switch operation {
       case .equals, .before, .after:
         DatePicker("Date", selection: $date, displayedComponents: .date)
           .labelsHidden()
+          .accessibilityLabel("Filter date")
+          .accessibilityHint("Select the date to filter by")
 
       case .between:
         DatePicker("From", selection: $startDate, displayedComponents: .date)
+          .accessibilityLabel("Start date")
+          .accessibilityHint("Select the start of the date range")
         DatePicker("To", selection: $endDate, displayedComponents: .date)
+          .accessibilityLabel("End date")
+          .accessibilityHint("Select the end of the date range")
 
       case .pastDays, .nextDays:
         Stepper("\(days) days", value: $days, in: 1 ... 365)
+          .accessibilityLabel("Number of days")
+          .accessibilityValue("\(days) days")
+          .accessibilityHint("Adjust the number of days to filter")
 
       default:
         EmptyView()
@@ -515,6 +590,8 @@ struct DateFilterControls: View {
 
       Button("Apply") { applyFilter() }
         .buttonStyle(.borderedProminent)
+        .accessibilityLabel("Apply filter")
+        .accessibilityHint("Applies the \(operation.displayName) filter")
     }
     .onAppear { loadCurrentFilter() }
   }
@@ -610,6 +687,9 @@ struct CheckboxFilterControls: View {
 
   var body: some View {
     VStack(alignment: .leading, spacing: 8) {
+      let isCheckedSelected = filter == .checked
+      let isUncheckedSelected = filter == .unchecked
+
       Button {
         filter = .checked
       } label: {
@@ -617,13 +697,16 @@ struct CheckboxFilterControls: View {
           Image(systemName: "checkmark.square.fill")
           Text("Checked")
           Spacer()
-          if case .checked = filter {
+          if isCheckedSelected {
             Image(systemName: "checkmark")
               .foregroundStyle(.blue)
           }
         }
       }
       .buttonStyle(.plain)
+      .accessibilityLabel("Show checked items")
+      .accessibilityAddTraits(isCheckedSelected ? .isSelected : [])
+      .accessibilityHint(isCheckedSelected ? "Currently selected" : "Tap to filter by checked items")
 
       Button {
         filter = .unchecked
@@ -632,14 +715,19 @@ struct CheckboxFilterControls: View {
           Image(systemName: "square")
           Text("Unchecked")
           Spacer()
-          if case .unchecked = filter {
+          if isUncheckedSelected {
             Image(systemName: "checkmark")
               .foregroundStyle(.blue)
           }
         }
       }
       .buttonStyle(.plain)
+      .accessibilityLabel("Show unchecked items")
+      .accessibilityAddTraits(isUncheckedSelected ? .isSelected : [])
+      .accessibilityHint(isUncheckedSelected ? "Currently selected" : "Tap to filter by unchecked items")
     }
+    .accessibilityElement(children: .contain)
+    .accessibilityLabel("Checkbox filter options")
   }
 }
 
@@ -689,11 +777,15 @@ struct SelectFilterControls: View {
         }
       }
       .pickerStyle(.segmented)
+      .accessibilityLabel("Filter mode")
+      .accessibilityValue(mode.displayName)
+      .accessibilityHint("Choose how to filter options")
 
       if mode == .includes || mode == .excludes {
         ScrollView {
           VStack(alignment: .leading, spacing: 4) {
             ForEach(options) { option in
+              let isSelected = selectedIDs.contains(option.id)
               Button {
                 toggleOption(option.id)
               } label: {
@@ -701,24 +793,32 @@ struct SelectFilterControls: View {
                   Circle()
                     .fill(option.color.swiftUIColor)
                     .frame(width: 12, height: 12)
+                    .accessibilityHidden(true)
                   Text(option.name)
                   Spacer()
-                  if selectedIDs.contains(option.id) {
+                  if isSelected {
                     Image(systemName: "checkmark")
                       .foregroundStyle(.blue)
                   }
                 }
               }
               .buttonStyle(.plain)
+              .accessibilityLabel(option.name)
+              .accessibilityAddTraits(isSelected ? .isSelected : [])
+              .accessibilityHint(isSelected ? "Tap to deselect" : "Tap to select")
             }
           }
         }
         .frame(maxHeight: 200)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Filter options. \(selectedIDs.count) of \(options.count) selected")
       }
 
       Button("Apply") { applyFilter() }
         .buttonStyle(.borderedProminent)
         .disabled(mode.requiresSelection && selectedIDs.isEmpty)
+        .accessibilityLabel("Apply filter")
+        .accessibilityHint("Applies the \(mode.displayName) filter with \(selectedIDs.count) options")
     }
     .onAppear { loadCurrentFilter() }
   }

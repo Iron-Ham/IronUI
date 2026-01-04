@@ -220,6 +220,7 @@ public struct IronColumn: Identifiable, Sendable, Equatable {
   ///   - options: Select options (for select types).
   ///   - isResizable: Whether the user can resize this column.
   ///   - isSortable: Whether this column can be sorted.
+  ///   - isFilterable: Whether this column can be filtered.
   public init(
     id: UUID = UUID(),
     name: String,
@@ -229,6 +230,7 @@ public struct IronColumn: Identifiable, Sendable, Equatable {
     options: [IronSelectOption] = [],
     isResizable: Bool = true,
     isSortable: Bool = true,
+    isFilterable: Bool = true,
   ) {
     self.id = id
     self.name = name
@@ -238,6 +240,7 @@ public struct IronColumn: Identifiable, Sendable, Equatable {
     self.options = options
     self.isResizable = isResizable
     self.isSortable = isSortable
+    self.isFilterable = isFilterable
   }
 
   // MARK: Public
@@ -271,6 +274,9 @@ public struct IronColumn: Identifiable, Sendable, Equatable {
 
   /// Whether this column can be sorted.
   public var isSortable: Bool
+
+  /// Whether this column can be filtered.
+  public var isFilterable: Bool
 
   /// The resolved width for this column.
   ///
@@ -472,6 +478,38 @@ public enum IronCellValue: Sendable, Equatable {
       string
     case .phone(let string):
       string
+    }
+  }
+
+  /// Returns a VoiceOver-friendly accessibility label for this value.
+  ///
+  /// Unlike `textValue`, this returns "empty" for nil/empty values
+  /// instead of an empty string, making it clear to screen reader users
+  /// that the cell has no value.
+  public var accessibilityLabel: String {
+    switch self {
+    case .empty:
+      "empty"
+    case .text(let string):
+      string.isEmpty ? "empty" : string
+    case .number(let value):
+      value.formatted()
+    case .date(let date):
+      date.formatted(date: .complete, time: .omitted)
+    case .checkbox(let value):
+      value ? "Checked" : "Unchecked"
+    case .select:
+      "empty" // Needs option lookup - would require database context
+    case .multiSelect(let ids):
+      ids.isEmpty ? "empty" : "\(ids.count) selected"
+    case .person(let person):
+      person?.name ?? "empty"
+    case .url(let url):
+      url?.host ?? "empty"
+    case .email(let string):
+      string.isEmpty ? "empty" : string
+    case .phone(let string):
+      string.isEmpty ? "empty" : string
     }
   }
 }

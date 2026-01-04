@@ -11,12 +11,15 @@ import UIKit
 /// This replaces string-based identifiers with a proper model type,
 /// enabling modern `CellRegistration` patterns.
 ///
-/// The `rowID` is included to ensure diffable data source detects changes
-/// when row order changes due to sorting - items with the same display index
-/// but different row IDs will be treated as different items.
+/// The layout uses rows as sections, with each item representing a cell
+/// at a specific column within that row. The `rowID` ensures diffable
+/// data source detects changes when row order changes due to sorting.
 struct IronDatabaseCellItem: Hashable {
-  let sectionIndex: Int
+  /// The column index (0 = selection column if shown, then data columns).
+  let columnIndex: Int
+  /// The display row index (section index in the layout).
   let rowIndex: Int
+  /// The actual row UUID for identity tracking.
   let rowID: UUID
 }
 
@@ -90,29 +93,38 @@ final class IronDatabaseIOSCoordinator: IronDatabaseTableCoordinatorBase {
   weak var containerView: IronDatabaseTableContainerView?
 
   func collectionView(_: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-    guard let row = row(at: indexPath.item) else { return }
+    // In the row-based layout:
+    // - indexPath.section = row index
+    // - indexPath.item = column index within the row
+    let rowIndex = indexPath.section
+    let columnIndex = indexPath.item
+
+    guard let row = row(at: rowIndex) else { return }
 
     let item = IronDatabaseCellItem(
-      sectionIndex: indexPath.section,
-      rowIndex: indexPath.item,
+      columnIndex: columnIndex,
+      rowIndex: rowIndex,
       rowID: row.id,
     )
 
-    // Handle cell tap for editing
-    let columnIndex = indexPath.section - (configuration.showsSelectionColumn ? 1 : 0)
-    guard columnIndex >= 0, columnIndex < configuration.database.columns.count else {
-      // Selection column tapped
-      if configuration.showsSelectionColumn, indexPath.section == 0 {
-        toggleSelection(for: row.id)
-        containerView?.reconfigureItem(item)
-      }
+    // Handle cell tap based on column type
+    let dataColumnIndex = columnIndex - (configuration.showsSelectionColumn ? 1 : 0)
+
+    // Selection column tapped
+    if configuration.showsSelectionColumn, columnIndex == 0 {
+      toggleSelection(for: row.id)
+      containerView?.reconfigureItem(item)
       return
     }
 
-    let column = configuration.database.columns[columnIndex]
+    guard dataColumnIndex >= 0, dataColumnIndex < configuration.database.columns.count else {
+      return
+    }
+
+    let column = configuration.database.columns[dataColumnIndex]
     if column.type != .checkbox {
-      editingCell = CellIdentifier(rowID: row.id, columnID: column.id)
-      containerView?.reconfigureItem(item)
+      // Use setEditingCell to reconfigure both old and new cells
+      containerView?.setEditingCell(CellIdentifier(rowID: row.id, columnID: column.id), in: self)
     }
   }
 }
@@ -154,25 +166,27 @@ final class IronDatabaseTableContainerView: UIView {
   func reloadData() {
     var snapshot = NSDiffableDataSourceSnapshot<Int, IronDatabaseCellItem>()
 
-    // Add sections for each column
-    let sectionCount =
+    // Calculate number of columns
+    let columnCount =
       configuration.database.columns.count + (configuration.showsSelectionColumn ? 1 : 0)
         + (configuration.showsAddColumnButton ? 1 : 0)
 
-    for section in 0..<sectionCount {
-      snapshot.appendSections([section])
+    // Add sections for each ROW (not column)
+    let rowCount = coordinator?.displayRowCount ?? 0
 
-      // Add items for each row, including rowID so diffable data source
-      // detects changes when sort order changes
-      let itemCount = coordinator?.displayRowCount ?? 0
-      let items = (0..<itemCount).compactMap { displayIndex -> IronDatabaseCellItem? in
-        guard let row = coordinator?.row(at: displayIndex) else { return nil }
-        return IronDatabaseCellItem(sectionIndex: section, rowIndex: displayIndex, rowID: row.id)
+    for rowIndex in 0..<rowCount {
+      snapshot.appendSections([rowIndex])
+
+      guard let row = coordinator?.row(at: rowIndex) else { continue }
+
+      // Add items for each column in this row
+      let items = (0..<columnCount).map { columnIndex in
+        IronDatabaseCellItem(columnIndex: columnIndex, rowIndex: rowIndex, rowID: row.id)
       }
-      snapshot.appendItems(items, toSection: section)
+      snapshot.appendItems(items, toSection: rowIndex)
     }
 
-    bodyDataSource?.apply(snapshot, animatingDifferences: false)
+    bodyDataSource?.apply(snapshot, animatingDifferences: true)
 
     // Reload header and update width
     headerCollectionView.reloadData()
@@ -186,7 +200,62 @@ final class IronDatabaseTableContainerView: UIView {
   func reconfigureItem(_ item: IronDatabaseCellItem) {
     guard var snapshot = bodyDataSource?.snapshot() else { return }
     snapshot.reconfigureItems([item])
-    bodyDataSource?.apply(snapshot, animatingDifferences: false)
+    bodyDataSource?.apply(snapshot, animatingDifferences: true)
+  }
+
+  /// Reconfigures multiple items at once.
+  func reconfigureItems(_ items: [IronDatabaseCellItem]) {
+    guard !items.isEmpty, var snapshot = bodyDataSource?.snapshot() else { return }
+    snapshot.reconfigureItems(items)
+    bodyDataSource?.apply(snapshot, animatingDifferences: true)
+  }
+
+  /// Sets the editing cell and reconfigures both the old and new cells.
+  ///
+  /// This ensures the focus ring is properly removed from the old cell
+  /// and added to the new cell.
+  func setEditingCell(_ newEditingCell: CellIdentifier?, in coordinator: IronDatabaseIOSCoordinator?) {
+    guard let coordinator else { return }
+
+    var itemsToReconfigure = [IronDatabaseCellItem]()
+
+    // Find the old editing cell item (to remove focus ring)
+    if
+      let oldCell = coordinator.editingCell,
+      let displayIndex = coordinator.displayIndex(for: oldCell.rowID),
+      let dataColumnIndex = configuration.database.columns.firstIndex(where: { $0.id == oldCell.columnID })
+    {
+      let columnIndex = dataColumnIndex + (configuration.showsSelectionColumn ? 1 : 0)
+      itemsToReconfigure.append(IronDatabaseCellItem(
+        columnIndex: columnIndex,
+        rowIndex: displayIndex,
+        rowID: oldCell.rowID,
+      ))
+    }
+
+    // Update the editing cell
+    coordinator.editingCell = newEditingCell
+
+    // Find the new editing cell item (to add focus ring)
+    if
+      let newCell = newEditingCell,
+      let displayIndex = coordinator.displayIndex(for: newCell.rowID),
+      let dataColumnIndex = configuration.database.columns.firstIndex(where: { $0.id == newCell.columnID })
+    {
+      let columnIndex = dataColumnIndex + (configuration.showsSelectionColumn ? 1 : 0)
+      let newItem = IronDatabaseCellItem(
+        columnIndex: columnIndex,
+        rowIndex: displayIndex,
+        rowID: newCell.rowID,
+      )
+      // Avoid duplicates if same cell
+      if !itemsToReconfigure.contains(newItem) {
+        itemsToReconfigure.append(newItem)
+      }
+    }
+
+    // Reconfigure all affected cells
+    reconfigureItems(itemsToReconfigure)
   }
 
   // MARK: Private
@@ -231,7 +300,9 @@ final class IronDatabaseTableContainerView: UIView {
     guard let row = coordinator.row(at: item.rowIndex) else { return }
 
     let isSelected = configuration.selection.contains(row.id)
-    cell.configure(isSelected: isSelected) { [weak self, weak coordinator] in
+    // Row number is 1-indexed for accessibility (human-readable)
+    cell.configure(isSelected: isSelected, rowNumber: item.rowIndex + 1) { [weak self, weak coordinator] in
+      IronHaptics.selection()
       coordinator?.toggleSelection(for: row.id)
       self?.reconfigureItem(item)
     }
@@ -245,28 +316,66 @@ final class IronDatabaseTableContainerView: UIView {
     guard let self, let coordinator else { return }
     guard let row = coordinator.row(at: item.rowIndex) else { return }
 
-    let columnIndex = item.sectionIndex - (configuration.showsSelectionColumn ? 1 : 0)
-    guard columnIndex >= 0, columnIndex < configuration.database.columns.count else { return }
+    let dataColumnIndex = item.columnIndex - (configuration.showsSelectionColumn ? 1 : 0)
+    guard dataColumnIndex >= 0, dataColumnIndex < configuration.database.columns.count else { return }
 
-    let column = configuration.database.columns[columnIndex]
+    let column = configuration.database.columns[dataColumnIndex]
     let isEditing =
       coordinator.editingCell?.rowID == row.id && coordinator.editingCell?.columnID == column.id
+    let isSelected = configuration.selection.contains(row.id)
     let valueBinding = coordinator.cellValueBinding(row: row.id, column: column.id)
 
     cell.configure(
       column: column,
       value: valueBinding,
       isEditing: isEditing,
+      isSelected: isSelected,
       onTap: { [weak self, weak coordinator] in
+        guard let self else { return }
+
+        // In fullRowTap or both mode, single tap toggles selection
+        if
+          configuration.rowSelectionMode == .fullRowTap
+          || configuration.rowSelectionMode == .both
+        {
+          IronHaptics.selection()
+          coordinator?.toggleSelection(for: row.id)
+          reconfigureItem(item)
+          return
+        }
+
+        // In checkboxOnly mode, tap starts editing (except for checkboxes)
         if column.type != .checkbox {
-          coordinator?.editingCell = CellIdentifier(rowID: row.id, columnID: column.id)
-          self?.reconfigureItem(item)
+          IronHaptics.tap()
+          // Use setEditingCell to reconfigure both old and new cells
+          setEditingCell(CellIdentifier(rowID: row.id, columnID: column.id), in: coordinator)
         }
       },
       onSubmit: { [weak self, weak coordinator] in
-        coordinator?.editingCell = nil
-        self?.reconfigureItem(item)
+        // Note: Haptic feedback is handled in IronDatabaseDataCellContainer
+        // along with the success flash animation
+        self?.setEditingCell(nil, in: coordinator)
       },
+      onEdit: { [weak self, weak coordinator] in
+        IronHaptics.tap()
+        // Use setEditingCell to reconfigure both old and new cells
+        self?.setEditingCell(CellIdentifier(rowID: row.id, columnID: column.id), in: coordinator)
+      },
+      onCancel: { [weak self, weak coordinator] in
+        // Cancel editing without saving changes
+        self?.setEditingCell(nil, in: coordinator)
+      },
+      onClear: configuration.onClearCell != nil
+        ? { [weak self] in
+          self?.configuration.onClearCell?(row.id, column.id)
+          self?.reconfigureItem(item)
+        }
+        : nil,
+      onRowAction: configuration.onRowAction != nil
+        ? { [weak self] action in
+          self?.configuration.onRowAction?(action, row.id)
+        }
+        : nil,
     )
   }
 
@@ -303,6 +412,8 @@ final class IronDatabaseTableContainerView: UIView {
     let sortDirection = isSorted ? configuration.sortState?.direction : nil
     let isFiltered = configuration.filterState.filters[column.id] != nil
 
+    let currentFilter = configuration.filterState.filters[column.id]
+
     cell.configure(
       column: column,
       isSorted: isSorted,
@@ -310,9 +421,52 @@ final class IronDatabaseTableContainerView: UIView {
       isFiltered: isFiltered,
       onSort: { [weak self] in
         guard let self else { return }
+        IronHaptics.selection()
         // Update the configuration's sort state via binding
         configuration.toggleSort(for: column.id)
         // Sync coordinator's configuration with updated sort state
+        coordinator?.configuration = configuration
+        coordinator?.recomputeDisplayIndices()
+        reloadData()
+      },
+      onSortAscending: { [weak self] in
+        guard let self else { return }
+        configuration.sortState = IronDatabaseSortState(columnID: column.id, direction: .ascending)
+        coordinator?.configuration = configuration
+        coordinator?.recomputeDisplayIndices()
+        reloadData()
+      },
+      onSortDescending: { [weak self] in
+        guard let self else { return }
+        configuration.sortState = IronDatabaseSortState(columnID: column.id, direction: .descending)
+        coordinator?.configuration = configuration
+        coordinator?.recomputeDisplayIndices()
+        reloadData()
+      },
+      onClearSort: { [weak self] in
+        guard let self else { return }
+        configuration.sortState = nil
+        coordinator?.configuration = configuration
+        coordinator?.recomputeDisplayIndices()
+        reloadData()
+      },
+      currentFilter: currentFilter,
+      onApplyFilter: { [weak self] newFilter in
+        guard let self else { return }
+        if let newFilter {
+          configuration.filterState.filters[column.id] = newFilter
+          IronHaptics.impact(.medium)
+        } else {
+          configuration.filterState.filters.removeValue(forKey: column.id)
+          IronHaptics.impact(.light)
+        }
+        coordinator?.configuration = configuration
+        coordinator?.recomputeDisplayIndices()
+        reloadData()
+      },
+      onClearFilter: { [weak self] in
+        guard let self else { return }
+        configuration.filterState.filters.removeValue(forKey: column.id)
         coordinator?.configuration = configuration
         coordinator?.recomputeDisplayIndices()
         reloadData()
@@ -407,7 +561,7 @@ final class IronDatabaseTableContainerView: UIView {
       guard let self else { return UICollectionViewCell() }
 
       // Selection column - use selection cell registration
-      if configuration.showsSelectionColumn, item.sectionIndex == 0 {
+      if configuration.showsSelectionColumn, item.columnIndex == 0 {
         return collectionView.dequeueConfiguredReusableCell(
           using: selectionCellRegistration,
           for: indexPath,
@@ -431,82 +585,110 @@ final class IronDatabaseTableContainerView: UIView {
     return UICollectionViewCompositionalLayout(
       sectionProvider: { [weak self] sectionIndex, _ in
         guard let self else { return nil }
-        return createColumnSection(at: sectionIndex, isHeader: true)
+        return createHeaderColumnSection(at: sectionIndex)
       },
       configuration: config,
     )
   }
 
-  private func createBodyLayout() -> UICollectionViewLayout {
-    let config = UICollectionViewCompositionalLayoutConfiguration()
-    config.scrollDirection = .horizontal
+  /// Creates a section layout for a single header column.
+  private func createHeaderColumnSection(at sectionIndex: Int) -> NSCollectionLayoutSection {
+    let columnWidth: CGFloat
 
-    return UICollectionViewCompositionalLayout(
-      sectionProvider: { [weak self] sectionIndex, _ in
-        guard let self else { return nil }
-        return createColumnSection(at: sectionIndex, isHeader: false)
-      },
-      configuration: config,
-    )
-  }
-
-  private func createColumnSection(at sectionIndex: Int, isHeader: Bool) -> NSCollectionLayoutSection {
     // Selection column
     if configuration.showsSelectionColumn, sectionIndex == 0 {
-      let itemSize = NSCollectionLayoutSize(
-        widthDimension: .absolute(configuration.selectionColumnWidth),
-        heightDimension: .absolute(isHeader ? configuration.headerHeight : configuration.rowHeight),
-      )
-      let item = NSCollectionLayoutItem(layoutSize: itemSize)
-
-      let groupSize = NSCollectionLayoutSize(
-        widthDimension: .absolute(configuration.selectionColumnWidth),
-        heightDimension: isHeader ? .absolute(configuration.headerHeight) : .estimated(1000),
-      )
-      let group = NSCollectionLayoutGroup.vertical(layoutSize: groupSize, subitems: [item])
-
-      let section = NSCollectionLayoutSection(group: group)
-      section.orthogonalScrollingBehavior = isHeader ? .none : .continuous
-      return section
+      columnWidth = configuration.selectionColumnWidth
+    } else {
+      let dataColumnIndex = sectionIndex - (configuration.showsSelectionColumn ? 1 : 0)
+      if dataColumnIndex >= 0, dataColumnIndex < configuration.database.columns.count {
+        let column = configuration.database.columns[dataColumnIndex]
+        columnWidth = column.width ?? column.resolvedWidth
+      } else {
+        // Add column button
+        columnWidth = 44
+      }
     }
-
-    // Data column
-    let columnIndex = sectionIndex - (configuration.showsSelectionColumn ? 1 : 0)
-    guard columnIndex >= 0, columnIndex < configuration.database.columns.count else {
-      // Add column button section
-      let itemSize = NSCollectionLayoutSize(
-        widthDimension: .absolute(44),
-        heightDimension: .absolute(isHeader ? configuration.headerHeight : configuration.rowHeight),
-      )
-      let item = NSCollectionLayoutItem(layoutSize: itemSize)
-      let group = NSCollectionLayoutGroup.vertical(
-        layoutSize: NSCollectionLayoutSize(
-          widthDimension: .absolute(44),
-          heightDimension: .estimated(1000),
-        ),
-        subitems: [item],
-      )
-      return NSCollectionLayoutSection(group: group)
-    }
-
-    let column = configuration.database.columns[columnIndex]
-    let columnWidth = column.width ?? column.resolvedWidth
 
     let itemSize = NSCollectionLayoutSize(
       widthDimension: .absolute(columnWidth),
-      heightDimension: .absolute(isHeader ? configuration.headerHeight : configuration.rowHeight),
+      heightDimension: .absolute(configuration.headerHeight),
     )
     let item = NSCollectionLayoutItem(layoutSize: itemSize)
 
     let groupSize = NSCollectionLayoutSize(
       widthDimension: .absolute(columnWidth),
-      heightDimension: isHeader ? .absolute(configuration.headerHeight) : .estimated(1000),
+      heightDimension: .absolute(configuration.headerHeight),
     )
     let group = NSCollectionLayoutGroup.vertical(layoutSize: groupSize, subitems: [item])
 
-    let section = NSCollectionLayoutSection(group: group)
-    section.orthogonalScrollingBehavior = isHeader ? .none : .continuous
-    return section
+    return NSCollectionLayoutSection(group: group)
+  }
+
+  private func createBodyLayout() -> UICollectionViewLayout {
+    let config = UICollectionViewCompositionalLayoutConfiguration()
+    config.scrollDirection = .vertical
+
+    return UICollectionViewCompositionalLayout(
+      sectionProvider: { [weak self] _, _ in
+        guard let self else { return nil }
+        return createRowSection()
+      },
+      configuration: config,
+    )
+  }
+
+  /// Creates a section layout for a single row.
+  ///
+  /// Each row section contains items for all columns laid out horizontally.
+  /// The section's width exceeds the viewport to enable horizontal scrolling.
+  private func createRowSection() -> NSCollectionLayoutSection {
+    // Build items for each column
+    var items = [NSCollectionLayoutItem]()
+
+    // Selection column (if shown)
+    if configuration.showsSelectionColumn {
+      let selectionItem = NSCollectionLayoutItem(
+        layoutSize: NSCollectionLayoutSize(
+          widthDimension: .absolute(configuration.selectionColumnWidth),
+          heightDimension: .absolute(configuration.rowHeight),
+        )
+      )
+      items.append(selectionItem)
+    }
+
+    // Data columns
+    for column in configuration.database.columns {
+      let columnWidth = column.width ?? column.resolvedWidth
+      let columnItem = NSCollectionLayoutItem(
+        layoutSize: NSCollectionLayoutSize(
+          widthDimension: .absolute(columnWidth),
+          heightDimension: .absolute(configuration.rowHeight),
+        )
+      )
+      items.append(columnItem)
+    }
+
+    // Add column button (if shown)
+    if configuration.showsAddColumnButton {
+      let addItem = NSCollectionLayoutItem(
+        layoutSize: NSCollectionLayoutSize(
+          widthDimension: .absolute(44),
+          heightDimension: .absolute(configuration.rowHeight),
+        )
+      )
+      items.append(addItem)
+    }
+
+    // Create horizontal group containing all column items
+    let group = NSCollectionLayoutGroup.horizontal(
+      layoutSize: NSCollectionLayoutSize(
+        widthDimension: .absolute(totalContentWidth),
+        heightDimension: .absolute(configuration.rowHeight),
+      ),
+      subitems: items,
+    )
+
+    return NSCollectionLayoutSection(group: group)
   }
 }
 
@@ -625,6 +807,14 @@ final class IronDatabaseHeaderCollectionCell: UICollectionViewCell {
     sortDirection: IronDatabaseSortState.SortDirection?,
     isFiltered: Bool,
     onSort: @escaping () -> Void,
+    onSortAscending: (() -> Void)? = nil,
+    onSortDescending: (() -> Void)? = nil,
+    onClearSort: (() -> Void)? = nil,
+    currentFilter: IronDatabaseFilter? = nil,
+    onApplyFilter: ((IronDatabaseFilter?) -> Void)? = nil,
+    onClearFilter: (() -> Void)? = nil,
+    onRename: (() -> Void)? = nil,
+    onDelete: (() -> Void)? = nil,
   ) {
     hostingController?.view.removeFromSuperview()
 
@@ -635,6 +825,14 @@ final class IronDatabaseHeaderCollectionCell: UICollectionViewCell {
         sortDirection: sortDirection,
         isFiltered: isFiltered,
         onSort: onSort,
+        onSortAscending: onSortAscending,
+        onSortDescending: onSortDescending,
+        onClearSort: onClearSort,
+        currentFilter: currentFilter,
+        onApplyFilter: onApplyFilter,
+        onClearFilter: onClearFilter,
+        onRename: onRename,
+        onDelete: onDelete,
       )
     )
 
@@ -680,15 +878,40 @@ final class IronDatabaseDataCollectionCell: UICollectionViewCell {
     column: IronColumn,
     value: Binding<IronCellValue>,
     isEditing: Bool,
+    isSelected: Bool,
     onTap: @escaping () -> Void,
     onSubmit: @escaping () -> Void,
+    onEdit: (() -> Void)? = nil,
+    onCancel: (() -> Void)? = nil,
+    onClear: (() -> Void)? = nil,
+    onRowAction: ((IronDatabaseRowAction) -> Void)? = nil,
   ) {
     hostingController?.view.removeFromSuperview()
 
+    // Build accessibility label: "Column Name: value" or "Column Name: empty"
+    let accessibilityLabel = "\(column.name): \(value.wrappedValue.accessibilityLabel)"
+    let accessibilityHint =
+      column.type == .checkbox
+        ? "Double tap to toggle"
+        : "Double tap to edit, hold for options"
+
     let cellView = AnyView(
-      IronDatabaseCell(column: column, value: value, isEditing: isEditing)
-        .onSubmit { onSubmit() }
-        .onTapGesture { onTap() }
+      IronDatabaseDataCellContainer(
+        column: column,
+        value: value,
+        isEditing: isEditing,
+        isSelected: isSelected,
+        onTap: onTap,
+        onSubmit: onSubmit,
+        onEdit: onEdit,
+        onCancel: onCancel,
+        onClear: onClear,
+        onRowAction: onRowAction,
+      )
+      .accessibilityElement(children: .ignore)
+      .accessibilityLabel(accessibilityLabel)
+      .accessibilityHint(accessibilityHint)
+      .accessibilityAddTraits(column.type == .checkbox ? .isButton : [])
     )
 
     let controller = UIHostingController(rootView: cellView)
@@ -729,7 +952,7 @@ final class IronDatabaseSelectionCollectionCell: UICollectionViewCell {
 
   // MARK: Internal
 
-  func configure(isSelected: Bool, onToggle: @escaping () -> Void) {
+  func configure(isSelected: Bool, rowNumber: Int, onToggle: @escaping () -> Void) {
     hostingController?.view.removeFromSuperview()
 
     let view = Button(action: onToggle) {
@@ -738,6 +961,9 @@ final class IronDatabaseSelectionCollectionCell: UICollectionViewCell {
     }
     .buttonStyle(.plain)
     .frame(maxWidth: .infinity, maxHeight: .infinity)
+    .accessibilityLabel("Select row \(rowNumber)")
+    .accessibilityValue(isSelected ? "Selected" : "Not selected")
+    .accessibilityAddTraits(.isButton)
 
     let controller = UIHostingController(rootView: AnyView(view))
     controller.view.backgroundColor = .clear
@@ -759,6 +985,148 @@ final class IronDatabaseSelectionCollectionCell: UICollectionViewCell {
   private var hostingController: UIHostingController<AnyView>?
 }
 
+// MARK: - IronDatabaseDataCellContainer
+
+/// Container view that wraps data cells with visual feedback (focus ring, selection highlight).
+private struct IronDatabaseDataCellContainer: View {
+
+  // MARK: Internal
+
+  let column: IronColumn
+  @Binding var value: IronCellValue
+  let isEditing: Bool
+  let isSelected: Bool
+  let onTap: () -> Void
+  let onSubmit: () -> Void
+  var onEdit: (() -> Void)?
+  var onCancel: (() -> Void)?
+  var onClear: (() -> Void)?
+  var onRowAction: ((IronDatabaseRowAction) -> Void)?
+
+  var body: some View {
+    IronDatabaseCell(column: column, value: $value, isEditing: isEditing)
+      .onSubmit {
+        // Show brief success flash before submitting
+        showSuccessFlash = true
+        IronHaptics.success()
+        onSubmit()
+
+        // Reset flash after animation
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+          showSuccessFlash = false
+        }
+      }
+      .onTapGesture { onTap() }
+      .padding(.horizontal, theme.spacing.xs)
+      .padding(.vertical, theme.spacing.xxs)
+      .background(backgroundColor)
+      .clipShape(RoundedRectangle(cornerRadius: theme.radii.sm))
+      .overlay {
+        // Success flash overlay
+        if showSuccessFlash {
+          RoundedRectangle(cornerRadius: theme.radii.sm)
+            .fill(theme.colors.success.opacity(0.2))
+            .transition(.opacity)
+        }
+
+        // Focus ring when editing
+        if isEditing {
+          RoundedRectangle(cornerRadius: theme.radii.sm)
+            .strokeBorder(theme.colors.primary, lineWidth: 2)
+            .transition(.scale(scale: 0.95).combined(with: .opacity))
+        }
+      }
+      // Escape key cancels editing (works on iPad with keyboard and macOS)
+      .onKeyPress(.escape) {
+        if isEditing, let onCancel {
+          IronHaptics.impact(.light)
+          onCancel()
+          return .handled
+        }
+        return .ignored
+      }
+      .contextMenu {
+        // Cell actions
+        if onEdit != nil {
+          Button {
+            onEdit?()
+          } label: {
+            Label("Edit", systemImage: "pencil")
+          }
+        }
+
+        Button {
+          UIPasteboard.general.string = value.textValue
+          IronHaptics.tap()
+        } label: {
+          Label("Copy", systemImage: "doc.on.doc")
+        }
+
+        if !value.isEmpty, onClear != nil {
+          Divider()
+
+          Button(role: .destructive) {
+            IronHaptics.impact(.medium)
+            onClear?()
+          } label: {
+            Label("Clear", systemImage: "xmark.circle")
+          }
+        }
+
+        // Row actions section
+        if onRowAction != nil {
+          Divider()
+
+          Section("Row") {
+            Button {
+              onRowAction?(.insertAbove)
+            } label: {
+              Label("Insert Row Above", systemImage: "arrow.up.to.line")
+            }
+
+            Button {
+              onRowAction?(.insertBelow)
+            } label: {
+              Label("Insert Row Below", systemImage: "arrow.down.to.line")
+            }
+
+            Button {
+              onRowAction?(.duplicate)
+            } label: {
+              Label("Duplicate Row", systemImage: "doc.on.doc")
+            }
+
+            Divider()
+
+            Button(role: .destructive) {
+              IronHaptics.impact(.medium)
+              onRowAction?(.delete)
+            } label: {
+              Label("Delete Row", systemImage: "trash")
+            }
+          }
+        }
+      }
+      .accessibleAnimation(theme.animation.snappy, value: isEditing)
+      .accessibleAnimation(theme.animation.snappy, value: isSelected)
+      .accessibleAnimation(theme.animation.snappy, value: showSuccessFlash)
+  }
+
+  // MARK: Private
+
+  @Environment(\.ironTheme) private var theme
+  @State private var showSuccessFlash = false
+
+  private var backgroundColor: Color {
+    if isEditing {
+      return theme.colors.surfaceElevated
+    } else if isSelected {
+      return theme.colors.primary.opacity(0.08)
+    }
+    return .clear
+  }
+}
+
 // MARK: - IronDatabaseHeaderCellContent
 
 /// SwiftUI content for header cells.
@@ -771,43 +1139,177 @@ private struct IronDatabaseHeaderCellContent: View {
   let sortDirection: IronDatabaseSortState.SortDirection?
   let isFiltered: Bool
   let onSort: () -> Void
+  var onSortAscending: (() -> Void)?
+  var onSortDescending: (() -> Void)?
+  var onClearSort: (() -> Void)?
+  var currentFilter: IronDatabaseFilter?
+  var onApplyFilter: ((IronDatabaseFilter?) -> Void)?
+  var onClearFilter: (() -> Void)?
+  var onRename: (() -> Void)?
+  var onDelete: (() -> Void)?
 
   var body: some View {
-    Button(action: onSort) {
-      HStack(spacing: 4) {
-        Image(systemName: column.type.iconName)
-          .foregroundStyle(.secondary)
-          .font(.caption)
+    Menu {
+      // Sort section (only if sortable)
+      if column.isSortable {
+        Section("Sort") {
+          Button {
+            IronHaptics.selection()
+            onSortAscending?()
+          } label: {
+            Label("Sort Ascending", systemImage: "arrow.up")
+          }
 
-        Text(column.name)
-          .font(.subheadline)
-          .fontWeight(.medium)
-          .foregroundStyle(.secondary)
-          .lineLimit(1)
+          Button {
+            IronHaptics.selection()
+            onSortDescending?()
+          } label: {
+            Label("Sort Descending", systemImage: "arrow.down")
+          }
 
-        Spacer()
-
-        if isFiltered {
-          Image(systemName: "line.3.horizontal.decrease.circle.fill")
-            .foregroundStyle(.blue)
-            .font(.caption)
-        }
-
-        if isSorted, let direction = sortDirection {
-          Image(systemName: direction.iconName)
-            .foregroundStyle(.blue)
-            .font(.caption)
+          if isSorted {
+            Button {
+              IronHaptics.selection()
+              onClearSort?()
+            } label: {
+              Label("Clear Sort", systemImage: "xmark")
+            }
+          }
         }
       }
-      .padding(.horizontal, 8)
-      .frame(maxHeight: .infinity)
+
+      // Filter section (only if filterable)
+      if column.isFilterable {
+        Section("Filter") {
+          Button {
+            IronHaptics.impact(.medium)
+            localFilter = currentFilter
+            showFilterPopover = true
+          } label: {
+            Label("Add Filter...", systemImage: "line.3.horizontal.decrease")
+          }
+
+          if isFiltered {
+            Button {
+              IronHaptics.impact(.light)
+              onClearFilter?()
+            } label: {
+              Label("Clear Filter", systemImage: "xmark.circle")
+            }
+          }
+        }
+      }
+
+      Divider()
+
+      // Column management
+      if onRename != nil {
+        Button {
+          onRename?()
+        } label: {
+          Label("Rename", systemImage: "pencil")
+        }
+      }
+
+      // Type change submenu
+      Menu("Change Type") {
+        ForEach(IronColumnType.allCases, id: \.self) { type in
+          Button {
+            // Type change would need configuration callback
+          } label: {
+            Label(type.displayName, systemImage: type.iconName)
+          }
+          .disabled(type == column.type)
+        }
+      }
+
+      Divider()
+
+      if onDelete != nil {
+        Button(role: .destructive) {
+          IronHaptics.impact(.medium)
+          onDelete?()
+        } label: {
+          Label("Delete Column", systemImage: "trash")
+        }
+      }
+    } label: {
+      headerLabel
+    } primaryAction: {
+      // Single tap triggers sort for quick access (only if sortable)
+      if column.isSortable {
+        onSort()
+      }
     }
-    .buttonStyle(.plain)
+    .accessibilityElement(children: .ignore)
+    .accessibilityLabel(accessibilityLabel)
+    .accessibilityHint(column.isSortable ? "Tap to sort, hold for more options" : "Hold for options")
+    .accessibilityAddTraits(.isButton)
+    .popover(isPresented: $showFilterPopover) {
+      IronDatabaseFilterPopover(
+        column: column,
+        filter: $localFilter,
+        selectOptions: column.options,
+      )
+      .presentationCompactAdaptation(.popover)
+      .onChange(of: localFilter) { _, newValue in
+        // Apply filter immediately as user makes changes
+        onApplyFilter?(newValue)
+      }
+    }
   }
 
   // MARK: Private
 
   @Environment(\.ironTheme) private var theme
+  @State private var showFilterPopover = false
+  @State private var localFilter: IronDatabaseFilter?
+
+  private var headerLabel: some View {
+    HStack(spacing: 4) {
+      Image(systemName: column.type.iconName)
+        .foregroundStyle(.secondary)
+        .font(.caption)
+
+      Text(column.name)
+        .font(.subheadline)
+        .fontWeight(.medium)
+        .foregroundStyle(.secondary)
+        .lineLimit(2)
+        .minimumScaleFactor(0.8)
+
+      Spacer()
+
+      if isFiltered {
+        Image(systemName: "line.3.horizontal.decrease.circle.fill")
+          .foregroundStyle(.blue)
+          .font(.caption)
+      }
+
+      if isSorted, let direction = sortDirection {
+        Image(systemName: direction.iconName)
+          .foregroundStyle(.blue)
+          .font(.caption)
+      }
+    }
+    .padding(.horizontal, 8)
+    .frame(maxHeight: .infinity)
+    .contentShape(Rectangle())
+  }
+
+  private var accessibilityLabel: String {
+    var parts = ["\(column.name) column", "\(column.type.displayName) type"]
+
+    if isSorted, let direction = sortDirection {
+      parts.append(direction.accessibilityLabel)
+    }
+
+    if isFiltered {
+      parts.append("Filtered")
+    }
+
+    return parts.joined(separator: ", ")
+  }
 
 }
 

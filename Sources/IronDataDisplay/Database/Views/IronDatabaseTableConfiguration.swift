@@ -62,6 +62,12 @@ public struct IronDatabaseTableConfiguration {
   /// Callback for row actions.
   public let onRowAction: ((IronDatabaseRowAction, IronRow.ID) -> Void)?
 
+  /// Callback for clearing a cell value.
+  ///
+  /// When provided, cells will show a "Clear" option in their context menu.
+  /// The callback receives the row ID and column ID to clear.
+  public var onClearCell: ((IronRow.ID, IronColumn.ID) -> Void)?
+
   /// Whether to show row numbers.
   public var showsRowNumbers = false
 
@@ -74,11 +80,17 @@ public struct IronDatabaseTableConfiguration {
   /// Whether multiple rows can be selected.
   public var allowsMultipleSelection = true
 
-  /// Whether to show the selection column.
-  public var showsSelectionColumn = true
+  /// How row selection is triggered.
+  ///
+  /// - `.checkboxOnly`: Only the checkbox column triggers selection (default).
+  /// - `.fullRowTap`: Tapping any cell toggles selection; checkbox column hidden.
+  /// - `.both`: Checkbox visible AND row tap also selects.
+  public var rowSelectionMode = RowSelectionMode.checkboxOnly
 
   /// The height of each data row.
-  public var rowHeight: CGFloat = 40
+  ///
+  /// Defaults to 44pt to meet Apple HIG minimum touch target requirements.
+  public var rowHeight: CGFloat = 44
 
   /// The height of the header row.
   public var headerHeight: CGFloat = 44
@@ -91,6 +103,15 @@ public struct IronDatabaseTableConfiguration {
 
   /// The width of the row number column.
   public var rowNumberColumnWidth: CGFloat = 50
+
+  /// Whether to show the selection column.
+  ///
+  /// This is computed based on `rowSelectionMode`:
+  /// - `.checkboxOnly` or `.both`: Shows the checkbox column.
+  /// - `.fullRowTap`: Hides the checkbox column.
+  public var showsSelectionColumn: Bool {
+    rowSelectionMode != .fullRowTap
+  }
 
   /// Whether to show the add row button.
   public var showsAddRowButton: Bool {
@@ -183,4 +204,27 @@ public enum IronDatabaseRowAction: Sendable, Equatable {
 
   /// Delete this row.
   case delete
+}
+
+// MARK: - RowSelectionMode
+
+/// Determines how row selection is triggered in `IronDatabaseTable`.
+public enum RowSelectionMode: Sendable, Equatable {
+  /// Selection only via the checkbox column.
+  ///
+  /// This is the default Notion-style behavior where the checkbox
+  /// column is visible and tapping cells starts editing instead of selecting.
+  case checkboxOnly
+
+  /// Selection via tapping anywhere on the row.
+  ///
+  /// The checkbox column is hidden and any cell tap toggles selection.
+  /// Editing is triggered via double-tap or long-press.
+  case fullRowTap
+
+  /// Both checkbox and full-row tap selection are enabled.
+  ///
+  /// The checkbox column is visible, but tapping any data cell
+  /// also toggles the row's selection state.
+  case both
 }
