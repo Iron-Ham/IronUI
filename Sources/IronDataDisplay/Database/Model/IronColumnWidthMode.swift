@@ -59,6 +59,15 @@ public enum IronColumnWidthMode: Sendable, Equatable, Hashable {
   /// - Parameter weight: Proportion of remaining space (default: 1.0).
   case fill(weight: CGFloat = 1.0)
 
+  /// Width calculated to fit the header text.
+  ///
+  /// Unlike `.fitContent` which samples row data, this mode sizes the column
+  /// based solely on the header name. Useful for columns with short content
+  /// but descriptive headers (e.g., "Status" column with single-character values).
+  ///
+  /// - Parameter padding: Additional horizontal padding for sort indicator and margins (default: 24 points).
+  case fitHeader(padding: CGFloat = 24)
+
   // MARK: Public
 
   /// The minimum width for this mode.
@@ -72,6 +81,8 @@ public enum IronColumnWidthMode: Sendable, Equatable, Hashable {
       40 // Absolute minimum for any content
     case .fill:
       40 // Absolute minimum for fill columns
+    case .fitHeader:
+      40 // Absolute minimum, actual width determined by header text
     }
   }
 
@@ -86,6 +97,8 @@ public enum IronColumnWidthMode: Sendable, Equatable, Hashable {
       nil // No maximum, determined by content
     case .fill:
       nil // No maximum, fills available space
+    case .fitHeader:
+      nil // No maximum, determined by header text
     }
   }
 
@@ -94,7 +107,7 @@ public enum IronColumnWidthMode: Sendable, Equatable, Hashable {
     switch self {
     case .fixed:
       false
-    case .flexible, .fitContent, .fill:
+    case .flexible, .fitContent, .fill, .fitHeader:
       true
     }
   }
@@ -122,5 +135,10 @@ extension IronColumnWidthMode {
   /// A wide column mode for longer text or descriptions.
   public static var wide: IronColumnWidthMode {
     .flexible(min: 200, max: 500)
+  }
+
+  /// A column mode sized to fit the header text.
+  public static var fitHeader: IronColumnWidthMode {
+    .fitHeader()
   }
 }

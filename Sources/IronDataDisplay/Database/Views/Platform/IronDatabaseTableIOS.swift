@@ -90,7 +90,75 @@ struct IronDatabaseTableIOS: UIViewRepresentable {
 @MainActor
 final class IronDatabaseIOSCoordinator: IronDatabaseTableCoordinatorBase {
 
+  // MARK: Internal
+
   weak var containerView: IronDatabaseTableContainerView?
+
+  /// Tracks the state of column resize operations.
+  let resizeState = IronColumnResizeState()
+
+  /// Calculates the width for a column using `fitHeader` mode.
+  ///
+  /// - Parameter column: The column to calculate width for.
+  /// - Returns: The calculated width based on header text.
+  func calculateFitHeaderWidth(for column: IronColumn) -> CGFloat {
+    let font = UIFont.preferredFont(forTextStyle: .headline)
+    let attributes: [NSAttributedString.Key: Any] = [.font: font]
+    let size = (column.name as NSString).size(withAttributes: attributes)
+
+    // Get padding from the width mode, or use default
+    let padding: CGFloat =
+      if case .fitHeader(let customPadding) = column.widthMode {
+        customPadding
+      } else {
+        24
+      }
+
+    return ceil(size.width) + padding
+  }
+
+  /// Finds the column at a resize boundary for the given location.
+  ///
+  /// - Parameters:
+  ///   - location: The point in the header scroll view's visible coordinate space.
+  ///   - scrollView: The scroll view to get content offset from.
+  /// - Returns: The column ID and current width if the location is on a resize boundary, nil otherwise.
+  func columnAtResizeBoundary(location: CGPoint, in scrollView: UIScrollView?) -> (columnID: UUID, width: CGFloat)? {
+    // Only detect boundaries in the header area (y within header height)
+    guard location.y >= 0, location.y <= configuration.headerHeight else { return nil }
+
+    // Convert from visible coordinates to content coordinates by adding scroll offset
+    let scrollOffset = scrollView?.contentOffset.x ?? 0
+    let contentX = location.x + scrollOffset
+
+    // Use containerView's width calculation for consistency with layout
+    guard let containerView else { return nil }
+
+    var accumulatedX: CGFloat = 0
+
+    // Account for selection column
+    if configuration.showsSelectionColumn {
+      accumulatedX += configuration.selectionColumnWidth
+    }
+
+    // Read columns fresh from the container's configuration (source of truth for layout)
+    for column in containerView.configuration.database.columns {
+      let columnWidth = containerView.effectiveColumnWidth(for: column)
+      accumulatedX += columnWidth
+
+      // Skip non-resizable columns for boundary detection
+      guard column.isResizable else {
+        continue
+      }
+
+      // Check if location is within resize handle zone
+      if abs(contentX - accumulatedX) <= resizeHandleHalfWidth {
+        return (column.id, columnWidth)
+      }
+    }
+
+    return nil
+  }
 
   func collectionView(_: UICollectionView, didSelectItemAt indexPath: IndexPath) {
     // In the row-based layout:
@@ -127,6 +195,118 @@ final class IronDatabaseIOSCoordinator: IronDatabaseTableCoordinatorBase {
       containerView?.setEditingCell(CellIdentifier(rowID: row.id, columnID: column.id), in: self)
     }
   }
+
+  /// Handles the pan gesture for column resizing.
+  @objc
+  func handleResizeGesture(_ gesture: UIPanGestureRecognizer) {
+    // Get the scroll view directly from the gesture's view
+    guard let scrollView = gesture.view as? UIScrollView else { return }
+
+    let location = gesture.location(in: scrollView)
+
+    switch gesture.state {
+    case .began:
+      // Find if we're on a column boundary
+      if let (columnID, originalWidth) = columnAtResizeBoundary(location: location, in: scrollView) {
+        resizeState.beginResize(columnID: columnID, startX: location.x, originalWidth: originalWidth)
+        IronHaptics.impact(.medium)
+      }
+
+    case .changed:
+      guard
+        resizeState.isResizing,
+        let columnID = resizeState.resizingColumnID,
+        let columnIndex = configuration.database.columns.firstIndex(where: { $0.id == columnID })
+      else { return }
+
+      let column = configuration.database.columns[columnIndex]
+      let translation = location.x - resizeState.dragStartX
+      let constraints = (min: column.widthMode.minimumWidth, max: column.widthMode.maximumWidth)
+      let newWidth = resizeState.newWidth(for: translation, constraints: constraints)
+
+      // Update column width in the binding
+      configuration.database.columns[columnIndex].width = newWidth
+
+      // Sync container view's configuration for layout updates
+      containerView?.configuration = configuration
+
+      // Invalidate layout for live feedback
+      containerView?.invalidateLayoutForResize()
+
+    case .ended, .cancelled:
+      if resizeState.isResizing {
+        IronHaptics.impact(.light)
+
+        // Announce resize completion for accessibility
+        if
+          let columnID = resizeState.resizingColumnID,
+          let column = configuration.database.columns.first(where: { $0.id == columnID })
+        {
+          let newWidth = column.width ?? column.resolvedWidth
+          UIAccessibility.post(
+            notification: .announcement,
+            argument: "\(column.name) resized to \(Int(newWidth)) points",
+          )
+        }
+      }
+      resizeState.endResize()
+
+    default:
+      break
+    }
+  }
+
+  // MARK: Private
+
+  /// Half-width of the resize hit zone on each side of column boundaries.
+  /// This should match the visual resize handle width (44pt total = 22pt on each side).
+  private let resizeHandleHalfWidth: CGFloat = 22
+
+  /// Calculates the effective display width for a column.
+  ///
+  /// - Parameter column: The column to calculate width for.
+  /// - Returns: The effective width, handling `fitHeader` mode.
+  private func effectiveWidth(for column: IronColumn) -> CGFloat {
+    if let explicitWidth = column.width {
+      return explicitWidth
+    }
+
+    if case .fitHeader = column.widthMode {
+      return calculateFitHeaderWidth(for: column)
+    }
+
+    return column.resolvedWidth
+  }
+
+}
+
+// MARK: - IronDatabaseIOSCoordinator + UIGestureRecognizerDelegate
+
+extension IronDatabaseIOSCoordinator: UIGestureRecognizerDelegate {
+
+  nonisolated func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+    guard let panGesture = gestureRecognizer as? UIPanGestureRecognizer else { return true }
+
+    // This is called from the gesture recognizer's thread, need to dispatch to main
+    return MainActor.assumeIsolated {
+      // Get the scroll view directly from the gesture's view
+      guard let scrollView = panGesture.view as? UIScrollView else { return false }
+      let location = panGesture.location(in: scrollView)
+
+      // Only begin if on a resize boundary
+      return columnAtResizeBoundary(location: location, in: scrollView) != nil
+    }
+  }
+
+  nonisolated func gestureRecognizer(
+    _: UIGestureRecognizer,
+    shouldRecognizeSimultaneouslyWith _: UIGestureRecognizer,
+  ) -> Bool {
+    // Don't interfere with scroll gestures unless actively resizing
+    MainActor.assumeIsolated {
+      !resizeState.isResizing
+    }
+  }
 }
 
 // MARK: - IronDatabaseTableContainerView
@@ -150,7 +330,21 @@ final class IronDatabaseTableContainerView: UIView {
   // MARK: Internal
 
   var configuration: IronDatabaseTableConfiguration
-  weak var coordinator: IronDatabaseIOSCoordinator?
+
+  /// The coordinator, which must be set after init for gesture handling.
+  weak var coordinator: IronDatabaseIOSCoordinator? {
+    didSet {
+      // Set up resize gesture once coordinator is available
+      if coordinator != nil, resizeGesture == nil {
+        setupResizeGesture()
+      }
+    }
+  }
+
+  /// Exposes the header scroll view for resize gesture coordinate conversion.
+  var headerScrollViewForResize: UIScrollView {
+    headerScrollView
+  }
 
   override func layoutSubviews() {
     super.layoutSubviews()
@@ -161,6 +355,17 @@ final class IronDatabaseTableContainerView: UIView {
     bodyCollectionView.setCollectionViewLayout(createBodyLayout(), animated: false)
     headerCollectionView.setCollectionViewLayout(createHeaderLayout(), animated: false)
     reloadData()
+  }
+
+  /// Invalidates layout during live resize for smooth real-time feedback.
+  /// This is lighter-weight than `rebuildLayout()` and avoids data source reloads.
+  func invalidateLayoutForResize() {
+    // Rebuild layouts with new column widths
+    bodyCollectionView.setCollectionViewLayout(createBodyLayout(), animated: false)
+    headerCollectionView.setCollectionViewLayout(createHeaderLayout(), animated: false)
+
+    // Update header scroll view content width
+    updateHeaderWidth()
   }
 
   func reloadData() {
@@ -258,7 +463,40 @@ final class IronDatabaseTableContainerView: UIView {
     reconfigureItems(itemsToReconfigure)
   }
 
+  /// Calculates the effective width for a column, handling all width modes.
+  ///
+  /// - Parameter column: The column to calculate width for.
+  /// - Returns: The effective display width.
+  func effectiveColumnWidth(for column: IronColumn) -> CGFloat {
+    // If explicit width is set (e.g., after resize), use it
+    if let explicitWidth = column.width {
+      return explicitWidth
+    }
+
+    switch column.widthMode {
+    case .fixed(let width):
+      return width
+
+    case .flexible(let min, let max):
+      // Use default within constraints
+      return Swift.min(max, Swift.max(min, column.resolvedWidth))
+
+    case .fitHeader:
+      return coordinator?.calculateFitHeaderWidth(for: column) ?? column.resolvedWidth
+
+    case .fitContent:
+      return column.resolvedWidth
+
+    case .fill:
+      // Calculate fill width based on remaining space
+      return calculateFillWidth(for: column)
+    }
+  }
+
   // MARK: Private
+
+  /// The resize gesture recognizer (stored to avoid duplicate setup).
+  private var resizeGesture: UIPanGestureRecognizer?
 
   private lazy var headerScrollView: UIScrollView = {
     let scrollView = UIScrollView()
@@ -471,7 +709,52 @@ final class IronDatabaseTableContainerView: UIView {
         coordinator?.recomputeDisplayIndices()
         reloadData()
       },
+      isResizable: column.isResizable,
+      onAdjustWidth: column.isResizable
+        ? { [weak self] delta in
+          guard let self else { return }
+          let currentWidth = effectiveColumnWidth(for: column)
+          let newWidth = max(column.widthMode.minimumWidth, currentWidth + delta)
+          configuration.database.columns[columnIndex].width = newWidth
+          coordinator?.configuration = configuration
+          rebuildLayout()
+
+          // Announce for accessibility
+          UIAccessibility.post(
+            notification: .announcement,
+            argument: "\(column.name) column width \(delta > 0 ? "increased" : "decreased") to \(Int(newWidth)) points",
+          )
+        }
+        : nil,
+      onResetWidth: column.isResizable
+        ? { [weak self] in
+          guard let self, let coordinator else { return }
+          // Reset to fitHeader calculated width
+          let calculatedWidth = coordinator.calculateFitHeaderWidth(for: column)
+          configuration.database.columns[columnIndex].width = calculatedWidth
+          coordinator.configuration = configuration
+          rebuildLayout()
+
+          // Announce for accessibility
+          UIAccessibility.post(
+            notification: .announcement,
+            argument: "\(column.name) column width reset to \(Int(calculatedWidth)) points",
+          )
+        }
+        : nil,
     )
+  }
+
+  /// Registration for empty cells in the body (used for add column placeholder).
+  private lazy var emptyBodyCellRegistration = UICollectionView.CellRegistration<
+    UICollectionViewCell,
+    IronDatabaseCellItem,
+  > { cell, _, _ in
+    // Clear any existing content configuration
+    cell.contentConfiguration = UIHostingConfiguration {
+      Color.clear
+    }
+    .background(.clear)
   }
 
   /// Calculates total content width based on all columns.
@@ -483,7 +766,7 @@ final class IronDatabaseTableContainerView: UIView {
     }
 
     for column in configuration.database.columns {
-      width += column.width ?? column.resolvedWidth
+      width += effectiveColumnWidth(for: column)
     }
 
     if configuration.showsAddColumnButton {
@@ -491,6 +774,57 @@ final class IronDatabaseTableContainerView: UIView {
     }
 
     return max(width, bounds.width)
+  }
+
+  /// Calculates the width for a `.fill` column based on available space.
+  private func calculateFillWidth(for targetColumn: IronColumn) -> CGFloat {
+    let availableWidth = bounds.width
+
+    // Calculate total fixed/non-fill width
+    var fixedWidth: CGFloat = 0
+    var totalFillWeight: CGFloat = 0
+
+    if configuration.showsSelectionColumn {
+      fixedWidth += configuration.selectionColumnWidth
+    }
+
+    for column in configuration.database.columns {
+      if case .fill(let weight) = column.widthMode, column.width == nil {
+        totalFillWeight += weight
+      } else {
+        // Non-fill columns or columns with explicit width
+        if let explicitWidth = column.width {
+          fixedWidth += explicitWidth
+        } else {
+          switch column.widthMode {
+          case .fixed(let width):
+            fixedWidth += width
+          case .flexible(let min, _):
+            fixedWidth += min
+          case .fitHeader:
+            fixedWidth += coordinator?.calculateFitHeaderWidth(for: column) ?? column.resolvedWidth
+          case .fitContent:
+            fixedWidth += column.resolvedWidth
+          case .fill:
+            break // Handled above
+          }
+        }
+      }
+    }
+
+    if configuration.showsAddColumnButton {
+      fixedWidth += 44
+    }
+
+    // Distribute remaining space among fill columns
+    let remainingWidth = max(0, availableWidth - fixedWidth)
+    guard totalFillWeight > 0 else { return targetColumn.resolvedWidth }
+
+    if case .fill(let weight) = targetColumn.widthMode {
+      return max(40, (remainingWidth * weight) / totalFillWeight)
+    }
+
+    return targetColumn.resolvedWidth
   }
 
   private func updateHeaderWidth() {
@@ -537,6 +871,25 @@ final class IronDatabaseTableContainerView: UIView {
     // Setup data sources
     setupHeaderDataSource()
     setupBodyDataSource()
+
+    // Setup resize gesture recognizer
+    setupResizeGesture()
+  }
+
+  private func setupResizeGesture() {
+    guard let coordinator, resizeGesture == nil else { return }
+
+    let gesture = UIPanGestureRecognizer(
+      target: coordinator,
+      action: #selector(IronDatabaseIOSCoordinator.handleResizeGesture(_:)),
+    )
+    gesture.delegate = coordinator
+    headerScrollView.addGestureRecognizer(gesture)
+    resizeGesture = gesture
+
+    // Setup pointer interaction for iPadOS (resize cursor on hover)
+    let pointerInteraction = UIPointerInteraction(delegate: self)
+    headerScrollView.addInteraction(pointerInteraction)
   }
 
   private func setupHeaderDataSource() {
@@ -554,6 +907,7 @@ final class IronDatabaseTableContainerView: UIView {
     // This is required per Apple's documentation for iOS 15+
     _ = selectionCellRegistration
     _ = dataCellRegistration
+    _ = emptyBodyCellRegistration
 
     bodyDataSource = UICollectionViewDiffableDataSource<Int, IronDatabaseCellItem>(
       collectionView: bodyCollectionView
@@ -564,6 +918,18 @@ final class IronDatabaseTableContainerView: UIView {
       if configuration.showsSelectionColumn, item.columnIndex == 0 {
         return collectionView.dequeueConfiguredReusableCell(
           using: selectionCellRegistration,
+          for: indexPath,
+          item: item,
+        )
+      }
+
+      // Calculate the add column index (last column when add button is shown)
+      let addColumnIndex = configuration.database.columns.count + (configuration.showsSelectionColumn ? 1 : 0)
+
+      // Add column placeholder - use empty cell registration
+      if configuration.showsAddColumnButton, item.columnIndex == addColumnIndex {
+        return collectionView.dequeueConfiguredReusableCell(
+          using: emptyBodyCellRegistration,
           for: indexPath,
           item: item,
         )
@@ -602,7 +968,7 @@ final class IronDatabaseTableContainerView: UIView {
       let dataColumnIndex = sectionIndex - (configuration.showsSelectionColumn ? 1 : 0)
       if dataColumnIndex >= 0, dataColumnIndex < configuration.database.columns.count {
         let column = configuration.database.columns[dataColumnIndex]
-        columnWidth = column.width ?? column.resolvedWidth
+        columnWidth = effectiveColumnWidth(for: column)
       } else {
         // Add column button
         columnWidth = 44
@@ -658,7 +1024,7 @@ final class IronDatabaseTableContainerView: UIView {
 
     // Data columns
     for column in configuration.database.columns {
-      let columnWidth = column.width ?? column.resolvedWidth
+      let columnWidth = effectiveColumnWidth(for: column)
       let columnItem = NSCollectionLayoutItem(
         layoutSize: NSCollectionLayoutSize(
           widthDimension: .absolute(columnWidth),
@@ -750,6 +1116,59 @@ extension IronDatabaseTableContainerView: UICollectionViewDataSource {
   }
 }
 
+// MARK: - UIPointerInteractionDelegate
+
+extension IronDatabaseTableContainerView: UIPointerInteractionDelegate {
+
+  func pointerInteraction(
+    _: UIPointerInteraction,
+    regionFor request: UIPointerRegionRequest,
+    defaultRegion: UIPointerRegion,
+  ) -> UIPointerRegion? {
+    let location = request.location
+
+    // Check if we're on a resize boundary
+    guard
+      let coordinator,
+      coordinator.columnAtResizeBoundary(location: location, in: headerScrollView) != nil
+    else {
+      return defaultRegion
+    }
+
+    // Return a narrow vertical strip at the boundary
+    return UIPointerRegion(
+      rect: CGRect(
+        x: location.x - 4,
+        y: 0,
+        width: 8,
+        height: configuration.headerHeight,
+      )
+    )
+  }
+
+  func pointerInteraction(
+    _: UIPointerInteraction,
+    styleFor region: UIPointerRegion,
+  ) -> UIPointerStyle? {
+    let centerX = region.rect.midX
+    let testLocation = CGPoint(x: centerX, y: configuration.headerHeight / 2)
+
+    // Check if we're on a resize boundary
+    guard
+      let coordinator,
+      coordinator.columnAtResizeBoundary(location: testLocation, in: headerScrollView) != nil
+    else {
+      return nil
+    }
+
+    // Show vertical resize cursor
+    return UIPointerStyle(
+      shape: .verticalBeam(length: configuration.headerHeight),
+      constrainedAxes: .vertical,
+    )
+  }
+}
+
 // MARK: - IronDatabaseHeaderCollectionCell
 
 /// Collection view cell for header items using modern UIHostingConfiguration.
@@ -802,6 +1221,9 @@ final class IronDatabaseHeaderCollectionCell: UICollectionViewCell {
     onClearFilter: (() -> Void)? = nil,
     onRename: (() -> Void)? = nil,
     onDelete: (() -> Void)? = nil,
+    isResizable: Bool = false,
+    onAdjustWidth: ((CGFloat) -> Void)? = nil,
+    onResetWidth: (() -> Void)? = nil,
   ) {
     contentConfiguration = UIHostingConfiguration {
       IronDatabaseHeaderCellContent(
@@ -818,9 +1240,13 @@ final class IronDatabaseHeaderCollectionCell: UICollectionViewCell {
         onClearFilter: onClearFilter,
         onRename: onRename,
         onDelete: onDelete,
+        isResizable: isResizable,
+        onAdjustWidth: onAdjustWidth,
+        onResetWidth: onResetWidth,
       )
       .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
+    .margins(.all, 0)
     .background(.clear)
   }
 }
@@ -1056,8 +1482,12 @@ private struct IronDatabaseHeaderCellContent: View {
   var onClearFilter: (() -> Void)?
   var onRename: (() -> Void)?
   var onDelete: (() -> Void)?
+  var isResizable = false
+  var onAdjustWidth: ((CGFloat) -> Void)?
+  var onResetWidth: (() -> Void)?
 
   var body: some View {
+    // Main header content with Menu
     Menu {
       // Sort section (only if sortable)
       if column.isSortable {
@@ -1132,6 +1562,34 @@ private struct IronDatabaseHeaderCellContent: View {
         }
       }
 
+      // Resize actions (in menu for accessibility)
+      if isResizable {
+        Divider()
+
+        Section("Resize") {
+          Button {
+            IronHaptics.selection()
+            onAdjustWidth?(20)
+          } label: {
+            Label("Increase Width", systemImage: "arrow.left.and.right.square")
+          }
+
+          Button {
+            IronHaptics.selection()
+            onAdjustWidth?(-20)
+          } label: {
+            Label("Decrease Width", systemImage: "arrow.right.and.left.square")
+          }
+
+          Button {
+            IronHaptics.selection()
+            onResetWidth?()
+          } label: {
+            Label("Fit to Header", systemImage: "arrow.up.left.and.arrow.down.right")
+          }
+        }
+      }
+
       Divider()
 
       if onDelete != nil {
@@ -1143,17 +1601,23 @@ private struct IronDatabaseHeaderCellContent: View {
         }
       }
     } label: {
-      headerLabel
+      headerLabelContent
     } primaryAction: {
       // Single tap triggers sort for quick access (only if sortable)
       if column.isSortable {
         onSort()
       }
     }
-    .accessibilityElement(children: .ignore)
     .accessibilityLabel(accessibilityLabel)
-    .accessibilityHint(column.isSortable ? "Tap to sort, hold for more options" : "Hold for options")
-    .accessibilityAddTraits(.isButton)
+    .accessibilityHint(accessibilityHint)
+    // Resize handle overlays the trailing edge, centered on column boundary
+    .overlay(alignment: .trailing) {
+      if isResizable {
+        resizeHandle
+          .offset(x: 22) // Center the 44pt handle on the column boundary
+          .accessibilityHidden(true)
+      }
+    }
     .popover(isPresented: $showFilterPopover) {
       IronDatabaseFilterPopover(
         column: column,
@@ -1174,7 +1638,8 @@ private struct IronDatabaseHeaderCellContent: View {
   @State private var showFilterPopover = false
   @State private var localFilter: IronDatabaseFilter?
 
-  private var headerLabel: some View {
+  /// The header label content (inside the Menu).
+  private var headerLabelContent: some View {
     HStack(spacing: 4) {
       Image(systemName: column.type.iconName)
         .foregroundStyle(.secondary)
@@ -1184,10 +1649,10 @@ private struct IronDatabaseHeaderCellContent: View {
         .font(.subheadline)
         .fontWeight(.medium)
         .foregroundStyle(.secondary)
-        .lineLimit(2)
-        .minimumScaleFactor(0.8)
+        .lineLimit(1)
+        .truncationMode(.tail)
 
-      Spacer()
+      Spacer(minLength: 4)
 
       if isFiltered {
         Image(systemName: "line.3.horizontal.decrease.circle.fill")
@@ -1206,6 +1671,18 @@ private struct IronDatabaseHeaderCellContent: View {
     .contentShape(Rectangle())
   }
 
+  /// Visual resize handle shown at the right edge of resizable columns.
+  /// Placed OUTSIDE the Menu to receive pan gesture events.
+  /// Uses 44pt minimum touch target for accessibility compliance.
+  private var resizeHandle: some View {
+    Rectangle()
+      .fill(theme.colors.border)
+      .frame(width: 1)
+      .padding(.vertical, 6)
+      .frame(width: 44) // 44pt minimum touch target
+      .contentShape(Rectangle())
+  }
+
   private var accessibilityLabel: String {
     var parts = ["\(column.name) column", "\(column.type.displayName) type"]
 
@@ -1217,7 +1694,27 @@ private struct IronDatabaseHeaderCellContent: View {
       parts.append("Filtered")
     }
 
+    if isResizable {
+      parts.append("Resizable")
+    }
+
     return parts.joined(separator: ", ")
+  }
+
+  private var accessibilityHint: String {
+    var hints = [String]()
+
+    if column.isSortable {
+      hints.append("Tap to sort")
+    }
+
+    hints.append("Hold for more options")
+
+    if isResizable {
+      hints.append("Use actions to resize")
+    }
+
+    return hints.joined(separator: ", ")
   }
 
 }

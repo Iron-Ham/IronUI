@@ -328,6 +328,65 @@ public struct IronDatabaseTable: View {
   .padding()
 }
 
+#Preview("IronDatabaseTable - Resizable Columns (fitHeader)") {
+  @Previewable @State var database: IronDatabase = {
+    var db = IronDatabase(name: "Resizable Columns")
+
+    // Fit Header mode - width based on header text
+    var statusCol = db.addColumn(name: "Status", type: .select, options: [
+      IronSelectOption(name: "OK", color: .success),
+      IronSelectOption(name: "X", color: .error),
+    ])
+    if let idx = db.columns.firstIndex(where: { $0.id == statusCol.id }) {
+      db.columns[idx].widthMode = .fitHeader
+    }
+
+    // Another fitHeader column with longer name
+    var descriptionCol = db.addColumn(name: "Description", type: .text)
+    if let idx = db.columns.firstIndex(where: { $0.id == descriptionCol.id }) {
+      db.columns[idx].widthMode = .fitHeader
+    }
+
+    // Flexible column for comparison
+    var notesCol = db.addColumn(name: "Notes (Flexible)", type: .text)
+    if let idx = db.columns.firstIndex(where: { $0.id == notesCol.id }) {
+      db.columns[idx].widthMode = .flexible(min: 100, max: 400)
+    }
+
+    // Fixed non-resizable column
+    var idCol = db.addColumn(name: "ID", type: .number)
+    if let idx = db.columns.firstIndex(where: { $0.id == idCol.id }) {
+      db.columns[idx].widthMode = .fixed(50)
+      db.columns[idx].isResizable = false
+    }
+
+    // Add sample data
+    for i in 1 ... 10 {
+      let row = db.addRow()
+      db.setValue(.select(statusCol.options[i % 2].id), for: row.id, column: statusCol.id)
+      db.setValue(.text("Item \(i) description"), for: row.id, column: descriptionCol.id)
+      db.setValue(.text("Additional notes for row \(i)"), for: row.id, column: notesCol.id)
+      db.setValue(.number(Double(i)), for: row.id, column: idCol.id)
+    }
+
+    return db
+  }()
+
+  VStack(alignment: .leading, spacing: 12) {
+    IronText(
+      "Drag column borders in the header to resize. Use VoiceOver actions for accessibility.",
+      style: .caption,
+      color: .secondary,
+    )
+
+    IronDatabaseTable(
+      database: $database,
+      onAddRow: { database.addRow() },
+    )
+  }
+  .padding()
+}
+
 // MARK: - Preview Helpers
 
 private func createPreviewDatabase() -> IronDatabase {
