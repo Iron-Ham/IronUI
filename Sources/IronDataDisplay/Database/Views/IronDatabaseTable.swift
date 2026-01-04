@@ -436,6 +436,7 @@ public struct IronDatabaseTable: View {
         }
       }
 
+      #if os(iOS)
       if isEditing, !selection.isEmpty {
         ToolbarItem(placement: .bottomBar) {
           Button("Delete \(selection.count) items", role: .destructive) {
@@ -446,6 +447,7 @@ public struct IronDatabaseTable: View {
           }
         }
       }
+      #endif
     }
   }
 }

@@ -130,6 +130,17 @@ let project = Project(
         .testableTarget(target: .target("IronUISnapshotTests")),
         .testableTarget(target: .target("IronUIIntegrationTests")),
       ]),
-    )
+    ),
+    .scheme(
+      name: "IronUISnapshotTests",
+      shared: true,
+      buildAction: .buildAction(targets: [
+        .target("IronUI"),
+        .target("IronUISnapshotTests"),
+      ]),
+      testAction: .targets([
+        .testableTarget(target: .target("IronUISnapshotTests"))
+      ]),
+    ),
   ],
 )
