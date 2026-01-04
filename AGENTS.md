@@ -11,6 +11,7 @@ These instructions apply to both Claude and Codex when working in this repo.
 ## Commit Practices
 
 - Never use co-authored commits.
+- Never add "Generated with Claude Code" or similar AI attribution footers.
 - Work in branches; never commit directly to `main`.
 - Prefer stacked PRs; open draft PRs when possible.
 - Use conventional commit messages (feat:, fix:, docs:, etc.).

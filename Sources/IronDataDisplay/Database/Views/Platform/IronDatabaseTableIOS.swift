@@ -59,9 +59,8 @@ struct IronDatabaseTableIOS: UIViewRepresentable {
     let previousSort = coordinator.configuration.sortState
     let previousFilter = coordinator.configuration.filterState
 
-    // Update configuration
+    // Update coordinator's configuration (single source of truth)
     coordinator.configuration = configuration
-    containerView.configuration = configuration
 
     // Detect changes
     let columnsChanged = previousDatabase.columns != configuration.database.columns
@@ -227,10 +226,7 @@ final class IronDatabaseIOSCoordinator: IronDatabaseTableCoordinatorBase {
       // Update column width in the binding
       configuration.database.columns[columnIndex].width = newWidth
 
-      // Sync container view's configuration for layout updates
-      containerView?.configuration = configuration
-
-      // Invalidate layout for live feedback
+      // Invalidate layout for live feedback (containerView reads from coordinator)
       containerView?.invalidateLayoutForResize()
 
     case .ended, .cancelled:
@@ -317,7 +313,7 @@ final class IronDatabaseTableContainerView: UIView {
   // MARK: Lifecycle
 
   init(configuration: IronDatabaseTableConfiguration) {
-    self.configuration = configuration
+    initialConfiguration = configuration
     super.init(frame: .zero)
     setupViews()
   }
@@ -329,13 +325,26 @@ final class IronDatabaseTableContainerView: UIView {
 
   // MARK: Internal
 
-  var configuration: IronDatabaseTableConfiguration
+  /// Configuration is accessed through the coordinator when available.
+  /// Falls back to initial configuration during setup before coordinator is set.
+  var configuration: IronDatabaseTableConfiguration {
+    coordinator?.configuration ?? initialConfiguration
+  }
 
   /// The coordinator, which must be set after init for gesture handling.
+  /// Once set, configuration reads will go through the coordinator (single source of truth).
   weak var coordinator: IronDatabaseIOSCoordinator? {
     didSet {
+      guard coordinator != nil else { return }
+
+      // Rebuild layouts now that coordinator is available for width calculations
+      // (fitHeader mode needs coordinator.calculateFitHeaderWidth)
+      // Note: Only rebuild layout, not data - caller will call reloadData after recomputeDisplayIndices
+      bodyCollectionView.setCollectionViewLayout(createBodyLayout(), animated: false)
+      headerCollectionView.setCollectionViewLayout(createHeaderLayout(), animated: false)
+
       // Set up resize gesture once coordinator is available
-      if coordinator != nil, resizeGesture == nil {
+      if resizeGesture == nil {
         setupResizeGesture()
       }
     }
@@ -348,7 +357,14 @@ final class IronDatabaseTableContainerView: UIView {
 
   override func layoutSubviews() {
     super.layoutSubviews()
-    updateHeaderWidth()
+
+    // Rebuild layout when bounds change (needed for .fill columns)
+    if previousBoundsSize != bounds.size {
+      previousBoundsSize = bounds.size
+      invalidateLayoutForResize()
+    } else {
+      updateHeaderWidth()
+    }
   }
 
   func rebuildLayout() {
@@ -494,6 +510,12 @@ final class IronDatabaseTableContainerView: UIView {
   }
 
   // MARK: Private
+
+  /// Initial configuration used only during setup before coordinator is connected.
+  private let initialConfiguration: IronDatabaseTableConfiguration
+
+  /// Tracks previous bounds size to detect size changes.
+  private var previousBoundsSize = CGSize.zero
 
   /// The resize gesture recognizer (stored to avoid duplicate setup).
   private var resizeGesture: UIPanGestureRecognizer?
@@ -658,65 +680,57 @@ final class IronDatabaseTableContainerView: UIView {
       sortDirection: sortDirection,
       isFiltered: isFiltered,
       onSort: { [weak self] in
-        guard let self else { return }
+        guard let self, let coordinator else { return }
         IronHaptics.selection()
-        // Update the configuration's sort state via binding
-        configuration.toggleSort(for: column.id)
-        // Sync coordinator's configuration with updated sort state
-        coordinator?.configuration = configuration
-        coordinator?.recomputeDisplayIndices()
+        // Write through binding to external state
+        coordinator.configuration.toggleSort(for: column.id)
+        coordinator.recomputeDisplayIndices()
         reloadData()
       },
       onSortAscending: { [weak self] in
-        guard let self else { return }
-        configuration.sortState = IronDatabaseSortState(columnID: column.id, direction: .ascending)
-        coordinator?.configuration = configuration
-        coordinator?.recomputeDisplayIndices()
+        guard let self, let coordinator else { return }
+        coordinator.configuration.sortState = IronDatabaseSortState(columnID: column.id, direction: .ascending)
+        coordinator.recomputeDisplayIndices()
         reloadData()
       },
       onSortDescending: { [weak self] in
-        guard let self else { return }
-        configuration.sortState = IronDatabaseSortState(columnID: column.id, direction: .descending)
-        coordinator?.configuration = configuration
-        coordinator?.recomputeDisplayIndices()
+        guard let self, let coordinator else { return }
+        coordinator.configuration.sortState = IronDatabaseSortState(columnID: column.id, direction: .descending)
+        coordinator.recomputeDisplayIndices()
         reloadData()
       },
       onClearSort: { [weak self] in
-        guard let self else { return }
-        configuration.sortState = nil
-        coordinator?.configuration = configuration
-        coordinator?.recomputeDisplayIndices()
+        guard let self, let coordinator else { return }
+        coordinator.configuration.sortState = nil
+        coordinator.recomputeDisplayIndices()
         reloadData()
       },
       currentFilter: currentFilter,
       onApplyFilter: { [weak self] newFilter in
-        guard let self else { return }
+        guard let self, let coordinator else { return }
         if let newFilter {
-          configuration.filterState.filters[column.id] = newFilter
+          coordinator.configuration.filterState.filters[column.id] = newFilter
           IronHaptics.impact(.medium)
         } else {
-          configuration.filterState.filters.removeValue(forKey: column.id)
+          coordinator.configuration.filterState.filters.removeValue(forKey: column.id)
           IronHaptics.impact(.light)
         }
-        coordinator?.configuration = configuration
-        coordinator?.recomputeDisplayIndices()
+        coordinator.recomputeDisplayIndices()
         reloadData()
       },
       onClearFilter: { [weak self] in
-        guard let self else { return }
-        configuration.filterState.filters.removeValue(forKey: column.id)
-        coordinator?.configuration = configuration
-        coordinator?.recomputeDisplayIndices()
+        guard let self, let coordinator else { return }
+        coordinator.configuration.filterState.filters.removeValue(forKey: column.id)
+        coordinator.recomputeDisplayIndices()
         reloadData()
       },
       isResizable: column.isResizable,
       onAdjustWidth: column.isResizable
         ? { [weak self] delta in
-          guard let self else { return }
+          guard let self, let coordinator else { return }
           let currentWidth = effectiveColumnWidth(for: column)
           let newWidth = max(column.widthMode.minimumWidth, currentWidth + delta)
-          configuration.database.columns[columnIndex].width = newWidth
-          coordinator?.configuration = configuration
+          coordinator.configuration.database.columns[columnIndex].width = newWidth
           rebuildLayout()
 
           // Announce for accessibility
@@ -731,8 +745,7 @@ final class IronDatabaseTableContainerView: UIView {
           guard let self, let coordinator else { return }
           // Reset to fitHeader calculated width
           let calculatedWidth = coordinator.calculateFitHeaderWidth(for: column)
-          configuration.database.columns[columnIndex].width = calculatedWidth
-          coordinator.configuration = configuration
+          coordinator.configuration.database.columns[columnIndex].width = calculatedWidth
           rebuildLayout()
 
           // Announce for accessibility
