@@ -242,6 +242,7 @@ public struct IronDatabaseTable: View {
 #Preview("IronDatabaseTable - All Features") {
   @Previewable @State var database = createLargePreviewDatabase(rowCount: 100)
   @Previewable @State var selection = Set<IronRow.ID>()
+  @Previewable @State var isEditing = false
   @Previewable @State var sortState: IronDatabaseSortState?
   @Previewable @State var filterState = IronDatabaseFilterState()
 
@@ -266,13 +267,19 @@ public struct IronDatabaseTable: View {
       Spacer()
 
       HStack(spacing: 8) {
+        Button(isEditing ? "Done" : "Edit") {
+          isEditing.toggle()
+        }
+
         Button("Select All") {
           selection = Set(database.rows.map(\.id))
         }
+        .disabled(!isEditing)
 
         Button("Clear Selection") {
           selection.removeAll()
         }
+        .disabled(!isEditing)
 
         Button("Clear Filters") {
           filterState.clear()
@@ -285,6 +292,7 @@ public struct IronDatabaseTable: View {
     IronDatabaseTable(
       database: database,
       selection: $selection,
+      isEditing: $isEditing,
       sortState: $sortState,
       filterState: $filterState,
       onAddRow: { database.addRow() },

@@ -39,10 +39,17 @@ struct IronDatabaseTableIOS: UIViewRepresentable {
 
   // MARK: Internal
 
+  @Environment(\.ironTheme) var theme
+
   let configuration: IronDatabaseTableConfiguration
 
   func makeUIView(context: Context) -> IronDatabaseTableContainerView {
-    let containerView = IronDatabaseTableContainerView(configuration: configuration)
+    // Pass theme's divider color for selection column background (subtle gray)
+    let selectionColumnBackgroundColor = UIColor(theme.colors.divider)
+    let containerView = IronDatabaseTableContainerView(
+      configuration: configuration,
+      selectionColumnBackgroundColor: selectionColumnBackgroundColor,
+    )
     containerView.coordinator = context.coordinator
     context.coordinator.containerView = containerView
 
@@ -202,8 +209,20 @@ final class IronDatabaseIOSCoordinator: IronDatabaseTableCoordinatorBase {
     let rowIndex = indexPath.section
     let columnIndex = indexPath.item
 
-    guard let row = row(at: rowIndex) else { return }
-    guard columnIndex >= 0, columnIndex < configuration.database.columns.count else { return }
+    guard let row = row(at: rowIndex) else {
+      IronLogger.ui.warning(
+        "Cell selection: row not found at index",
+        metadata: ["rowIndex": .int(rowIndex)],
+      )
+      return
+    }
+    guard columnIndex >= 0, columnIndex < configuration.database.columns.count else {
+      IronLogger.ui.warning(
+        "Cell selection: column index out of bounds",
+        metadata: ["columnIndex": .int(columnIndex), "columnCount": .int(configuration.database.columns.count)],
+      )
+      return
+    }
 
     let column = configuration.database.columns[columnIndex]
     if column.type != .checkbox {
@@ -216,7 +235,10 @@ final class IronDatabaseIOSCoordinator: IronDatabaseTableCoordinatorBase {
   @objc
   func handleResizeGesture(_ gesture: UIPanGestureRecognizer) {
     // Get the scroll view directly from the gesture's view
-    guard let scrollView = gesture.view as? UIScrollView else { return }
+    guard let scrollView = gesture.view as? UIScrollView else {
+      IronLogger.ui.warning("Resize gesture: gesture view is not a UIScrollView")
+      return
+    }
 
     let location = gesture.location(in: scrollView)
 
@@ -230,11 +252,21 @@ final class IronDatabaseIOSCoordinator: IronDatabaseTableCoordinatorBase {
       }
 
     case .changed:
-      guard
-        resizeState.isResizing,
-        let columnID = resizeState.resizingColumnID,
-        let columnIndex = configuration.database.columns.firstIndex(where: { $0.id == columnID })
-      else { return }
+      // Not in resize mode - expected when gesture starts outside resize boundary
+      guard resizeState.isResizing else { return }
+
+      guard let columnID = resizeState.resizingColumnID else {
+        IronLogger.ui.warning("Resize gesture changed: no column ID in active resize state")
+        return
+      }
+      guard let columnIndex = configuration.database.columns.firstIndex(where: { $0.id == columnID }) else {
+        IronLogger.ui.warning(
+          "Resize gesture changed: column no longer exists",
+          metadata: ["columnID": .string(columnID.uuidString)],
+        )
+        resizeState.endResize()
+        return
+      }
 
       let column = configuration.database.columns[columnIndex]
       // Use visible coordinates - measures how far finger moved in screen space
@@ -281,22 +313,6 @@ final class IronDatabaseIOSCoordinator: IronDatabaseTableCoordinatorBase {
   /// Width of the resize handle touch target (matches the grip view's frame).
   private let resizeHandleWidth: CGFloat = 44
 
-  /// Calculates the effective display width for a column.
-  ///
-  /// - Parameter column: The column to calculate width for.
-  /// - Returns: The effective width, handling `fitHeader` mode.
-  private func effectiveWidth(for column: IronColumn) -> CGFloat {
-    if let explicitWidth = column.width {
-      return explicitWidth
-    }
-
-    if case .fitHeader = column.widthMode {
-      return calculateFitHeaderWidth(for: column)
-    }
-
-    return column.resolvedWidth
-  }
-
 }
 
 // MARK: - IronDatabaseIOSCoordinator + UIGestureRecognizerDelegate
@@ -335,8 +351,9 @@ final class IronDatabaseTableContainerView: UIView {
 
   // MARK: Lifecycle
 
-  init(configuration: IronDatabaseTableConfiguration) {
+  init(configuration: IronDatabaseTableConfiguration, selectionColumnBackgroundColor: UIColor) {
     initialConfiguration = configuration
+    self.selectionColumnBackgroundColor = selectionColumnBackgroundColor
     super.init(frame: .zero)
     setupViews()
   }
@@ -442,7 +459,10 @@ final class IronDatabaseTableContainerView: UIView {
     for rowIndex in 0..<rowCount {
       bodySnapshot.appendSections([rowIndex])
 
-      guard let row = coordinator?.row(at: rowIndex) else { continue }
+      guard let row = coordinator?.row(at: rowIndex) else {
+        IronLogger.ui.debug("Reload data: row not found, skipping", metadata: ["rowIndex": .int(rowIndex)])
+        continue
+      }
 
       let items = (0..<bodyColumnCount).map { columnIndex in
         IronDatabaseCellItem(columnIndex: columnIndex, rowIndex: rowIndex, rowID: row.id)
@@ -459,7 +479,10 @@ final class IronDatabaseTableContainerView: UIView {
       for rowIndex in 0..<rowCount {
         selectionSnapshot.appendSections([rowIndex])
 
-        guard let row = coordinator?.row(at: rowIndex) else { continue }
+        guard let row = coordinator?.row(at: rowIndex) else {
+          IronLogger.ui.debug("Reload data: row not found, skipping", metadata: ["rowIndex": .int(rowIndex)])
+          continue
+        }
 
         // Selection column has one item per row (columnIndex 0)
         let item = IronDatabaseCellItem(columnIndex: 0, rowIndex: rowIndex, rowID: row.id)
@@ -489,6 +512,42 @@ final class IronDatabaseTableContainerView: UIView {
     guard !items.isEmpty, var snapshot = bodyDataSource?.snapshot() else { return }
     snapshot.reconfigureItems(items)
     bodyDataSource?.apply(snapshot, animatingDifferences: true)
+  }
+
+  /// Reconfigures all cells in a row (both body and selection column).
+  ///
+  /// Use this when row selection state changes to update visual feedback
+  /// including the checkbox state and row highlight.
+  func reconfigureRow(at rowIndex: Int) {
+    guard let row = coordinator?.row(at: rowIndex) else {
+      IronLogger.ui.debug("reconfigureRow: row not found", metadata: ["rowIndex": .int(rowIndex)])
+      return
+    }
+
+    // Reconfigure selection column cell (checkbox state)
+    if configuration.showsSelectionColumn {
+      let selectionItem = IronDatabaseCellItem(columnIndex: 0, rowIndex: rowIndex, rowID: row.id)
+      if var snapshot = selectionColumnDataSource?.snapshot() {
+        snapshot.reconfigureItems([selectionItem])
+        selectionColumnDataSource?.apply(snapshot, animatingDifferences: true)
+      }
+    }
+
+    // Reconfigure body cells (for selection highlight background)
+    let bodyColumnCount = configuration.database.columns.count
+    if bodyColumnCount > 0 {
+      let bodyItems = (0..<bodyColumnCount).map { columnIndex in
+        IronDatabaseCellItem(columnIndex: columnIndex, rowIndex: rowIndex, rowID: row.id)
+      }
+      if var snapshot = bodyDataSource?.snapshot() {
+        // Only reconfigure items that exist in the snapshot
+        let existingItems = bodyItems.filter { snapshot.itemIdentifiers.contains($0) }
+        if !existingItems.isEmpty {
+          snapshot.reconfigureItems(existingItems)
+          bodyDataSource?.apply(snapshot, animatingDifferences: true)
+        }
+      }
+    }
   }
 
   /// Sets the editing cell and reconfigures both the old and new cells.
@@ -597,10 +656,13 @@ final class IronDatabaseTableContainerView: UIView {
     return collectionView
   }()
 
+  /// Background color for selection column, passed from the theme at initialization.
+  private let selectionColumnBackgroundColor: UIColor
+
   /// Pinned selection column header (empty cell matching header height).
   private lazy var selectionColumnHeaderView: UIView = {
     let view = UIView()
-    view.backgroundColor = .systemGray6
+    view.backgroundColor = selectionColumnBackgroundColor
     view.translatesAutoresizingMaskIntoConstraints = false
     return view
   }()
@@ -608,7 +670,8 @@ final class IronDatabaseTableContainerView: UIView {
   /// Pinned selection column that scrolls only vertically (like a frozen spreadsheet column).
   private lazy var selectionColumnView: UICollectionView = {
     let collectionView = UICollectionView(frame: .zero, collectionViewLayout: createSelectionColumnLayout())
-    collectionView.backgroundColor = .clear
+    // Use selection column background color for any gaps between cells
+    collectionView.backgroundColor = selectionColumnBackgroundColor
     collectionView.showsHorizontalScrollIndicator = false
     collectionView.showsVerticalScrollIndicator = false
     collectionView.translatesAutoresizingMaskIntoConstraints = false
@@ -642,15 +705,28 @@ final class IronDatabaseTableContainerView: UIView {
     IronDatabaseSelectionCollectionCell,
     IronDatabaseCellItem,
   > { [weak self] cell, _, item in
-    guard let self, let coordinator else { return }
-    guard let row = coordinator.row(at: item.rowIndex) else { return }
+    guard let self, let coordinator else {
+      IronLogger.ui.warning(
+        "Selection cell registration: container view deallocated",
+        metadata: ["rowIndex": .int(item.rowIndex)],
+      )
+      return
+    }
+    guard let row = coordinator.row(at: item.rowIndex) else {
+      IronLogger.ui.warning(
+        "Selection cell registration: row not found at index",
+        metadata: ["rowIndex": .int(item.rowIndex)],
+      )
+      return
+    }
 
     let isSelected = configuration.selection.contains(row.id)
     // Row number is 1-indexed for accessibility (human-readable)
     cell.configure(isSelected: isSelected, rowNumber: item.rowIndex + 1) { [weak self, weak coordinator] in
       IronHaptics.selection()
       coordinator?.toggleSelection(for: row.id)
-      self?.reconfigureItem(item)
+      // Reconfigure entire row to update both checkbox and body cell highlights
+      self?.reconfigureRow(at: item.rowIndex)
     }
   }
 
@@ -659,12 +735,33 @@ final class IronDatabaseTableContainerView: UIView {
     IronDatabaseDataCollectionCell,
     IronDatabaseCellItem,
   > { [weak self] cell, _, item in
-    guard let self, let coordinator else { return }
-    guard let row = coordinator.row(at: item.rowIndex) else { return }
+    guard let self, let coordinator else {
+      IronLogger.ui.warning(
+        "Data cell registration: container view deallocated",
+        metadata: ["rowIndex": .int(item.rowIndex), "columnIndex": .int(item.columnIndex)],
+      )
+      return
+    }
+    guard let row = coordinator.row(at: item.rowIndex) else {
+      IronLogger.ui.warning(
+        "Data cell registration: row not found at index",
+        metadata: ["rowIndex": .int(item.rowIndex)],
+      )
+      return
+    }
 
     // Body no longer contains selection column, so columnIndex maps directly to data columns
     let dataColumnIndex = item.columnIndex
-    guard dataColumnIndex >= 0, dataColumnIndex < configuration.database.columns.count else { return }
+    guard dataColumnIndex >= 0, dataColumnIndex < configuration.database.columns.count else {
+      IronLogger.ui.warning(
+        "Data cell registration: column index out of bounds",
+        metadata: [
+          "columnIndex": .int(dataColumnIndex),
+          "columnCount": .int(configuration.database.columns.count),
+        ],
+      )
+      return
+    }
 
     let column = configuration.database.columns[dataColumnIndex]
     let isEditing =
@@ -672,15 +769,28 @@ final class IronDatabaseTableContainerView: UIView {
     let isSelected = configuration.selection.contains(row.id)
     let valueBinding = coordinator.cellValueBinding(row: row.id, column: column.id)
 
+    // Capture whether we're in table edit mode (selection mode)
+    let isInEditMode = configuration.isEditing
+
     cell.configure(
       column: column,
       value: valueBinding,
       isEditing: isEditing,
       isSelected: isSelected,
+      isInTableEditMode: isInEditMode,
       onTap: { [weak self, weak coordinator] in
-        guard let self else { return }
+        guard let self, let coordinator else { return }
 
-        // Tap starts editing (except for checkbox columns which toggle directly)
+        // In edit mode, tap toggles row selection (Apple Mail style)
+        if isInEditMode {
+          IronHaptics.selection()
+          coordinator.toggleSelection(for: row.id)
+          // Reconfigure all cells in this row to update selection state
+          reconfigureRow(at: item.rowIndex)
+          return
+        }
+
+        // Normal mode: tap starts editing (except for checkbox columns which toggle directly)
         if column.type != .checkbox {
           IronHaptics.tap()
           setEditingCell(CellIdentifier(rowID: row.id, columnID: column.id), in: coordinator)
@@ -737,11 +847,23 @@ final class IronDatabaseTableContainerView: UIView {
     IronDatabaseHeaderCollectionCell,
     Int,
   > { [weak self] cell, _, sectionIndex in
-    guard let self else { return }
+    guard let self else {
+      IronLogger.ui.warning(
+        "Header cell registration: container view deallocated",
+        metadata: ["sectionIndex": .int(sectionIndex)],
+      )
+      return
+    }
 
     // Header no longer includes selection column, so sectionIndex = columnIndex
     let columnIndex = sectionIndex
-    guard columnIndex >= 0, columnIndex < configuration.database.columns.count else { return }
+    guard columnIndex >= 0, columnIndex < configuration.database.columns.count else {
+      IronLogger.ui.warning(
+        "Header cell registration: column index out of bounds",
+        metadata: ["columnIndex": .int(columnIndex), "columnCount": .int(configuration.database.columns.count)],
+      )
+      return
+    }
 
     let column = configuration.database.columns[columnIndex]
     let isSorted = configuration.sortState?.columnID == column.id
@@ -939,7 +1061,10 @@ final class IronDatabaseTableContainerView: UIView {
     for rowIndex in 0..<rowCount {
       selectionSnapshot.appendSections([rowIndex])
 
-      guard let row = coordinator?.row(at: rowIndex) else { continue }
+      guard let row = coordinator?.row(at: rowIndex) else {
+        IronLogger.ui.debug("Reload data: row not found, skipping", metadata: ["rowIndex": .int(rowIndex)])
+        continue
+      }
 
       let item = IronDatabaseCellItem(columnIndex: 0, rowIndex: rowIndex, rowID: row.id)
       selectionSnapshot.appendItems([item], toSection: rowIndex)
@@ -958,7 +1083,10 @@ final class IronDatabaseTableContainerView: UIView {
     for rowIndex in 0..<rowCount {
       bodySnapshot.appendSections([rowIndex])
 
-      guard let row = coordinator?.row(at: rowIndex) else { continue }
+      guard let row = coordinator?.row(at: rowIndex) else {
+        IronLogger.ui.debug("Reload data: row not found, skipping", metadata: ["rowIndex": .int(rowIndex)])
+        continue
+      }
 
       let items = (0..<bodyColumnCount).map { columnIndex in
         IronDatabaseCellItem(columnIndex: columnIndex, rowIndex: rowIndex, rowID: row.id)
@@ -990,7 +1118,10 @@ final class IronDatabaseTableContainerView: UIView {
     for rowIndex in 0..<rowCount {
       bodySnapshot.appendSections([rowIndex])
 
-      guard let row = coordinator?.row(at: rowIndex) else { continue }
+      guard let row = coordinator?.row(at: rowIndex) else {
+        IronLogger.ui.debug("Reload data: row not found, skipping", metadata: ["rowIndex": .int(rowIndex)])
+        continue
+      }
 
       let items = (0..<bodyColumnCount).map { columnIndex in
         IronDatabaseCellItem(columnIndex: columnIndex, rowIndex: rowIndex, rowID: row.id)
@@ -1008,7 +1139,10 @@ final class IronDatabaseTableContainerView: UIView {
       for rowIndex in 0..<rowCount {
         selectionSnapshot.appendSections([rowIndex])
 
-        guard let row = coordinator?.row(at: rowIndex) else { continue }
+        guard let row = coordinator?.row(at: rowIndex) else {
+          IronLogger.ui.debug("Reload data: row not found, skipping", metadata: ["rowIndex": .int(rowIndex)])
+          continue
+        }
 
         let item = IronDatabaseCellItem(columnIndex: 0, rowIndex: rowIndex, rowID: row.id)
         selectionSnapshot.appendItems([item], toSection: rowIndex)
@@ -1198,7 +1332,13 @@ final class IronDatabaseTableContainerView: UIView {
     selectionColumnDataSource = UICollectionViewDiffableDataSource<Int, IronDatabaseCellItem>(
       collectionView: selectionColumnView
     ) { [weak self] collectionView, indexPath, item in
-      guard let self else { return UICollectionViewCell() }
+      guard let self else {
+        IronLogger.ui.warning(
+          "Selection column data source: container view deallocated during cell dequeue",
+          metadata: ["section": .int(indexPath.section), "item": .int(indexPath.item)],
+        )
+        return UICollectionViewCell()
+      }
 
       return collectionView.dequeueConfiguredReusableCell(
         using: selectionCellRegistration,
@@ -1217,7 +1357,13 @@ final class IronDatabaseTableContainerView: UIView {
     bodyDataSource = UICollectionViewDiffableDataSource<Int, IronDatabaseCellItem>(
       collectionView: bodyCollectionView
     ) { [weak self] collectionView, indexPath, item in
-      guard let self else { return UICollectionViewCell() }
+      guard let self else {
+        IronLogger.ui.warning(
+          "Body data source: container view deallocated during cell dequeue",
+          metadata: ["section": .int(indexPath.section), "item": .int(indexPath.item)],
+        )
+        return UICollectionViewCell()
+      }
 
       // Calculate the add column index (last column when add button is shown)
       let addColumnIndex = configuration.database.columns.count
@@ -1487,7 +1633,8 @@ final class IronDatabaseHeaderCollectionCell: UICollectionViewCell {
 
   override init(frame: CGRect) {
     super.init(frame: frame)
-    contentView.backgroundColor = .systemGray6
+    // Background color is applied via SwiftUI hosting configuration for theming support
+    contentView.backgroundColor = .clear
   }
 
   @available(*, unavailable)
@@ -1500,20 +1647,16 @@ final class IronDatabaseHeaderCollectionCell: UICollectionViewCell {
   func configureEmpty() {
     contentConfiguration = UIHostingConfiguration {
       Color.clear
+        .modifier(IronThemedHeaderBackgroundModifier())
     }
-    .background(.clear)
+    .margins(.all, 0)
   }
 
   func configureAddButton(onTap: @escaping () -> Void) {
     contentConfiguration = UIHostingConfiguration {
-      Button(action: onTap) {
-        Image(systemName: "plus")
-          .foregroundStyle(.secondary)
-      }
-      .buttonStyle(.plain)
-      .frame(maxWidth: .infinity, maxHeight: .infinity)
+      IronThemedHeaderButton(systemImage: "plus", action: onTap)
     }
-    .background(.clear)
+    .margins(.all, 0)
   }
 
   func configure(
@@ -1556,9 +1699,9 @@ final class IronDatabaseHeaderCollectionCell: UICollectionViewCell {
         onResetWidth: onResetWidth,
       )
       .frame(maxWidth: .infinity, maxHeight: .infinity)
+      .modifier(IronThemedHeaderBackgroundModifier())
     }
     .margins(.all, 0)
-    .background(.clear)
   }
 }
 
@@ -1572,6 +1715,7 @@ final class IronDatabaseDataCollectionCell: UICollectionViewCell {
     value: Binding<IronCellValue>,
     isEditing: Bool,
     isSelected: Bool,
+    isInTableEditMode: Bool,
     onTap: @escaping () -> Void,
     onSubmit: @escaping () -> Void,
     onEdit: (() -> Void)? = nil,
@@ -1592,6 +1736,7 @@ final class IronDatabaseDataCollectionCell: UICollectionViewCell {
         value: value,
         isEditing: isEditing,
         isSelected: isSelected,
+        isInTableEditMode: isInTableEditMode,
         onTap: onTap,
         onSubmit: onSubmit,
         onEdit: onEdit,
@@ -1599,14 +1744,15 @@ final class IronDatabaseDataCollectionCell: UICollectionViewCell {
         onClear: onClear,
         onRowAction: onRowAction,
       )
-      .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
       .accessibilityElement(children: .ignore)
       .accessibilityLabel(accessibilityLabel)
       .accessibilityHint(accessibilityHint)
       .accessibilityAddTraits(column.type == .checkbox ? .isButton : [])
     }
-    .margins(.horizontal, 8)
-    .background(.clear)
+    // No margins - the container fills the full cell for tap hit testing
+    .margins(.all, 0)
+    // Selection highlight spans the full cell (row highlight effect)
+    .background { IronRowSelectionBackground(isSelected: isSelected) }
   }
 }
 
@@ -1619,7 +1765,7 @@ final class IronDatabaseSelectionCollectionCell: UICollectionViewCell {
     contentConfiguration = UIHostingConfiguration {
       IronSelectionCheckbox(isSelected: isSelected, rowNumber: rowNumber, onToggle: onToggle)
     }
-    .background(.clear)
+    .margins(.all, 0)
   }
 }
 
@@ -1635,12 +1781,15 @@ private struct IronSelectionCheckbox: View {
   var body: some View {
     Button(action: onToggle) {
       Image(systemName: isSelected ? "checkmark.square.fill" : "square")
-        .foregroundStyle(isSelected ? Color.blue : Color.secondary)
+        .foregroundStyle(isSelected ? theme.colors.primary : theme.colors.textSecondary)
         .font(.title3)
         .contentTransition(.symbolEffect(.replace))
     }
     .buttonStyle(.plain)
+    .padding(.horizontal, theme.spacing.sm)
     .frame(maxWidth: .infinity, maxHeight: .infinity)
+    // Show selection highlight for row continuity, or divider color when not selected
+    .background(isSelected ? theme.colors.primary.opacity(0.08) : theme.colors.divider)
     .accessibilityLabel("Select row \(rowNumber)")
     .accessibilityValue(isSelected ? "Selected" : "Not selected")
     .accessibilityAddTraits(.isButton)
@@ -1648,6 +1797,22 @@ private struct IronSelectionCheckbox: View {
   }
 
   // MARK: Private
+
+  @Environment(\.ironTheme) private var theme
+
+}
+
+/// Selection background that spans the full cell for row highlight effect.
+private struct IronRowSelectionBackground: View {
+  let isSelected: Bool
+
+  var body: some View {
+    if isSelected {
+      theme.colors.primary.opacity(0.08)
+    } else {
+      Color.clear
+    }
+  }
 
   @Environment(\.ironTheme) private var theme
 
@@ -1664,6 +1829,9 @@ private struct IronDatabaseDataCellContainer: View {
   @Binding var value: IronCellValue
   let isEditing: Bool
   let isSelected: Bool
+  /// Whether the table is in edit mode (selection mode). When true, cell content
+  /// is non-interactive and taps anywhere toggle row selection.
+  let isInTableEditMode: Bool
   let onTap: () -> Void
   let onSubmit: () -> Void
   var onEdit: (() -> Void)?
@@ -1672,7 +1840,10 @@ private struct IronDatabaseDataCellContainer: View {
   var onRowAction: ((IronDatabaseRowAction) -> Void)?
 
   var body: some View {
+    // Cell content with focus ring and visual feedback
     IronDatabaseCell(column: column, value: $value, isEditing: isEditing)
+      // Disable cell content interactivity in table edit mode so taps toggle selection
+      .allowsHitTesting(!isInTableEditMode)
       .onSubmit {
         // Show brief success flash before submitting
         showSuccessFlash = true
@@ -1684,7 +1855,6 @@ private struct IronDatabaseDataCellContainer: View {
           showSuccessFlash = false
         }
       }
-      .onTapGesture { onTap() }
       .padding(.horizontal, theme.spacing.xs)
       .padding(.vertical, theme.spacing.xxs)
       .background(backgroundColor)
@@ -1713,71 +1883,78 @@ private struct IronDatabaseDataCellContainer: View {
         }
         return .ignored
       }
-      .contextMenu {
-        // Cell actions
-        if onEdit != nil {
+      // Context menu disabled in table edit mode
+      .contextMenu(isInTableEditMode
+        ? nil
+        : ContextMenu {
+          // Cell actions
+          if onEdit != nil {
+            Button {
+              onEdit?()
+            } label: {
+              Label("Edit", systemImage: "pencil")
+            }
+          }
+
           Button {
-            onEdit?()
+            UIPasteboard.general.string = value.textValue
+            IronHaptics.tap()
           } label: {
-            Label("Edit", systemImage: "pencil")
+            Label("Copy", systemImage: "doc.on.doc")
           }
-        }
 
-        Button {
-          UIPasteboard.general.string = value.textValue
-          IronHaptics.tap()
-        } label: {
-          Label("Copy", systemImage: "doc.on.doc")
-        }
-
-        if !value.isEmpty, onClear != nil {
-          Divider()
-
-          Button(role: .destructive) {
-            IronHaptics.impact(.medium)
-            onClear?()
-          } label: {
-            Label("Clear", systemImage: "xmark.circle")
-          }
-        }
-
-        // Row actions section
-        if onRowAction != nil {
-          Divider()
-
-          Section("Row") {
-            Button {
-              onRowAction?(.insertAbove)
-            } label: {
-              Label("Insert Row Above", systemImage: "arrow.up.to.line")
-            }
-
-            Button {
-              onRowAction?(.insertBelow)
-            } label: {
-              Label("Insert Row Below", systemImage: "arrow.down.to.line")
-            }
-
-            Button {
-              onRowAction?(.duplicate)
-            } label: {
-              Label("Duplicate Row", systemImage: "doc.on.doc")
-            }
-
+          if !value.isEmpty, onClear != nil {
             Divider()
 
             Button(role: .destructive) {
               IronHaptics.impact(.medium)
-              onRowAction?(.delete)
+              onClear?()
             } label: {
-              Label("Delete Row", systemImage: "trash")
+              Label("Clear", systemImage: "xmark.circle")
             }
           }
-        }
-      }
+
+          // Row actions section
+          if onRowAction != nil {
+            Divider()
+
+            Section("Row") {
+              Button {
+                onRowAction?(.insertAbove)
+              } label: {
+                Label("Insert Row Above", systemImage: "arrow.up.to.line")
+              }
+
+              Button {
+                onRowAction?(.insertBelow)
+              } label: {
+                Label("Insert Row Below", systemImage: "arrow.down.to.line")
+              }
+
+              Button {
+                onRowAction?(.duplicate)
+              } label: {
+                Label("Duplicate Row", systemImage: "doc.on.doc")
+              }
+
+              Divider()
+
+              Button(role: .destructive) {
+                IronHaptics.impact(.medium)
+                onRowAction?(.delete)
+              } label: {
+                Label("Delete Row", systemImage: "trash")
+              }
+            }
+          }
+        })
       .accessibleAnimation(theme.animation.snappy, value: isEditing)
       .accessibleAnimation(theme.animation.snappy, value: isSelected)
       .accessibleAnimation(theme.animation.snappy, value: showSuccessFlash)
+      // Fill remaining space and make entire cell tappable (including dead space)
+      .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+      .contentShape(Rectangle())
+      .onTapGesture { onTap() }
   }
 
   // MARK: Private
@@ -1785,11 +1962,11 @@ private struct IronDatabaseDataCellContainer: View {
   @Environment(\.ironTheme) private var theme
   @State private var showSuccessFlash = false
 
+  /// Background for the content area (editing state only).
+  /// Row selection highlight is applied at the cell level via `IronRowSelectionBackground`.
   private var backgroundColor: Color {
     if isEditing {
       return theme.colors.surfaceElevated
-    } else if isSelected {
-      return theme.colors.primary.opacity(0.08)
     }
     return .clear
   }
@@ -1996,13 +2173,13 @@ private struct IronDatabaseHeaderCellContent: View {
       // Sort/filter indicators follow immediately after the column name
       if isSorted, let direction = sortDirection {
         Image(systemName: direction.iconName)
-          .foregroundStyle(.blue)
+          .foregroundStyle(theme.colors.primary)
           .font(.caption)
       }
 
       if isFiltered {
         Image(systemName: "line.3.horizontal.decrease.circle.fill")
-          .foregroundStyle(.blue)
+          .foregroundStyle(theme.colors.primary)
           .font(.caption)
       }
 
@@ -2075,6 +2252,37 @@ private struct IronDatabaseHeaderCellContent: View {
 
     return hints.joined(separator: ", ")
   }
+
+}
+
+// MARK: - Themed Header Views
+
+/// View modifier that applies themed header background.
+private struct IronThemedHeaderBackgroundModifier: ViewModifier {
+  func body(content: Content) -> some View {
+    content.background(theme.colors.surfaceElevated)
+  }
+
+  @Environment(\.ironTheme) private var theme
+
+}
+
+/// Themed button for header actions (e.g., add column).
+private struct IronThemedHeaderButton: View {
+  let systemImage: String
+  let action: () -> Void
+
+  var body: some View {
+    Button(action: action) {
+      Image(systemName: systemImage)
+        .foregroundStyle(theme.colors.textSecondary)
+    }
+    .buttonStyle(.plain)
+    .frame(maxWidth: .infinity, maxHeight: .infinity)
+    .background(theme.colors.surfaceElevated)
+  }
+
+  @Environment(\.ironTheme) private var theme
 
 }
 
