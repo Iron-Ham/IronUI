@@ -313,7 +313,7 @@ struct IronDatabaseSnapshotTests {
     let database = createTestDatabase()
 
     let view = IronDatabaseTable(
-      database: .constant(database),
+      database: database,
       onAddRow: { },
       onAddColumn: { },
     )
@@ -328,7 +328,7 @@ struct IronDatabaseSnapshotTests {
     let database = IronDatabase(name: "Empty Database")
 
     let view = IronDatabaseTable(
-      database: .constant(database),
+      database: database,
       onAddRow: { },
       onAddColumn: { },
     )
@@ -407,8 +407,9 @@ struct IronDatabaseSnapshotTests {
 
   // MARK: Private
 
+  @MainActor
   private func createTestDatabase() -> IronDatabase {
-    var database = IronDatabase(name: "Tasks")
+    let database = IronDatabase(name: "Tasks")
 
     let titleColumn = database.addColumn(name: "Title", type: .text)
     let statusColumn = database.addColumn(name: "Status", type: .select, options: [

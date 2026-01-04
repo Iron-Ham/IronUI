@@ -17,7 +17,7 @@ import SwiftUI
 /// ```swift
 /// @State private var database = IronDatabase(name: "Tasks")
 ///
-/// IronDatabaseTable(database: $database)
+/// IronDatabaseTable(database: database)
 /// ```
 ///
 /// ## With Selection
@@ -26,7 +26,7 @@ import SwiftUI
 /// @State private var selection: Set<IronRow.ID> = []
 ///
 /// IronDatabaseTable(
-///   database: $database,
+///   database: database,
 ///   selection: $selection
 /// )
 /// ```
@@ -38,7 +38,7 @@ import SwiftUI
 /// @State private var filterState = IronDatabaseFilterState()
 ///
 /// IronDatabaseTable(
-///   database: $database,
+///   database: database,
 ///   sortState: $sortState,
 ///   filterState: $filterState
 /// )
@@ -48,7 +48,7 @@ import SwiftUI
 ///
 /// ```swift
 /// IronDatabaseTable(
-///   database: $database,
+///   database: database,
 ///   onAddRow: { database.addRow() },
 ///   onAddColumn: { showColumnSheet = true }
 /// )
@@ -60,7 +60,7 @@ public struct IronDatabaseTable: View {
   /// Creates a database table view.
   ///
   /// - Parameters:
-  ///   - database: Binding to the database.
+  ///   - database: The database to display (observed automatically).
   ///   - selection: Binding to selected row IDs.
   ///   - sortState: Binding to the current sort state.
   ///   - filterState: Binding to the current filter state.
@@ -68,7 +68,7 @@ public struct IronDatabaseTable: View {
   ///   - onAddColumn: Callback when the add column button is tapped.
   ///   - onRowAction: Callback for row context menu actions.
   public init(
-    database: Binding<IronDatabase>,
+    database: IronDatabase,
     selection: Binding<Set<IronRow.ID>> = .constant([]),
     sortState: Binding<IronDatabaseSortState?> = .constant(nil),
     filterState: Binding<IronDatabaseFilterState> = .constant(IronDatabaseFilterState()),
@@ -76,7 +76,7 @@ public struct IronDatabaseTable: View {
     onAddColumn: (() -> Void)? = nil,
     onRowAction: ((IronDatabaseRowAction, IronRow.ID) -> Void)? = nil,
   ) {
-    _database = database
+    self.database = database
     _selection = selection
     _sortState = sortState
     _filterState = filterState
@@ -111,10 +111,11 @@ public struct IronDatabaseTable: View {
 
   @Environment(\.ironTheme) private var theme
 
-  @Binding private var database: IronDatabase
   @Binding private var selection: Set<IronRow.ID>
   @Binding private var sortState: IronDatabaseSortState?
   @Binding private var filterState: IronDatabaseFilterState
+
+  private let database: IronDatabase
 
   private let onAddRow: (() -> Void)?
   private let onAddColumn: (() -> Void)?
@@ -122,7 +123,7 @@ public struct IronDatabaseTable: View {
 
   private var configuration: IronDatabaseTableConfiguration {
     IronDatabaseTableConfiguration(
-      database: $database,
+      database: database,
       selection: $selection,
       sortState: $sortState,
       filterState: $filterState,
@@ -139,7 +140,7 @@ public struct IronDatabaseTable: View {
   @Previewable @State var database = createPreviewDatabase()
 
   IronDatabaseTable(
-    database: $database,
+    database: database,
     onAddRow: { database.addRow() },
     onAddColumn: { database.addColumn(name: "New Column", type: .text) },
   )
@@ -154,7 +155,7 @@ public struct IronDatabaseTable: View {
     IronText("Selected: \(selection.count) rows", style: .bodyMedium, color: .secondary)
 
     IronDatabaseTable(
-      database: $database,
+      database: database,
       selection: $selection,
       onAddRow: { database.addRow() },
     )
@@ -170,7 +171,7 @@ public struct IronDatabaseTable: View {
   )
 
   IronDatabaseTable(
-    database: $database,
+    database: database,
     sortState: $sortState,
     onAddRow: { database.addRow() },
   )
@@ -181,7 +182,7 @@ public struct IronDatabaseTable: View {
   @Previewable @State var database = createLargePreviewDatabase(rowCount: 500)
 
   IronDatabaseTable(
-    database: $database,
+    database: database,
     onAddRow: { database.addRow() },
   )
   .padding()
@@ -191,7 +192,7 @@ public struct IronDatabaseTable: View {
   @Previewable @State var database = IronDatabase(name: "Empty Database")
 
   IronDatabaseTable(
-    database: $database,
+    database: database,
     onAddRow: { database.addRow() },
     onAddColumn: { database.addColumn(name: "Column", type: .text) },
   )
@@ -225,7 +226,7 @@ public struct IronDatabaseTable: View {
     }
 
     IronDatabaseTable(
-      database: $database,
+      database: database,
       filterState: $filterState,
       onAddRow: { database.addRow() },
     )
@@ -277,7 +278,7 @@ public struct IronDatabaseTable: View {
     }
 
     IronDatabaseTable(
-      database: $database,
+      database: database,
       selection: $selection,
       sortState: $sortState,
       filterState: $filterState,
@@ -322,7 +323,7 @@ public struct IronDatabaseTable: View {
   }()
 
   IronDatabaseTable(
-    database: $database,
+    database: database,
     onAddRow: { database.addRow() },
   )
   .padding()
@@ -380,7 +381,7 @@ public struct IronDatabaseTable: View {
     )
 
     IronDatabaseTable(
-      database: $database,
+      database: database,
       onAddRow: { database.addRow() },
     )
   }
@@ -389,8 +390,9 @@ public struct IronDatabaseTable: View {
 
 // MARK: - Preview Helpers
 
+@MainActor
 private func createPreviewDatabase() -> IronDatabase {
-  var database = IronDatabase(name: "Tasks")
+  let database = IronDatabase(name: "Tasks")
 
   // Add columns
   let titleColumn = database.addColumn(name: "Title", type: .text)
@@ -431,8 +433,9 @@ private func createPreviewDatabase() -> IronDatabase {
   return database
 }
 
+@MainActor
 private func createLargePreviewDatabase(rowCount: Int) -> IronDatabase {
-  var database = IronDatabase(name: "Large Dataset")
+  let database = IronDatabase(name: "Large Dataset")
 
   // Add columns
   let titleColumn = database.addColumn(name: "Title", type: .text)

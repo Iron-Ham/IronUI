@@ -118,8 +118,11 @@ public enum IronColumnWidthMode: Sendable, Equatable, Hashable {
 extension IronColumnWidthMode {
 
   /// The default width mode for new columns.
+  ///
+  /// Uses `.fitHeader()` to automatically size columns based on header content,
+  /// which provides a clean, consistent appearance while allowing user resizing.
   public static var `default`: IronColumnWidthMode {
-    .flexible()
+    .fitHeader()
   }
 
   /// A narrow column mode suitable for checkboxes or icons.

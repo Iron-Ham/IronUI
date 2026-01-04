@@ -14,7 +14,7 @@ public struct IronDatabaseTableConfiguration {
   /// Creates a table configuration.
   ///
   /// - Parameters:
-  ///   - database: Binding to the database.
+  ///   - database: The database to display (observed automatically).
   ///   - selection: Binding to selected row IDs.
   ///   - sortState: Binding to the current sort state.
   ///   - filterState: Binding to the current filter state.
@@ -22,7 +22,7 @@ public struct IronDatabaseTableConfiguration {
   ///   - onAddColumn: Callback when add column is requested.
   ///   - onRowAction: Callback for row context menu actions.
   public init(
-    database: Binding<IronDatabase>,
+    database: IronDatabase,
     selection: Binding<Set<IronRow.ID>>,
     sortState: Binding<IronDatabaseSortState?>,
     filterState: Binding<IronDatabaseFilterState>,
@@ -30,7 +30,7 @@ public struct IronDatabaseTableConfiguration {
     onAddColumn: (() -> Void)?,
     onRowAction: ((IronDatabaseRowAction, IronRow.ID) -> Void)?,
   ) {
-    _database = database
+    self.database = database
     _selection = selection
     _sortState = sortState
     _filterState = filterState
@@ -41,9 +41,6 @@ public struct IronDatabaseTableConfiguration {
 
   // MARK: Public
 
-  /// Binding to the database.
-  @Binding public var database: IronDatabase
-
   /// Binding to selected row IDs.
   @Binding public var selection: Set<IronRow.ID>
 
@@ -52,6 +49,11 @@ public struct IronDatabaseTableConfiguration {
 
   /// Binding to the current filter state.
   @Binding public var filterState: IronDatabaseFilterState
+
+  /// The database to display.
+  ///
+  /// This is an `@Observable` class - changes are tracked automatically.
+  public let database: IronDatabase
 
   /// Callback when add row is requested.
   public let onAddRow: (() -> Void)?

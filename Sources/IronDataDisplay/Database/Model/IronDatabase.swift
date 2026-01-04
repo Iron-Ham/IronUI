@@ -10,10 +10,13 @@ import SwiftUI
 /// add, remove, and reorder columns at runtime. Each column has a type
 /// that determines how cells are edited and displayed.
 ///
+/// This is an `@Observable` class for automatic UIKit observation in iOS 26+.
+/// Changes to `columns`, `rows`, and `name` automatically trigger UI updates.
+///
 /// ## Basic Usage
 ///
 /// ```swift
-/// var database = IronDatabase(name: "Tasks")
+/// let database = IronDatabase(name: "Tasks")
 ///
 /// // Add columns
 /// database.addColumn(name: "Title", type: .text)
@@ -26,7 +29,9 @@ import SwiftUI
 /// let row = database.addRow()
 /// database.setValue(.text("My Task"), for: row.id, column: titleColumn.id)
 /// ```
-public struct IronDatabase: Identifiable, Sendable, Equatable {
+@Observable
+@MainActor
+public final class IronDatabase: Identifiable {
 
   // MARK: Lifecycle
 
@@ -81,7 +86,7 @@ public struct IronDatabase: Identifiable, Sendable, Equatable {
   ///   - options: Select options (for `.select` and `.multiSelect` types).
   /// - Returns: The created column.
   @discardableResult
-  public mutating func addColumn(
+  public func addColumn(
     name: String,
     type: IronColumnType,
     options: [IronSelectOption] = [],
@@ -94,7 +99,7 @@ public struct IronDatabase: Identifiable, Sendable, Equatable {
   /// Removes a column and all associated cell data.
   ///
   /// - Parameter columnID: The ID of the column to remove.
-  public mutating func removeColumn(_ columnID: IronColumn.ID) {
+  public func removeColumn(_ columnID: IronColumn.ID) {
     columns.removeAll { $0.id == columnID }
     for index in rows.indices {
       rows[index].cells.removeValue(forKey: columnID)
@@ -106,7 +111,7 @@ public struct IronDatabase: Identifiable, Sendable, Equatable {
   /// - Parameters:
   ///   - fromIndex: The current index of the column.
   ///   - toIndex: The destination index.
-  public mutating func moveColumn(from fromIndex: Int, to toIndex: Int) {
+  public func moveColumn(from fromIndex: Int, to toIndex: Int) {
     guard
       fromIndex != toIndex,
       fromIndex >= 0, fromIndex < columns.count,
@@ -122,7 +127,7 @@ public struct IronDatabase: Identifiable, Sendable, Equatable {
   ///
   /// - Returns: The created row.
   @discardableResult
-  public mutating func addRow() -> IronRow {
+  public func addRow() -> IronRow {
     let row = IronRow()
     rows.append(row)
     return row
@@ -131,7 +136,7 @@ public struct IronDatabase: Identifiable, Sendable, Equatable {
   /// Removes a row.
   ///
   /// - Parameter rowID: The ID of the row to remove.
-  public mutating func removeRow(_ rowID: IronRow.ID) {
+  public func removeRow(_ rowID: IronRow.ID) {
     rows.removeAll { $0.id == rowID }
   }
 
@@ -140,7 +145,7 @@ public struct IronDatabase: Identifiable, Sendable, Equatable {
   /// - Parameters:
   ///   - fromIndex: The current index of the row.
   ///   - toIndex: The destination index.
-  public mutating func moveRow(from fromIndex: Int, to toIndex: Int) {
+  public func moveRow(from fromIndex: Int, to toIndex: Int) {
     guard
       fromIndex != toIndex,
       fromIndex >= 0, fromIndex < rows.count,
@@ -171,7 +176,7 @@ public struct IronDatabase: Identifiable, Sendable, Equatable {
   ///   - value: The value to set.
   ///   - rowID: The row ID.
   ///   - columnID: The column ID.
-  public mutating func setValue(
+  public func setValue(
     _ value: IronCellValue,
     for rowID: IronRow.ID,
     column columnID: IronColumn.ID,

@@ -55,27 +55,26 @@ struct IronDatabaseTableIOS: UIViewRepresentable {
 
   func updateUIView(_ containerView: IronDatabaseTableContainerView, context: Context) {
     let coordinator = context.coordinator
-    let previousDatabase = coordinator.configuration.database
-    let previousSort = coordinator.configuration.sortState
-    let previousFilter = coordinator.configuration.filterState
 
-    // Update coordinator's configuration (single source of truth)
+    // Update coordinator's configuration (updates bindings to selection/sort/filter)
     coordinator.configuration = configuration
 
-    // Detect changes
-    let columnsChanged = previousDatabase.columns != configuration.database.columns
-    let rowsChanged = previousDatabase.rows != configuration.database.rows
-    let sortChanged = previousSort != configuration.sortState
-    let filterChanged = previousFilter != configuration.filterState
+    // Check for structural changes using count-based tracking
+    // (array equality doesn't work with @Observable since it's the same object)
+    let needsLayoutRebuild = coordinator.columnsChanged
+    let needsDataReload = coordinator.rowsOrOrderChanged
 
-    if columnsChanged {
+    if needsLayoutRebuild {
       containerView.rebuildLayout()
     }
 
-    if rowsChanged || sortChanged || filterChanged {
+    if needsDataReload {
       coordinator.recomputeDisplayIndices()
       containerView.reloadData()
     }
+
+    // Update tracked state for next comparison
+    coordinator.snapshotCurrentState()
   }
 
   func makeCoordinator() -> IronDatabaseIOSCoordinator {
@@ -98,39 +97,62 @@ final class IronDatabaseIOSCoordinator: IronDatabaseTableCoordinatorBase {
 
   /// Calculates the width for a column using `fitHeader` mode.
   ///
+  /// This measures the actual header content: type icon + text + indicators + padding.
+  /// The calculation matches the layout in `IronDatabaseHeaderCellContent.headerLabelContent`.
+  ///
   /// - Parameter column: The column to calculate width for.
-  /// - Returns: The calculated width based on header text.
+  /// - Returns: The calculated width based on header content.
   func calculateFitHeaderWidth(for column: IronColumn) -> CGFloat {
-    let font = UIFont.preferredFont(forTextStyle: .headline)
-    let attributes: [NSAttributedString.Key: Any] = [.font: font]
-    let size = (column.name as NSString).size(withAttributes: attributes)
+    // Measure column name with subheadline font (matches header text style)
+    let textFont = UIFont.preferredFont(forTextStyle: .subheadline)
+    let textAttributes: [NSAttributedString.Key: Any] = [.font: textFont]
+    let textSize = (column.name as NSString).size(withAttributes: textAttributes)
 
-    // Get padding from the width mode, or use default
-    let padding: CGFloat =
+    // Measure column type icon with caption font
+    let captionFont = UIFont.preferredFont(forTextStyle: .caption1)
+    let iconWidth = captionFont.pointSize // SF Symbols are roughly square
+
+    // Get extra padding from the width mode, or use default
+    let extraPadding: CGFloat =
       if case .fitHeader(let customPadding) = column.widthMode {
         customPadding
       } else {
-        24
+        0
       }
 
-    return ceil(size.width) + padding
+    // Calculate total width per layout spec:
+    // Resizable: | -(12)- [Icon] -(4)- [Title] -(8)- [GrabBar ~9pt] -(12)- |
+    // Don't reserve space for sort/filter indicators - they fit in the gap or text truncates
+    // This matches Notion's behavior where columns fit the name, not all possible states
+    let leadingPadding: CGFloat = 12
+    let trailingPadding: CGFloat = 29 // 8pt gap + ~9pt dots + 12pt to separator
+    let hstackSpacing: CGFloat = 4
+
+    return leadingPadding
+      + iconWidth // Type icon
+      + hstackSpacing // After icon
+      + ceil(textSize.width) // Text
+      + trailingPadding
+      + extraPadding
   }
 
   /// Finds the column at a resize boundary for the given location.
   ///
   /// - Parameters:
-  ///   - location: The point in the header scroll view's visible coordinate space.
-  ///   - scrollView: The scroll view to get content offset from.
+  ///   - location: The point in the header scroll view's coordinate space (content coordinates).
+  ///   - scrollView: The scroll view (unused, kept for API compatibility).
   /// - Returns: The column ID and current width if the location is on a resize boundary, nil otherwise.
-  func columnAtResizeBoundary(location: CGPoint, in scrollView: UIScrollView?) -> (columnID: UUID, width: CGFloat)? {
-    // Only detect boundaries in the header area (y within header height)
+  func columnAtResizeBoundary(location: CGPoint, in _: UIScrollView?) -> (columnID: UUID, width: CGFloat)? {
+    // Only detect boundaries in the header area
+    // Note: For UIScrollView, gesture.location(in: scrollView) returns coordinates in the
+    // scroll view's bounds system, where bounds.origin = contentOffset. So the location
+    // is already in content coordinates - no need to add scroll offset.
     guard location.y >= 0, location.y <= configuration.headerHeight else { return nil }
 
-    // Convert from visible coordinates to content coordinates by adding scroll offset
-    let scrollOffset = scrollView?.contentOffset.x ?? 0
-    let contentX = location.x + scrollOffset
+    // Location is already in content coordinates (bounds.origin = contentOffset for scroll views)
+    let contentX = location.x
 
-    // Use containerView's width calculation for consistency with layout
+    // Use containerView's effectiveColumnWidth for consistency with layout
     guard let containerView else { return nil }
 
     var accumulatedX: CGFloat = 0
@@ -140,18 +162,23 @@ final class IronDatabaseIOSCoordinator: IronDatabaseTableCoordinatorBase {
       accumulatedX += configuration.selectionColumnWidth
     }
 
-    // Read columns fresh from the container's configuration (source of truth for layout)
-    for column in containerView.configuration.database.columns {
+    // Read columns from database and use container's width calculation
+    // This ensures boundaries match the visual layout positions
+    for column in configuration.database.columns {
       let columnWidth = containerView.effectiveColumnWidth(for: column)
       accumulatedX += columnWidth
 
       // Skip non-resizable columns for boundary detection
-      guard column.isResizable else {
+      // Check both the explicit isResizable flag AND widthMode (fixed columns can't be resized)
+      guard column.isResizable, column.widthMode.allowsUserResizing else {
         continue
       }
 
-      // Check if location is within resize handle zone
-      if abs(contentX - accumulatedX) <= resizeHandleHalfWidth {
+      // Detection zone matches the grip position: inside the cell, 44pt from the boundary
+      // The grip is at .trailing alignment with 44pt width, so it spans from
+      // (boundary - 44) to boundary. Detect touches in this same range.
+      let distanceFromBoundary = accumulatedX - contentX
+      if distanceFromBoundary >= 0, distanceFromBoundary <= resizeHandleWidth {
         return (column.id, columnWidth)
       }
     }
@@ -207,6 +234,7 @@ final class IronDatabaseIOSCoordinator: IronDatabaseTableCoordinatorBase {
     case .began:
       // Find if we're on a column boundary
       if let (columnID, originalWidth) = columnAtResizeBoundary(location: location, in: scrollView) {
+        // Store visible coordinates - translation is finger movement in screen space
         resizeState.beginResize(columnID: columnID, startX: location.x, originalWidth: originalWidth)
         IronHaptics.impact(.medium)
       }
@@ -219,9 +247,15 @@ final class IronDatabaseIOSCoordinator: IronDatabaseTableCoordinatorBase {
       else { return }
 
       let column = configuration.database.columns[columnIndex]
+      // Use visible coordinates - measures how far finger moved in screen space
       let translation = location.x - resizeState.dragStartX
       let constraints = (min: column.widthMode.minimumWidth, max: column.widthMode.maximumWidth)
       let newWidth = resizeState.newWidth(for: translation, constraints: constraints)
+
+      // Throttle layout updates for performance on large tables
+      // Only rebuild if width changed by more than 2pt since last update
+      let currentWidth = column.width ?? column.resolvedWidth
+      guard abs(newWidth - currentWidth) >= 2 else { return }
 
       // Update column width in the binding
       configuration.database.columns[columnIndex].width = newWidth
@@ -254,9 +288,8 @@ final class IronDatabaseIOSCoordinator: IronDatabaseTableCoordinatorBase {
 
   // MARK: Private
 
-  /// Half-width of the resize hit zone on each side of column boundaries.
-  /// This should match the visual resize handle width (44pt total = 22pt on each side).
-  private let resizeHandleHalfWidth: CGFloat = 22
+  /// Width of the resize handle touch target (matches the grip view's frame).
+  private let resizeHandleWidth: CGFloat = 44
 
   /// Calculates the effective display width for a column.
   ///
@@ -376,12 +409,25 @@ final class IronDatabaseTableContainerView: UIView {
   /// Invalidates layout during live resize for smooth real-time feedback.
   /// This is lighter-weight than `rebuildLayout()` and avoids data source reloads.
   func invalidateLayoutForResize() {
+    // Preserve scroll positions before layout change
+    let bodyOffset = bodyCollectionView.contentOffset
+    let headerOffset = headerScrollView.contentOffset
+
     // Rebuild layouts with new column widths
     bodyCollectionView.setCollectionViewLayout(createBodyLayout(), animated: false)
     headerCollectionView.setCollectionViewLayout(createHeaderLayout(), animated: false)
 
     // Update header scroll view content width
     updateHeaderWidth()
+
+    // Restore scroll positions (prevent UIKit from adjusting them during layout)
+    bodyCollectionView.contentOffset = bodyOffset
+    headerScrollView.contentOffset = headerOffset
+
+    // Force immediate layout pass
+    headerScrollView.layoutIfNeeded()
+    headerCollectionView.layoutIfNeeded()
+    bodyCollectionView.layoutIfNeeded()
   }
 
   func reloadData() {
@@ -674,11 +720,16 @@ final class IronDatabaseTableContainerView: UIView {
 
     let currentFilter = configuration.filterState.filters[column.id]
 
+    // Determine if this is the last column (no separator after last column)
+    let isLastColumn = (columnIndex == configuration.database.columns.count - 1)
+      && !configuration.showsAddColumnButton
+
     cell.configure(
       column: column,
       isSorted: isSorted,
       sortDirection: sortDirection,
       isFiltered: isFiltered,
+      isLastColumn: isLastColumn,
       onSort: { [weak self] in
         guard let self, let coordinator else { return }
         IronHaptics.selection()
@@ -724,8 +775,8 @@ final class IronDatabaseTableContainerView: UIView {
         coordinator.recomputeDisplayIndices()
         reloadData()
       },
-      isResizable: column.isResizable,
-      onAdjustWidth: column.isResizable
+      isResizable: column.isResizable && column.widthMode.allowsUserResizing,
+      onAdjustWidth: column.isResizable && column.widthMode.allowsUserResizing
         ? { [weak self] delta in
           guard let self, let coordinator else { return }
           let currentWidth = effectiveColumnWidth(for: column)
@@ -740,7 +791,7 @@ final class IronDatabaseTableContainerView: UIView {
           )
         }
         : nil,
-      onResetWidth: column.isResizable
+      onResetWidth: column.isResizable && column.widthMode.allowsUserResizing
         ? { [weak self] in
           guard let self, let coordinator else { return }
           // Reset to fitHeader calculated width
@@ -1225,6 +1276,7 @@ final class IronDatabaseHeaderCollectionCell: UICollectionViewCell {
     isSorted: Bool,
     sortDirection: IronDatabaseSortState.SortDirection?,
     isFiltered: Bool,
+    isLastColumn: Bool = false,
     onSort: @escaping () -> Void,
     onSortAscending: (() -> Void)? = nil,
     onSortDescending: (() -> Void)? = nil,
@@ -1244,6 +1296,7 @@ final class IronDatabaseHeaderCollectionCell: UICollectionViewCell {
         isSorted: isSorted,
         sortDirection: sortDirection,
         isFiltered: isFiltered,
+        isLastColumn: isLastColumn,
         onSort: onSort,
         onSortAscending: onSortAscending,
         onSortDescending: onSortDescending,
@@ -1486,6 +1539,7 @@ private struct IronDatabaseHeaderCellContent: View {
   let isSorted: Bool
   let sortDirection: IronDatabaseSortState.SortDirection?
   let isFiltered: Bool
+  var isLastColumn = false
   let onSort: () -> Void
   var onSortAscending: (() -> Void)?
   var onSortDescending: (() -> Void)?
@@ -1500,7 +1554,7 @@ private struct IronDatabaseHeaderCellContent: View {
   var onResetWidth: (() -> Void)?
 
   var body: some View {
-    // Main header content with Menu
+    // Tap shows menu with column options (Notion-style)
     Menu {
       // Sort section (only if sortable)
       if column.isSortable {
@@ -1615,19 +1669,21 @@ private struct IronDatabaseHeaderCellContent: View {
       }
     } label: {
       headerLabelContent
-    } primaryAction: {
-      // Single tap triggers sort for quick access (only if sortable)
-      if column.isSortable {
-        onSort()
-      }
     }
     .accessibilityLabel(accessibilityLabel)
     .accessibilityHint(accessibilityHint)
-    // Resize handle overlays the trailing edge, centered on column boundary
+    // Column boundary separator (between all columns except after the last)
+    .overlay(alignment: .trailing) {
+      if !isLastColumn {
+        Rectangle()
+          .fill(theme.colors.border)
+          .frame(width: 1)
+      }
+    }
+    // Grip indicator for resizable columns (inside the cell, near the right edge)
     .overlay(alignment: .trailing) {
       if isResizable {
         resizeHandle
-          .offset(x: 22) // Center the 44pt handle on the column boundary
           .accessibilityHidden(true)
       }
     }
@@ -1652,6 +1708,11 @@ private struct IronDatabaseHeaderCellContent: View {
   @State private var localFilter: IronDatabaseFilter?
 
   /// The header label content (inside the Menu).
+  ///
+  /// Layout specs:
+  /// - Resizable, no sort:   `| -(12)- [Icon] -(4)- [Title] -(8)- [GrabBar] -(12)- |`
+  /// - Resizable, with sort: `| -(12)- [Icon] -(4)- [Title] -(4)- [Chevron] -(8)- [GrabBar] -(12)- |`
+  /// - Not resizable:        `| -(12)- [Icon] -(4)- [Title/Chevron] -(12)- |`
   private var headerLabelContent: some View {
     HStack(spacing: 4) {
       Image(systemName: column.type.iconName)
@@ -1665,7 +1726,12 @@ private struct IronDatabaseHeaderCellContent: View {
         .lineLimit(1)
         .truncationMode(.tail)
 
-      Spacer(minLength: 4)
+      // Sort/filter indicators follow immediately after the column name
+      if isSorted, let direction = sortDirection {
+        Image(systemName: direction.iconName)
+          .foregroundStyle(.blue)
+          .font(.caption)
+      }
 
       if isFiltered {
         Image(systemName: "line.3.horizontal.decrease.circle.fill")
@@ -1673,27 +1739,40 @@ private struct IronDatabaseHeaderCellContent: View {
           .font(.caption)
       }
 
-      if isSorted, let direction = sortDirection {
-        Image(systemName: direction.iconName)
-          .foregroundStyle(.blue)
-          .font(.caption)
-      }
+      Spacer(minLength: 0)
     }
-    .padding(.horizontal, 8)
-    .frame(maxHeight: .infinity)
+    .padding(.leading, 12)
+    // Trailing: 8pt gap to grabbar + ~9pt dots + 12pt to separator = 29pt for resizable
+    // Non-resizable: just 12pt trailing
+    .padding(.trailing, isResizable ? 29 : 12)
+    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
     .contentShape(Rectangle())
   }
 
-  /// Visual resize handle shown at the right edge of resizable columns.
-  /// Placed OUTSIDE the Menu to receive pan gesture events.
-  /// Uses 44pt minimum touch target for accessibility compliance.
+  /// Visual resize grip indicator (6-dot pattern like Notion).
+  /// Positioned 12pt from the separator line per layout spec.
+  /// The touch target extends to the column boundary for easy dragging.
   private var resizeHandle: some View {
-    Rectangle()
-      .fill(theme.colors.border)
-      .frame(width: 1)
-      .padding(.vertical, 6)
-      .frame(width: 44) // 44pt minimum touch target
-      .contentShape(Rectangle())
+    // 6-dot grip indicator: 2 columns × 3 rows
+    HStack(spacing: 3) {
+      VStack(spacing: 3) {
+        ForEach(0..<3, id: \.self) { _ in
+          Circle()
+            .fill(theme.colors.textSecondary.opacity(0.5))
+            .frame(width: 3, height: 3)
+        }
+      }
+      VStack(spacing: 3) {
+        ForEach(0..<3, id: \.self) { _ in
+          Circle()
+            .fill(theme.colors.textSecondary.opacity(0.5))
+            .frame(width: 3, height: 3)
+        }
+      }
+    }
+    .padding(.trailing, 12) // 12pt from separator per layout spec
+    .frame(width: 44, height: 44, alignment: .trailing) // 44pt touch target, dots aligned right
+    .contentShape(Rectangle())
   }
 
   private var accessibilityLabel: String {

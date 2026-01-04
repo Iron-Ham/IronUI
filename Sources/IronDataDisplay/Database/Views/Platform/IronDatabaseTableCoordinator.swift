@@ -51,6 +51,7 @@ open class IronDatabaseTableCoordinatorBase: NSObject {
     self.configuration = configuration
     super.init()
     recomputeDisplayIndices()
+    snapshotCurrentState()
   }
 
   // MARK: Open
@@ -91,6 +92,18 @@ open class IronDatabaseTableCoordinatorBase: NSObject {
   /// The table configuration.
   public var configuration: IronDatabaseTableConfiguration
 
+  /// Tracks the previous row count for detecting structural changes.
+  public private(set) var previousRowCount = 0
+
+  /// Tracks the previous column count for detecting structural changes.
+  public private(set) var previousColumnCount = 0
+
+  /// Tracks the previous sort state for detecting order changes.
+  public private(set) var previousSortState: IronDatabaseSortState?
+
+  /// Tracks the previous filter state for detecting filter changes.
+  public private(set) var previousFilterState = IronDatabaseFilterState()
+
   /// Indices into the database.rows array, in display order.
   ///
   /// This array accounts for both filtering and sorting,
@@ -100,9 +113,31 @@ open class IronDatabaseTableCoordinatorBase: NSObject {
   /// The currently editing cell, if any.
   public var editingCell: CellIdentifier?
 
+  /// Checks if column structure has changed.
+  public var columnsChanged: Bool {
+    configuration.database.columns.count != previousColumnCount
+  }
+
+  /// Checks if row structure or order has changed.
+  public var rowsOrOrderChanged: Bool {
+    configuration.database.rows.count != previousRowCount
+      || configuration.sortState != previousSortState
+      || configuration.filterState != previousFilterState
+  }
+
   /// The number of rows to display.
   public var displayRowCount: Int {
     displayRowIndices.count
+  }
+
+  /// Updates the tracked state to match current configuration.
+  ///
+  /// Call this after handling changes to prepare for the next update cycle.
+  public func snapshotCurrentState() {
+    previousRowCount = configuration.database.rows.count
+    previousColumnCount = configuration.database.columns.count
+    previousSortState = configuration.sortState
+    previousFilterState = configuration.filterState
   }
 
   /// Returns the row at a display index.

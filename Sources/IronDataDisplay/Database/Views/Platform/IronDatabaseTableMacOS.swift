@@ -89,30 +89,29 @@ struct IronDatabaseTableMacOS: NSViewRepresentable {
     }
 
     let coordinator = context.coordinator
-    let previousDatabase = coordinator.configuration.database
-    let previousSort = coordinator.configuration.sortState
-    let previousFilter = coordinator.configuration.filterState
 
-    // Update configuration
+    // Update coordinator's configuration (updates bindings to selection/sort/filter)
     coordinator.configuration = configuration
 
-    // Detect changes
-    let columnsChanged = previousDatabase.columns != configuration.database.columns
-    let rowsChanged = previousDatabase.rows != configuration.database.rows
-    let sortChanged = previousSort != configuration.sortState
-    let filterChanged = previousFilter != configuration.filterState
+    // Check for structural changes using count-based tracking
+    // (array equality doesn't work with @Observable since it's the same object)
+    let needsColumnSync = coordinator.columnsChanged
+    let needsDataReload = coordinator.rowsOrOrderChanged
 
-    if columnsChanged {
+    if needsColumnSync {
       syncColumns(tableView: tableView, coordinator: coordinator)
     }
 
-    if rowsChanged || sortChanged || filterChanged {
+    if needsDataReload {
       coordinator.recomputeDisplayIndices()
       tableView.reloadData()
     }
 
     // Sync selection
     syncSelection(tableView: tableView, coordinator: coordinator)
+
+    // Update tracked state for next comparison
+    coordinator.snapshotCurrentState()
   }
 
   func makeCoordinator() -> IronDatabaseMacOSCoordinator {
