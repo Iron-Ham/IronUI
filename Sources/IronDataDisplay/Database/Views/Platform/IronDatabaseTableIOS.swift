@@ -198,32 +198,14 @@ final class IronDatabaseIOSCoordinator: IronDatabaseTableCoordinatorBase {
     // In the row-based layout:
     // - indexPath.section = row index
     // - indexPath.item = column index within the row
+    // Note: Body no longer contains selection column (it's in a separate view)
     let rowIndex = indexPath.section
     let columnIndex = indexPath.item
 
     guard let row = row(at: rowIndex) else { return }
+    guard columnIndex >= 0, columnIndex < configuration.database.columns.count else { return }
 
-    let item = IronDatabaseCellItem(
-      columnIndex: columnIndex,
-      rowIndex: rowIndex,
-      rowID: row.id,
-    )
-
-    // Handle cell tap based on column type
-    let dataColumnIndex = columnIndex - (configuration.showsSelectionColumn ? 1 : 0)
-
-    // Selection column tapped
-    if configuration.showsSelectionColumn, columnIndex == 0 {
-      toggleSelection(for: row.id)
-      containerView?.reconfigureItem(item)
-      return
-    }
-
-    guard dataColumnIndex >= 0, dataColumnIndex < configuration.database.columns.count else {
-      return
-    }
-
-    let column = configuration.database.columns[dataColumnIndex]
+    let column = configuration.database.columns[columnIndex]
     if column.type != .checkbox {
       // Use setEditingCell to reconfigure both old and new cells
       containerView?.setEditingCell(CellIdentifier(rowID: row.id, columnID: column.id), in: self)
@@ -414,47 +396,15 @@ final class IronDatabaseTableContainerView: UIView {
     reloadData()
   }
 
-  /// Sets the collection view's editing state to enable two-finger swipe selection.
+  /// Sets the editing state to show/hide the selection column.
   ///
-  /// When editing, `allowsMultipleSelectionDuringEditing` enables the system's
-  /// two-finger pan gesture for selecting multiple rows.
+  /// When editing, the selection column (checkboxes) appears on the left,
+  /// allowing users to select rows by tapping checkboxes.
   func setEditing(_ editing: Bool, animated: Bool) {
-    bodyCollectionView.isEditing = editing
-
-    // When entering edit mode, sync current selection to collection view
-    if editing {
-      syncSelectionToCollectionView()
+    if animated {
+      animateSelectionColumnTransition(visible: editing)
     } else {
-      // When exiting edit mode, clear collection view selection
-      // (the binding retains the selection state)
-      bodyCollectionView.indexPathsForSelectedItems?.forEach {
-        bodyCollectionView.deselectItem(at: $0, animated: animated)
-      }
-    }
-  }
-
-  /// Syncs the selection binding to the collection view's selected index paths.
-  ///
-  /// Call this when entering edit mode or when the selection binding changes externally.
-  func syncSelectionToCollectionView() {
-    guard bodyCollectionView.isEditing else { return }
-    guard let coordinator else { return }
-
-    // Clear current collection view selection
-    bodyCollectionView.indexPathsForSelectedItems?.forEach {
-      bodyCollectionView.deselectItem(at: $0, animated: false)
-    }
-
-    // Select items for each selected row
-    for rowID in configuration.selection {
-      guard let displayIndex = coordinator.displayIndex(for: rowID) else { continue }
-
-      // Select all items in the row's section
-      let sectionItemCount = bodyDataSource?.snapshot().itemIdentifiers(inSection: displayIndex).count ?? 0
-      for itemIndex in 0..<sectionItemCount {
-        let indexPath = IndexPath(item: itemIndex, section: displayIndex)
-        bodyCollectionView.selectItem(at: indexPath, animated: false, scrollPosition: [])
-      }
+      rebuildLayoutWithFullReload()
     }
   }
 
@@ -483,29 +433,41 @@ final class IronDatabaseTableContainerView: UIView {
   }
 
   func reloadData() {
-    var snapshot = NSDiffableDataSourceSnapshot<Int, IronDatabaseCellItem>()
-
-    // Calculate number of columns
-    let columnCount =
-      configuration.database.columns.count + (configuration.showsSelectionColumn ? 1 : 0)
-        + (configuration.showsAddColumnButton ? 1 : 0)
-
-    // Add sections for each ROW (not column)
     let rowCount = coordinator?.displayRowCount ?? 0
 
+    // Reload body (data columns only)
+    var bodySnapshot = NSDiffableDataSourceSnapshot<Int, IronDatabaseCellItem>()
+    let bodyColumnCount = configuration.database.columns.count + (configuration.showsAddColumnButton ? 1 : 0)
+
     for rowIndex in 0..<rowCount {
-      snapshot.appendSections([rowIndex])
+      bodySnapshot.appendSections([rowIndex])
 
       guard let row = coordinator?.row(at: rowIndex) else { continue }
 
-      // Add items for each column in this row
-      let items = (0..<columnCount).map { columnIndex in
+      let items = (0..<bodyColumnCount).map { columnIndex in
         IronDatabaseCellItem(columnIndex: columnIndex, rowIndex: rowIndex, rowID: row.id)
       }
-      snapshot.appendItems(items, toSection: rowIndex)
+      bodySnapshot.appendItems(items, toSection: rowIndex)
     }
 
-    bodyDataSource?.apply(snapshot, animatingDifferences: true)
+    bodyDataSource?.apply(bodySnapshot, animatingDifferences: true)
+
+    // Reload selection column (if visible)
+    if configuration.showsSelectionColumn {
+      var selectionSnapshot = NSDiffableDataSourceSnapshot<Int, IronDatabaseCellItem>()
+
+      for rowIndex in 0..<rowCount {
+        selectionSnapshot.appendSections([rowIndex])
+
+        guard let row = coordinator?.row(at: rowIndex) else { continue }
+
+        // Selection column has one item per row (columnIndex 0)
+        let item = IronDatabaseCellItem(columnIndex: 0, rowIndex: rowIndex, rowID: row.id)
+        selectionSnapshot.appendItems([item], toSection: rowIndex)
+      }
+
+      selectionColumnDataSource?.apply(selectionSnapshot, animatingDifferences: true)
+    }
 
     // Reload header and update width
     headerCollectionView.reloadData()
@@ -539,14 +501,14 @@ final class IronDatabaseTableContainerView: UIView {
     var itemsToReconfigure = [IronDatabaseCellItem]()
 
     // Find the old editing cell item (to remove focus ring)
+    // Body no longer contains selection column, so columnIndex = dataColumnIndex
     if
       let oldCell = coordinator.editingCell,
       let displayIndex = coordinator.displayIndex(for: oldCell.rowID),
       let dataColumnIndex = configuration.database.columns.firstIndex(where: { $0.id == oldCell.columnID })
     {
-      let columnIndex = dataColumnIndex + (configuration.showsSelectionColumn ? 1 : 0)
       itemsToReconfigure.append(IronDatabaseCellItem(
-        columnIndex: columnIndex,
+        columnIndex: dataColumnIndex,
         rowIndex: displayIndex,
         rowID: oldCell.rowID,
       ))
@@ -561,9 +523,8 @@ final class IronDatabaseTableContainerView: UIView {
       let displayIndex = coordinator.displayIndex(for: newCell.rowID),
       let dataColumnIndex = configuration.database.columns.firstIndex(where: { $0.id == newCell.columnID })
     {
-      let columnIndex = dataColumnIndex + (configuration.showsSelectionColumn ? 1 : 0)
       let newItem = IronDatabaseCellItem(
-        columnIndex: columnIndex,
+        columnIndex: dataColumnIndex,
         rowIndex: displayIndex,
         rowID: newCell.rowID,
       )
@@ -636,22 +597,45 @@ final class IronDatabaseTableContainerView: UIView {
     return collectionView
   }()
 
+  /// Pinned selection column header (empty cell matching header height).
+  private lazy var selectionColumnHeaderView: UIView = {
+    let view = UIView()
+    view.backgroundColor = .systemGray6
+    view.translatesAutoresizingMaskIntoConstraints = false
+    return view
+  }()
+
+  /// Pinned selection column that scrolls only vertically (like a frozen spreadsheet column).
+  private lazy var selectionColumnView: UICollectionView = {
+    let collectionView = UICollectionView(frame: .zero, collectionViewLayout: createSelectionColumnLayout())
+    collectionView.backgroundColor = .clear
+    collectionView.showsHorizontalScrollIndicator = false
+    collectionView.showsVerticalScrollIndicator = false
+    collectionView.translatesAutoresizingMaskIntoConstraints = false
+    collectionView.allowsSelection = false
+    collectionView.tag = 1 // Tag to identify in scroll sync
+    return collectionView
+  }()
+
   private lazy var bodyCollectionView: UICollectionView = {
     let collectionView = UICollectionView(frame: .zero, collectionViewLayout: createBodyLayout())
     collectionView.backgroundColor = .clear
     collectionView.showsHorizontalScrollIndicator = true
     collectionView.showsVerticalScrollIndicator = true
     collectionView.translatesAutoresizingMaskIntoConstraints = false
-    // Enable system edit mode with two-finger swipe selection
     collectionView.allowsSelection = true
     collectionView.allowsMultipleSelection = false
-    collectionView.allowsMultipleSelectionDuringEditing = true
     // Note: No register() calls needed - using modern CellRegistration API
     return collectionView
   }()
 
   private var bodyDataSource: UICollectionViewDiffableDataSource<Int, IronDatabaseCellItem>?
+  private var selectionColumnDataSource: UICollectionViewDiffableDataSource<Int, IronDatabaseCellItem>?
   private var headerWidthConstraint: NSLayoutConstraint?
+  private var selectionColumnWidthConstraint: NSLayoutConstraint?
+  private var selectionColumnHeaderWidthConstraint: NSLayoutConstraint?
+  private var bodyLeadingConstraint: NSLayoutConstraint?
+  private var headerLeadingConstraint: NSLayoutConstraint?
 
   /// Registration for selection checkbox cells.
   private lazy var selectionCellRegistration = UICollectionView.CellRegistration<
@@ -678,7 +662,8 @@ final class IronDatabaseTableContainerView: UIView {
     guard let self, let coordinator else { return }
     guard let row = coordinator.row(at: item.rowIndex) else { return }
 
-    let dataColumnIndex = item.columnIndex - (configuration.showsSelectionColumn ? 1 : 0)
+    // Body no longer contains selection column, so columnIndex maps directly to data columns
+    let dataColumnIndex = item.columnIndex
     guard dataColumnIndex >= 0, dataColumnIndex < configuration.database.columns.count else { return }
 
     let column = configuration.database.columns[dataColumnIndex]
@@ -695,21 +680,9 @@ final class IronDatabaseTableContainerView: UIView {
       onTap: { [weak self, weak coordinator] in
         guard let self else { return }
 
-        // In fullRowTap or both mode, single tap toggles selection
-        if
-          configuration.rowSelectionMode == .fullRowTap
-          || configuration.rowSelectionMode == .both
-        {
-          IronHaptics.selection()
-          coordinator?.toggleSelection(for: row.id)
-          reconfigureItem(item)
-          return
-        }
-
-        // In checkboxOnly mode, tap starts editing (except for checkboxes)
+        // Tap starts editing (except for checkbox columns which toggle directly)
         if column.type != .checkbox {
           IronHaptics.tap()
-          // Use setEditingCell to reconfigure both old and new cells
           setEditingCell(CellIdentifier(rowID: row.id, columnID: column.id), in: coordinator)
         }
       },
@@ -766,7 +739,8 @@ final class IronDatabaseTableContainerView: UIView {
   > { [weak self] cell, _, sectionIndex in
     guard let self else { return }
 
-    let columnIndex = sectionIndex - (configuration.showsSelectionColumn ? 1 : 0)
+    // Header no longer includes selection column, so sectionIndex = columnIndex
+    let columnIndex = sectionIndex
     guard columnIndex >= 0, columnIndex < configuration.database.columns.count else { return }
 
     let column = configuration.database.columns[columnIndex]
@@ -877,13 +851,9 @@ final class IronDatabaseTableContainerView: UIView {
     .background(.clear)
   }
 
-  /// Calculates total content width based on all columns.
+  /// Calculates total content width for the header (excludes selection column which is separate).
   private var totalContentWidth: CGFloat {
     var width: CGFloat = 0
-
-    if configuration.showsSelectionColumn {
-      width += configuration.selectionColumnWidth
-    }
 
     for column in configuration.database.columns {
       width += effectiveColumnWidth(for: column)
@@ -893,7 +863,162 @@ final class IronDatabaseTableContainerView: UIView {
       width += 44
     }
 
-    return max(width, bounds.width)
+    // Account for selection column offset when calculating minimum width
+    let availableWidth = bounds.width - (configuration.showsSelectionColumn ? configuration.selectionColumnWidth : 0)
+    return max(width, availableWidth)
+  }
+
+  /// Width of body content (excludes selection column which is separate).
+  private var bodyContentWidth: CGFloat {
+    var width: CGFloat = 0
+
+    for column in configuration.database.columns {
+      width += effectiveColumnWidth(for: column)
+    }
+
+    if configuration.showsAddColumnButton {
+      width += 44
+    }
+
+    return max(width, bounds.width - (configuration.showsSelectionColumn ? configuration.selectionColumnWidth : 0))
+  }
+
+  /// Animates the selection column sliding in or out.
+  private func animateSelectionColumnTransition(visible: Bool) {
+    let columnWidth = visible ? configuration.selectionColumnWidth : 0
+
+    // Prepare layouts and data BEFORE animation to avoid pop at end
+    if visible {
+      // Show and position selection column at starting position (off-screen left)
+      selectionColumnView.isHidden = false
+      selectionColumnHeaderView.isHidden = false
+      selectionColumnView.alpha = 0
+      selectionColumnHeaderView.alpha = 0
+
+      // Load selection column data
+      reloadSelectionColumnData()
+    }
+
+    // Update collection view layouts to final state before animating
+    bodyCollectionView.setCollectionViewLayout(createBodyLayout(), animated: false)
+    headerCollectionView.setCollectionViewLayout(createHeaderLayout(), animated: false)
+    reloadBodyData()
+    headerCollectionView.reloadData()
+    updateHeaderWidth()
+
+    // Animate constraints and alpha
+    UIView.animate(
+      withDuration: 0.35,
+      delay: 0,
+      usingSpringWithDamping: 1.0,
+      initialSpringVelocity: 0,
+      options: [.beginFromCurrentState, .curveEaseOut],
+    ) { [self] in
+      selectionColumnWidthConstraint?.constant = columnWidth
+      selectionColumnHeaderWidthConstraint?.constant = columnWidth
+      bodyLeadingConstraint?.constant = columnWidth
+      headerLeadingConstraint?.constant = columnWidth
+
+      selectionColumnView.alpha = visible ? 1 : 0
+      selectionColumnHeaderView.alpha = visible ? 1 : 0
+
+      layoutIfNeeded()
+    } completion: { [self] _ in
+      if !visible {
+        selectionColumnView.isHidden = true
+        selectionColumnHeaderView.isHidden = true
+      }
+    }
+  }
+
+  /// Reloads only the selection column data.
+  private func reloadSelectionColumnData() {
+    let rowCount = coordinator?.displayRowCount ?? 0
+    var selectionSnapshot = NSDiffableDataSourceSnapshot<Int, IronDatabaseCellItem>()
+
+    for rowIndex in 0..<rowCount {
+      selectionSnapshot.appendSections([rowIndex])
+
+      guard let row = coordinator?.row(at: rowIndex) else { continue }
+
+      let item = IronDatabaseCellItem(columnIndex: 0, rowIndex: rowIndex, rowID: row.id)
+      selectionSnapshot.appendItems([item], toSection: rowIndex)
+    }
+
+    selectionColumnDataSource?.applySnapshotUsingReloadData(selectionSnapshot)
+    selectionColumnView.setCollectionViewLayout(createSelectionColumnLayout(), animated: false)
+  }
+
+  /// Reloads only the body data (excludes selection column).
+  private func reloadBodyData() {
+    let rowCount = coordinator?.displayRowCount ?? 0
+    var bodySnapshot = NSDiffableDataSourceSnapshot<Int, IronDatabaseCellItem>()
+    let bodyColumnCount = configuration.database.columns.count + (configuration.showsAddColumnButton ? 1 : 0)
+
+    for rowIndex in 0..<rowCount {
+      bodySnapshot.appendSections([rowIndex])
+
+      guard let row = coordinator?.row(at: rowIndex) else { continue }
+
+      let items = (0..<bodyColumnCount).map { columnIndex in
+        IronDatabaseCellItem(columnIndex: columnIndex, rowIndex: rowIndex, rowID: row.id)
+      }
+      bodySnapshot.appendItems(items, toSection: rowIndex)
+    }
+
+    bodyDataSource?.applySnapshotUsingReloadData(bodySnapshot)
+  }
+
+  /// Rebuilds layout with a full data source reload (no cell reuse).
+  ///
+  /// Use this when the column structure changes (e.g., selection column appears/disappears)
+  /// to avoid cell reuse issues where the wrong cell type would be displayed.
+  private func rebuildLayoutWithFullReload() {
+    // Update selection column visibility first
+    updateSelectionColumnVisibility()
+
+    bodyCollectionView.setCollectionViewLayout(createBodyLayout(), animated: false)
+    headerCollectionView.setCollectionViewLayout(createHeaderLayout(), animated: false)
+    selectionColumnView.setCollectionViewLayout(createSelectionColumnLayout(), animated: false)
+
+    let rowCount = coordinator?.displayRowCount ?? 0
+
+    // Reload body (data columns only)
+    var bodySnapshot = NSDiffableDataSourceSnapshot<Int, IronDatabaseCellItem>()
+    let bodyColumnCount = configuration.database.columns.count + (configuration.showsAddColumnButton ? 1 : 0)
+
+    for rowIndex in 0..<rowCount {
+      bodySnapshot.appendSections([rowIndex])
+
+      guard let row = coordinator?.row(at: rowIndex) else { continue }
+
+      let items = (0..<bodyColumnCount).map { columnIndex in
+        IronDatabaseCellItem(columnIndex: columnIndex, rowIndex: rowIndex, rowID: row.id)
+      }
+      bodySnapshot.appendItems(items, toSection: rowIndex)
+    }
+
+    // Use reloadData to force fresh cells
+    bodyDataSource?.applySnapshotUsingReloadData(bodySnapshot)
+
+    // Reload selection column (if visible)
+    if configuration.showsSelectionColumn {
+      var selectionSnapshot = NSDiffableDataSourceSnapshot<Int, IronDatabaseCellItem>()
+
+      for rowIndex in 0..<rowCount {
+        selectionSnapshot.appendSections([rowIndex])
+
+        guard let row = coordinator?.row(at: rowIndex) else { continue }
+
+        let item = IronDatabaseCellItem(columnIndex: 0, rowIndex: rowIndex, rowID: row.id)
+        selectionSnapshot.appendItems([item], toSection: rowIndex)
+      }
+
+      selectionColumnDataSource?.applySnapshotUsingReloadData(selectionSnapshot)
+    }
+
+    headerCollectionView.reloadData()
+    updateHeaderWidth()
   }
 
   /// Calculates the width for a `.fill` column based on available space.
@@ -958,16 +1083,30 @@ final class IronDatabaseTableContainerView: UIView {
     addSubview(headerScrollView)
     headerScrollView.addSubview(headerCollectionView)
 
+    // Selection column header (pinned, empty)
+    addSubview(selectionColumnHeaderView)
+
+    // Selection column body (pinned, scrolls only vertically)
+    addSubview(selectionColumnView)
+
     // Body
     addSubview(bodyCollectionView)
 
-    // Create header width constraint (will be updated in layoutSubviews)
+    // Create dynamic constraints (will be updated based on edit mode)
     headerWidthConstraint = headerCollectionView.widthAnchor.constraint(equalToConstant: 1000)
+    selectionColumnWidthConstraint = selectionColumnView.widthAnchor.constraint(
+      equalToConstant: configuration.selectionColumnWidth
+    )
+    selectionColumnHeaderWidthConstraint = selectionColumnHeaderView.widthAnchor.constraint(
+      equalToConstant: configuration.selectionColumnWidth
+    )
+    bodyLeadingConstraint = bodyCollectionView.leadingAnchor.constraint(equalTo: leadingAnchor)
+    headerLeadingConstraint = headerScrollView.leadingAnchor.constraint(equalTo: leadingAnchor)
 
     NSLayoutConstraint.activate([
-      // Header scroll view
+      // Header scroll view - starts after selection column when visible (aligned with body)
       headerScrollView.topAnchor.constraint(equalTo: topAnchor),
-      headerScrollView.leadingAnchor.constraint(equalTo: leadingAnchor),
+      headerLeadingConstraint!,
       headerScrollView.trailingAnchor.constraint(equalTo: trailingAnchor),
       headerScrollView.heightAnchor.constraint(equalToConstant: configuration.headerHeight),
 
@@ -978,22 +1117,52 @@ final class IronDatabaseTableContainerView: UIView {
       headerCollectionView.heightAnchor.constraint(equalToConstant: configuration.headerHeight),
       headerWidthConstraint!,
 
-      // Body collection view
+      // Selection column header (pinned on left, empty cell)
+      selectionColumnHeaderView.topAnchor.constraint(equalTo: topAnchor),
+      selectionColumnHeaderView.leadingAnchor.constraint(equalTo: leadingAnchor),
+      selectionColumnHeaderView.heightAnchor.constraint(equalToConstant: configuration.headerHeight),
+      selectionColumnHeaderWidthConstraint!,
+
+      // Selection column body (pinned on left, scrolls only vertically)
+      selectionColumnView.topAnchor.constraint(equalTo: headerScrollView.bottomAnchor),
+      selectionColumnView.leadingAnchor.constraint(equalTo: leadingAnchor),
+      selectionColumnView.bottomAnchor.constraint(equalTo: bottomAnchor),
+      selectionColumnWidthConstraint!,
+
+      // Body collection view - positioned after selection column when visible
       bodyCollectionView.topAnchor.constraint(equalTo: headerScrollView.bottomAnchor),
-      bodyCollectionView.leadingAnchor.constraint(equalTo: leadingAnchor),
+      bodyLeadingConstraint!,
       bodyCollectionView.trailingAnchor.constraint(equalTo: trailingAnchor),
       bodyCollectionView.bottomAnchor.constraint(equalTo: bottomAnchor),
     ])
 
+    // Initially hide selection column (shown in edit mode)
+    updateSelectionColumnVisibility()
+
     // Sync horizontal scroll
     bodyCollectionView.delegate = self
+    selectionColumnView.delegate = self
 
     // Setup data sources
     setupHeaderDataSource()
     setupBodyDataSource()
+    setupSelectionColumnDataSource()
 
     // Setup resize gesture recognizer
     setupResizeGesture()
+  }
+
+  /// Updates selection column visibility and body/header leading constraints.
+  private func updateSelectionColumnVisibility() {
+    let showSelection = configuration.showsSelectionColumn
+    let columnWidth = showSelection ? configuration.selectionColumnWidth : 0
+
+    selectionColumnView.isHidden = !showSelection
+    selectionColumnHeaderView.isHidden = !showSelection
+    selectionColumnWidthConstraint?.constant = columnWidth
+    selectionColumnHeaderWidthConstraint?.constant = columnWidth
+    bodyLeadingConstraint?.constant = columnWidth
+    headerLeadingConstraint?.constant = columnWidth
   }
 
   private func setupResizeGesture() {
@@ -1022,10 +1191,26 @@ final class IronDatabaseTableContainerView: UIView {
     headerCollectionView.dataSource = self
   }
 
+  private func setupSelectionColumnDataSource() {
+    // Create registration upfront
+    _ = selectionCellRegistration
+
+    selectionColumnDataSource = UICollectionViewDiffableDataSource<Int, IronDatabaseCellItem>(
+      collectionView: selectionColumnView
+    ) { [weak self] collectionView, indexPath, item in
+      guard let self else { return UICollectionViewCell() }
+
+      return collectionView.dequeueConfiguredReusableCell(
+        using: selectionCellRegistration,
+        for: indexPath,
+        item: item,
+      )
+    }
+  }
+
   private func setupBodyDataSource() {
     // Create registrations upfront by accessing the lazy properties
     // This is required per Apple's documentation for iOS 15+
-    _ = selectionCellRegistration
     _ = dataCellRegistration
     _ = emptyBodyCellRegistration
 
@@ -1034,17 +1219,8 @@ final class IronDatabaseTableContainerView: UIView {
     ) { [weak self] collectionView, indexPath, item in
       guard let self else { return UICollectionViewCell() }
 
-      // Selection column - use selection cell registration
-      if configuration.showsSelectionColumn, item.columnIndex == 0 {
-        return collectionView.dequeueConfiguredReusableCell(
-          using: selectionCellRegistration,
-          for: indexPath,
-          item: item,
-        )
-      }
-
       // Calculate the add column index (last column when add button is shown)
-      let addColumnIndex = configuration.database.columns.count + (configuration.showsSelectionColumn ? 1 : 0)
+      let addColumnIndex = configuration.database.columns.count
 
       // Add column placeholder - use empty cell registration
       if configuration.showsAddColumnButton, item.columnIndex == addColumnIndex {
@@ -1064,6 +1240,33 @@ final class IronDatabaseTableContainerView: UIView {
     }
   }
 
+  /// Creates layout for the pinned selection column (one checkbox per row).
+  private func createSelectionColumnLayout() -> UICollectionViewLayout {
+    let config = UICollectionViewCompositionalLayoutConfiguration()
+    config.scrollDirection = .vertical
+
+    return UICollectionViewCompositionalLayout(
+      sectionProvider: { [weak self] _, _ in
+        guard let self else { return nil }
+
+        let itemSize = NSCollectionLayoutSize(
+          widthDimension: .fractionalWidth(1.0),
+          heightDimension: .absolute(configuration.rowHeight),
+        )
+        let item = NSCollectionLayoutItem(layoutSize: itemSize)
+
+        let groupSize = NSCollectionLayoutSize(
+          widthDimension: .fractionalWidth(1.0),
+          heightDimension: .absolute(configuration.rowHeight),
+        )
+        let group = NSCollectionLayoutGroup.vertical(layoutSize: groupSize, subitems: [item])
+
+        return NSCollectionLayoutSection(group: group)
+      },
+      configuration: config,
+    )
+  }
+
   private func createHeaderLayout() -> UICollectionViewLayout {
     let config = UICollectionViewCompositionalLayoutConfiguration()
     config.scrollDirection = .horizontal
@@ -1081,18 +1284,14 @@ final class IronDatabaseTableContainerView: UIView {
   private func createHeaderColumnSection(at sectionIndex: Int) -> NSCollectionLayoutSection {
     let columnWidth: CGFloat
 
-    // Selection column
-    if configuration.showsSelectionColumn, sectionIndex == 0 {
-      columnWidth = configuration.selectionColumnWidth
+    // Header no longer includes selection column (it's a separate fixed view)
+    // So sectionIndex maps directly to data columns
+    if sectionIndex < configuration.database.columns.count {
+      let column = configuration.database.columns[sectionIndex]
+      columnWidth = effectiveColumnWidth(for: column)
     } else {
-      let dataColumnIndex = sectionIndex - (configuration.showsSelectionColumn ? 1 : 0)
-      if dataColumnIndex >= 0, dataColumnIndex < configuration.database.columns.count {
-        let column = configuration.database.columns[dataColumnIndex]
-        columnWidth = effectiveColumnWidth(for: column)
-      } else {
-        // Add column button
-        columnWidth = 44
-      }
+      // Add column button
+      columnWidth = 44
     }
 
     let itemSize = NSCollectionLayoutSize(
@@ -1125,22 +1324,11 @@ final class IronDatabaseTableContainerView: UIView {
 
   /// Creates a section layout for a single row.
   ///
-  /// Each row section contains items for all columns laid out horizontally.
-  /// The section's width exceeds the viewport to enable horizontal scrolling.
+  /// Each row section contains items for data columns laid out horizontally.
+  /// The selection column is in a separate pinned view.
   private func createRowSection() -> NSCollectionLayoutSection {
-    // Build items for each column
+    // Build items for each column (selection column is separate)
     var items = [NSCollectionLayoutItem]()
-
-    // Selection column (if shown)
-    if configuration.showsSelectionColumn {
-      let selectionItem = NSCollectionLayoutItem(
-        layoutSize: NSCollectionLayoutSize(
-          widthDimension: .absolute(configuration.selectionColumnWidth),
-          heightDimension: .absolute(configuration.rowHeight),
-        )
-      )
-      items.append(selectionItem)
-    }
 
     // Data columns
     for column in configuration.database.columns {
@@ -1168,7 +1356,7 @@ final class IronDatabaseTableContainerView: UIView {
     // Create horizontal group containing all column items
     let group = NSCollectionLayoutGroup.horizontal(
       layoutSize: NSCollectionLayoutSize(
-        widthDimension: .absolute(totalContentWidth),
+        widthDimension: .absolute(bodyContentWidth),
         heightDimension: .absolute(configuration.rowHeight),
       ),
       subitems: items,
@@ -1176,6 +1364,7 @@ final class IronDatabaseTableContainerView: UIView {
 
     return NSCollectionLayoutSection(group: group)
   }
+
 }
 
 // MARK: - UIScrollViewDelegate & UICollectionViewDelegate
@@ -1185,61 +1374,25 @@ extension IronDatabaseTableContainerView: UICollectionViewDelegate {
     if scrollView === bodyCollectionView {
       // Sync header horizontal scroll with body
       headerScrollView.contentOffset.x = scrollView.contentOffset.x
+
+      // Sync selection column vertical scroll with body
+      if configuration.showsSelectionColumn {
+        selectionColumnView.contentOffset.y = scrollView.contentOffset.y
+      }
+    } else if scrollView === selectionColumnView {
+      // Sync body vertical scroll with selection column
+      bodyCollectionView.contentOffset.y = scrollView.contentOffset.y
     }
   }
 
-  func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-    guard collectionView === bodyCollectionView, collectionView.isEditing else { return }
-    guard let coordinator else { return }
-    guard let row = coordinator.row(at: indexPath.section) else { return }
-
-    // Add to selection binding
-    configuration.selection.insert(row.id)
-    IronHaptics.selection()
-
-    // Select all items in this row (section) for visual consistency
-    let sectionItemCount = bodyDataSource?.snapshot().itemIdentifiers(inSection: indexPath.section).count ?? 0
-    for itemIndex in 0..<sectionItemCount where itemIndex != indexPath.item {
-      collectionView.selectItem(at: IndexPath(item: itemIndex, section: indexPath.section), animated: false, scrollPosition: [])
-    }
-  }
-
-  func collectionView(_ collectionView: UICollectionView, didDeselectItemAt indexPath: IndexPath) {
-    guard collectionView === bodyCollectionView, collectionView.isEditing else { return }
-    guard let coordinator else { return }
-    guard let row = coordinator.row(at: indexPath.section) else { return }
-
-    // Remove from selection binding
-    configuration.selection.remove(row.id)
-    IronHaptics.selection()
-
-    // Deselect all items in this row (section)
-    let sectionItemCount = bodyDataSource?.snapshot().itemIdentifiers(inSection: indexPath.section).count ?? 0
-    for itemIndex in 0..<sectionItemCount where itemIndex != indexPath.item {
-      collectionView.deselectItem(at: IndexPath(item: itemIndex, section: indexPath.section), animated: false)
-    }
-  }
-
-  func collectionView(
-    _ collectionView: UICollectionView,
-    shouldBeginMultipleSelectionInteractionAt _: IndexPath,
-  ) -> Bool {
-    // Enable two-finger pan selection when in edit mode
-    collectionView === bodyCollectionView && collectionView.isEditing
-  }
-
-  func collectionView(_: UICollectionView, didBeginMultipleSelectionInteractionAt _: IndexPath) {
-    // Provide haptic feedback when starting multi-selection gesture
-    IronHaptics.impact(.light)
-  }
 }
 
 // MARK: - UICollectionViewDataSource for Header
 
 extension IronDatabaseTableContainerView: UICollectionViewDataSource {
   func numberOfSections(in _: UICollectionView) -> Int {
-    configuration.database.columns.count + (configuration.showsSelectionColumn ? 1 : 0)
-      + (configuration.showsAddColumnButton ? 1 : 0)
+    // Header no longer includes selection column (it's a separate fixed view)
+    configuration.database.columns.count + (configuration.showsAddColumnButton ? 1 : 0)
   }
 
   func collectionView(_: UICollectionView, numberOfItemsInSection _: Int) -> Int {
@@ -1252,18 +1405,9 @@ extension IronDatabaseTableContainerView: UICollectionViewDataSource {
   ) -> UICollectionViewCell {
     let sectionIndex = indexPath.section
 
-    // Selection column header (empty) - use empty registration
-    if configuration.showsSelectionColumn, sectionIndex == 0 {
-      return collectionView.dequeueConfiguredReusableCell(
-        using: emptyHeaderCellRegistration,
-        for: indexPath,
-        item: sectionIndex,
-      )
-    }
-
-    // Check if this is the add column button section
-    let columnIndex = sectionIndex - (configuration.showsSelectionColumn ? 1 : 0)
-    guard columnIndex >= 0, columnIndex < configuration.database.columns.count else {
+    // Header no longer includes selection column (it's a separate fixed view)
+    // So sectionIndex maps directly to data columns
+    guard sectionIndex < configuration.database.columns.count else {
       // Add column button - use add column registration
       return collectionView.dequeueConfiguredReusableCell(
         using: addColumnHeaderCellRegistration,
@@ -1473,18 +1617,40 @@ final class IronDatabaseSelectionCollectionCell: UICollectionViewCell {
 
   func configure(isSelected: Bool, rowNumber: Int, onToggle: @escaping () -> Void) {
     contentConfiguration = UIHostingConfiguration {
-      Button(action: onToggle) {
-        Image(systemName: isSelected ? "checkmark.square.fill" : "square")
-          .foregroundStyle(isSelected ? .blue : .secondary)
-      }
-      .buttonStyle(.plain)
-      .frame(maxWidth: .infinity, maxHeight: .infinity)
-      .accessibilityLabel("Select row \(rowNumber)")
-      .accessibilityValue(isSelected ? "Selected" : "Not selected")
-      .accessibilityAddTraits(.isButton)
+      IronSelectionCheckbox(isSelected: isSelected, rowNumber: rowNumber, onToggle: onToggle)
     }
     .background(.clear)
   }
+}
+
+/// Animated checkbox for row selection.
+private struct IronSelectionCheckbox: View {
+
+  // MARK: Internal
+
+  let isSelected: Bool
+  let rowNumber: Int
+  let onToggle: () -> Void
+
+  var body: some View {
+    Button(action: onToggle) {
+      Image(systemName: isSelected ? "checkmark.square.fill" : "square")
+        .foregroundStyle(isSelected ? Color.blue : Color.secondary)
+        .font(.title3)
+        .contentTransition(.symbolEffect(.replace))
+    }
+    .buttonStyle(.plain)
+    .frame(maxWidth: .infinity, maxHeight: .infinity)
+    .accessibilityLabel("Select row \(rowNumber)")
+    .accessibilityValue(isSelected ? "Selected" : "Not selected")
+    .accessibilityAddTraits(.isButton)
+    .accessibleAnimation(theme.animation.snappy, value: isSelected)
+  }
+
+  // MARK: Private
+
+  @Environment(\.ironTheme) private var theme
+
 }
 
 // MARK: - IronDatabaseDataCellContainer

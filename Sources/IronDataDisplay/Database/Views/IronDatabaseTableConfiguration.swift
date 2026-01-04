@@ -91,13 +91,6 @@ public struct IronDatabaseTableConfiguration {
   /// Whether multiple rows can be selected.
   public var allowsMultipleSelection = true
 
-  /// How row selection is triggered.
-  ///
-  /// - `.checkboxOnly`: Only the checkbox column triggers selection (default).
-  /// - `.fullRowTap`: Tapping any cell toggles selection; checkbox column hidden.
-  /// - `.both`: Checkbox visible AND row tap also selects.
-  public var rowSelectionMode = RowSelectionMode.checkboxOnly
-
   /// The height of each data row.
   ///
   /// Defaults to 44pt to meet Apple HIG minimum touch target requirements.
@@ -117,11 +110,9 @@ public struct IronDatabaseTableConfiguration {
 
   /// Whether to show the selection column.
   ///
-  /// This is computed based on `rowSelectionMode`:
-  /// - `.checkboxOnly` or `.both`: Shows the checkbox column.
-  /// - `.fullRowTap`: Hides the checkbox column.
+  /// The selection column (checkboxes) only appears when in edit mode (Apple Mail style).
   public var showsSelectionColumn: Bool {
-    rowSelectionMode != .fullRowTap
+    isEditing
   }
 
   /// Whether to show the add row button.
@@ -215,27 +206,4 @@ public enum IronDatabaseRowAction: Sendable, Equatable {
 
   /// Delete this row.
   case delete
-}
-
-// MARK: - RowSelectionMode
-
-/// Determines how row selection is triggered in `IronDatabaseTable`.
-public enum RowSelectionMode: Sendable, Equatable {
-  /// Selection only via the checkbox column.
-  ///
-  /// This is the default Notion-style behavior where the checkbox
-  /// column is visible and tapping cells starts editing instead of selecting.
-  case checkboxOnly
-
-  /// Selection via tapping anywhere on the row.
-  ///
-  /// The checkbox column is hidden and any cell tap toggles selection.
-  /// Editing is triggered via double-tap or long-press.
-  case fullRowTap
-
-  /// Both checkbox and full-row tap selection are enabled.
-  ///
-  /// The checkbox column is visible, but tapping any data cell
-  /// also toggles the row's selection state.
-  case both
 }
