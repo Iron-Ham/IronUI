@@ -342,6 +342,17 @@ extension IronDatabaseIOSCoordinator: UIGestureRecognizerDelegate {
       !resizeState.isResizing
     }
   }
+
+  nonisolated func gestureRecognizer(
+    _: UIGestureRecognizer,
+    shouldBeRequiredToFailBy otherGestureRecognizer: UIGestureRecognizer,
+  ) -> Bool {
+    // Require navigation back gestures (UIScreenEdgePanGestureRecognizer) to wait for
+    // our resize gesture to fail first. This prevents accidental navigation when
+    // dragging to enlarge columns. Our gestureRecognizerShouldBegin already ensures
+    // we only begin when on a resize boundary, so this won't interfere with normal navigation.
+    otherGestureRecognizer is UIScreenEdgePanGestureRecognizer
+  }
 }
 
 // MARK: - IronDatabaseTableContainerView
