@@ -105,6 +105,29 @@ public struct IronChip<LeadingIcon: View>: View {
     _isSelected = .constant(nil)
   }
 
+  /// Creates a chip with a system icon from a string.
+  ///
+  /// - Parameters:
+  ///   - title: The chip label string.
+  ///   - icon: The SF Symbol name.
+  ///   - variant: The visual style of the chip.
+  ///   - size: The size of the chip.
+  ///   - onDismiss: Optional dismiss action.
+  public init(
+    _ title: some StringProtocol,
+    icon: String,
+    variant: IronChipVariant = .filled,
+    size: IronChipSize = .medium,
+    onDismiss: (() -> Void)? = nil,
+  ) where LeadingIcon == IronIcon {
+    self.title = LocalizedStringKey(String(title))
+    self.variant = variant
+    self.size = size
+    self.onDismiss = onDismiss
+    leadingIcon = IronIcon(systemName: icon, size: Self.iconSize(for: size), color: .inherit)
+    _isSelected = .constant(nil)
+  }
+
   /// Creates a chip with a custom leading icon.
   ///
   /// - Parameters:
@@ -121,6 +144,29 @@ public struct IronChip<LeadingIcon: View>: View {
     @ViewBuilder leadingIcon: () -> LeadingIcon,
   ) {
     self.title = title
+    self.variant = variant
+    self.size = size
+    self.onDismiss = onDismiss
+    self.leadingIcon = leadingIcon()
+    _isSelected = .constant(nil)
+  }
+
+  /// Creates a chip with a custom leading icon from a string.
+  ///
+  /// - Parameters:
+  ///   - title: The chip label string.
+  ///   - variant: The visual style of the chip.
+  ///   - size: The size of the chip.
+  ///   - onDismiss: Optional dismiss action.
+  ///   - leadingIcon: The custom leading icon view.
+  public init(
+    _ title: some StringProtocol,
+    variant: IronChipVariant = .filled,
+    size: IronChipSize = .medium,
+    onDismiss: (() -> Void)? = nil,
+    @ViewBuilder leadingIcon: () -> LeadingIcon,
+  ) {
+    self.title = LocalizedStringKey(String(title))
     self.variant = variant
     self.size = size
     self.onDismiss = onDismiss
@@ -168,6 +214,78 @@ public struct IronChip<LeadingIcon: View>: View {
     self.size = size
     onDismiss = nil
     leadingIcon = IronIcon(systemName: icon, size: Self.iconSize(for: size), color: .inherit)
+    _isSelected = Binding(
+      get: { isSelected.wrappedValue },
+      set: { isSelected.wrappedValue = $0 ?? false },
+    )
+  }
+
+  /// Creates a selectable chip with a custom leading icon.
+  ///
+  /// - Parameters:
+  ///   - title: The chip label.
+  ///   - isSelected: Binding to the selection state.
+  ///   - size: The size of the chip.
+  ///   - leadingIcon: The custom leading icon view.
+  public init(
+    _ title: LocalizedStringKey,
+    isSelected: Binding<Bool>,
+    size: IronChipSize = .medium,
+    @ViewBuilder leadingIcon: () -> LeadingIcon,
+  ) {
+    self.title = title
+    variant = .outlined
+    self.size = size
+    onDismiss = nil
+    self.leadingIcon = leadingIcon()
+    _isSelected = Binding(
+      get: { isSelected.wrappedValue },
+      set: { isSelected.wrappedValue = $0 ?? false },
+    )
+  }
+
+  /// Creates a selectable chip with a system icon from a string.
+  ///
+  /// - Parameters:
+  ///   - title: The chip label string.
+  ///   - icon: The SF Symbol name.
+  ///   - isSelected: Binding to the selection state.
+  ///   - size: The size of the chip.
+  public init(
+    _ title: some StringProtocol,
+    icon: String,
+    isSelected: Binding<Bool>,
+    size: IronChipSize = .medium,
+  ) where LeadingIcon == IronIcon {
+    self.title = LocalizedStringKey(String(title))
+    variant = .outlined
+    self.size = size
+    onDismiss = nil
+    leadingIcon = IronIcon(systemName: icon, size: Self.iconSize(for: size), color: .inherit)
+    _isSelected = Binding(
+      get: { isSelected.wrappedValue },
+      set: { isSelected.wrappedValue = $0 ?? false },
+    )
+  }
+
+  /// Creates a selectable chip with a custom leading icon from a string.
+  ///
+  /// - Parameters:
+  ///   - title: The chip label string.
+  ///   - isSelected: Binding to the selection state.
+  ///   - size: The size of the chip.
+  ///   - leadingIcon: The custom leading icon view.
+  public init(
+    _ title: some StringProtocol,
+    isSelected: Binding<Bool>,
+    size: IronChipSize = .medium,
+    @ViewBuilder leadingIcon: () -> LeadingIcon,
+  ) {
+    self.title = LocalizedStringKey(String(title))
+    variant = .outlined
+    self.size = size
+    onDismiss = nil
+    self.leadingIcon = leadingIcon()
     _isSelected = Binding(
       get: { isSelected.wrappedValue },
       set: { isSelected.wrappedValue = $0 ?? false },
