@@ -238,6 +238,38 @@ struct IronChipTests {
     // Chip created successfully
   }
 
+  @Test("can be created with string variable and icon")
+  func createWithStringVariableAndIcon() {
+    let label: String = "Location"
+    _ = IronChip(label, icon: "mappin")
+    // Chip created successfully with StringProtocol + icon overload
+  }
+
+  @Test("can be created with string variable and custom leading icon")
+  func createWithStringVariableAndCustomIcon() {
+    let label: String = "Custom"
+    _ = IronChip(label) {
+      Image(systemName: "star.fill")
+    }
+    // Chip created successfully with StringProtocol + custom leading icon overload
+  }
+
+  @Test("can be created as selectable with string variable and icon")
+  func createAsSelectableWithStringVariableAndIcon() {
+    let label: String = "Filter"
+    _ = IronChip(label, icon: "line.3.horizontal.decrease", isSelected: .constant(false))
+    // Chip created successfully with StringProtocol + selectable icon overload
+  }
+
+  @Test("can be created as selectable with string variable and custom leading icon")
+  func createAsSelectableWithStringVariableAndCustomIcon() {
+    let label: String = "Custom"
+    _ = IronChip(label, isSelected: .constant(true), leadingIcon: {
+      Image(systemName: "star.fill")
+    })
+    // Chip created successfully with StringProtocol + selectable custom leading icon overload
+  }
+
   @Test("supports all variants", arguments: IronChipVariant.allCases)
   func supportsVariant(variant: IronChipVariant) {
     _ = IronChip("Test", variant: variant)
