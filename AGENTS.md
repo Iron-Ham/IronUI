@@ -1,6 +1,54 @@
-# IronUI Shared Agent Instructions
+# IronUI — Agent Instructions
 
-These instructions apply to both Claude and Codex when working in this repo.
+> **This is a living document.** Agents are encouraged to update and extend these
+> instructions as they learn about the codebase. See
+> [Self-Improvement Protocol](#self-improvement-protocol).
+
+## Self-Improvement Protocol
+
+This repo uses a **distributed AGENTS.md system**. Instructions are decomposed
+across directories so agents receive context scoped to their working directory.
+
+### How It Works
+
+- Each directory may contain an `AGENTS.md` with context specific to that area.
+- `CLAUDE.md` is always a **symlink** to `AGENTS.md` — never a standalone file.
+- Agents inherit instructions from all ancestor `AGENTS.md` files automatically.
+
+### When to Create or Update
+
+Agents **should** create or update an `AGENTS.md` when they:
+
+- Discover a non-obvious pattern, convention, or gotcha in a directory.
+- Learn something from a bug fix that future agents should know.
+- Identify dependencies or constraints between files that aren't obvious.
+- Find that existing instructions are outdated or incomplete.
+- Complete significant work in a directory that lacks an `AGENTS.md`.
+
+### Pre-Commit Knowledge Capture
+
+**Before committing, agents must pause and reflect:**
+
+1. Did I uncover any non-obvious behavior, gotcha, or pattern during this work?
+2. Did I learn something about a module's internals that isn't documented?
+3. Did I fix a bug whose root cause would be useful for future agents to know?
+4. Did I discover a relationship between files/modules that isn't captured?
+
+If the answer to any of these is **yes**, update the relevant `AGENTS.md` (or create
+one) as part of the same commit. Treat knowledge capture as part of the deliverable,
+not an afterthought.
+
+### Rules for Writing AGENTS.md
+
+- Keep instructions **scoped** to the directory — don't repeat ancestor content.
+- Be **concise** — bullet points over prose.
+- Include **concrete examples** where they clarify.
+- Date new entries: `<!-- Updated: YYYY-MM-DD -->`.
+- Always create the symlink alongside: `ln -s AGENTS.md CLAUDE.md`.
+- Never contradict ancestor instructions without explicit justification.
+- Prefer **learnings and gotchas** over restating obvious things.
+
+---
 
 ## Product Goals
 
@@ -19,33 +67,9 @@ These instructions apply to both Claude and Codex when working in this repo.
 ## Architecture & Modules
 
 - Follow the ADR-defined module hierarchy in `adrs/`.
-- Keep dependency direction one-way (Core → Primitives → Components → higher layers).
+- Keep dependency direction one-way: **Core → Primitives → Components → higher layers**.
 - Document significant architectural changes with a new ADR in `adrs/`.
-
-## Theming & Visual Identity
-
-- Use token-based theming (`IronTheme` and token protocols).
-- Default theme should embody the visual identity principles in `adrs/0003-visual-identity.md`
-  and `adrs/VISUAL_IDENTITY.md`.
-- Prefer semantic tokens; avoid hard-coded colors, spacing, or fonts in components.
-
-## Accessibility (Non-Negotiable)
-
-- Minimum touch targets: 44x44 points.
-- Meaningful labels/hints/values for all interactive elements.
-- Respect Dynamic Type and `accessibilityReduceMotion`.
-- Ensure WCAG AA contrast for default themes.
-
-## Prefer IronUI Primitives
-
-Use IronUI primitives instead of raw SwiftUI controls inside IronUI components:
-`IronText`, `IronIcon`, `IronButton`, `IronTextField`, `IronToggle`, etc.
-Exceptions: preview-only code for brevity.
-
-## Previews
-
-- Use `@Previewable` for state in previews.
-- Name previews descriptively (e.g., `"IronButton - Variants"`).
+- See `Sources/AGENTS.md` for coding conventions and module-specific context.
 
 ## Project Management: Tuist
 
@@ -87,7 +111,8 @@ For faster execution, use the cached wrapper script:
 ./Scripts/ironui-cli <command>
 ```
 
-The wrapper caches the compiled CLI binary and validates it against a checksum of the source files. This avoids recompilation on every invocation (~30-60s savings).
+The wrapper caches the compiled CLI binary and validates it against a checksum of the
+source files. This avoids recompilation on every invocation (~30-60s savings).
 
 Alternatively, `swift run ironui-cli <command>` works but recompiles the CLI each time.
 
@@ -100,31 +125,6 @@ Alternatively, `swift run ironui-cli <command>` works but recompiles the CLI eac
 | `format` | Format Swift sources (`--dry-run` to check only) |
 | `snapshots` | Run snapshot tests (`--platform`, `--record`, `--spm`) |
 | `test` | Run unit tests (`--platform macos/ios`, `--spm` for SPM mode) |
-
-## Testing
-
-- Unit tests: Swift Testing (not XCTestCase).
-- Snapshot tests: PointFree `swift-snapshot-testing`.
-- Add/maintain accessibility audits for interactive components.
-- Use `swift run ironui-cli test` for running tests.
-- Use `swift run ironui-cli snapshots` for snapshot tests (runs both macOS and iOS by default).
-- Use `swift run ironui-cli snapshots --record` to update snapshot baselines.
-- For snapshot/visual changes, always re-record snapshots for both iOS and macOS
-  and visually inspect the results.
-
-## Documentation
-
-- All public APIs must have DocC docs.
-- Update module DocC when public APIs change.
-- Prefer tutorials/articles for onboarding and complex components.
-- Use `swift run ironui-cli docs` for site generation.
-- Use `swift run ironui-cli docs --preview` to preview locally.
-- Use `swift run ironui-cli export-snapshots` to copy snapshots to DocC Resources.
-
-## Logging
-
-- Never use `print`, `debugPrint`, or `dump` in production code.
-- Use `IronLogger` from `IronCore` with appropriate log levels.
 
 ## Planning & Issues
 
