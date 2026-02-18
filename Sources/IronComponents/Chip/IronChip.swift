@@ -269,7 +269,12 @@ public struct IronChip<LeadingIcon: View>: View {
     .accessibilityAddTraits(isSelectable || onDismiss != nil ? [.isButton] : [])
     .accessibilityValue(accessibilityValue)
     .accessibilityAction(named: dismissActionLabel) {
-      onDismiss?()
+      if let onDismiss {
+        withAnimation(shouldAnimate ? theme.animation.snappy : nil) {
+          onDismiss()
+        }
+        IronLogger.ui.debug("IronChip dismissed via accessibility")
+      }
     }
     .accessibilityAction {
       if isSelectable {
@@ -290,7 +295,7 @@ public struct IronChip<LeadingIcon: View>: View {
 
   /// Label for dismiss accessibility action; empty string effectively disables the action
   var dismissActionLabel: String {
-    onDismiss != nil ? "Remove" : ""
+    onDismiss != nil ? String(localized: "Remove") : ""
   }
 
   // MARK: Private
@@ -336,6 +341,7 @@ public struct IronChip<LeadingIcon: View>: View {
     case .filled: return .onSurface
     case .outlined: return .primary
     case .elevated: return .onSurface
+    case .tinted: return .custom(theme.colors.primary)
     }
   }
 
@@ -372,6 +378,7 @@ public struct IronChip<LeadingIcon: View>: View {
     case .filled: return theme.colors.background
     case .outlined: return .clear
     case .elevated: return theme.colors.surfaceElevated
+    case .tinted: return theme.colors.primary.opacity(0.12)
     }
   }
 
@@ -391,15 +398,16 @@ public struct IronChip<LeadingIcon: View>: View {
     case .filled: return theme.colors.textPrimary
     case .outlined: return theme.colors.primary
     case .elevated: return theme.colors.textPrimary
+    case .tinted: return theme.colors.primary
     }
   }
 
   private var accessibilityValue: String {
     if let isSelected {
-      return isSelected ? "Selected" : "Not selected"
+      return isSelected ? String(localized: "Selected") : String(localized: "Not selected")
     }
     if onDismiss != nil {
-      return "Removable"
+      return String(localized: "Removable")
     }
     return ""
   }
@@ -423,6 +431,8 @@ public enum IronChipVariant: Sendable, CaseIterable {
   case outlined
   /// A chip with a subtle shadow.
   case elevated
+  /// A chip with a low-opacity tinted background of the primary color, no border.
+  case tinted
 }
 
 // MARK: - IronChipSize
@@ -454,6 +464,7 @@ public enum IronChipSize: Sendable, CaseIterable {
       IronChip("Filled", variant: .filled)
       IronChip("Outlined", variant: .outlined)
       IronChip("Elevated", variant: .elevated)
+      IronChip("Tinted", variant: .tinted)
     }
   }
   .padding()
