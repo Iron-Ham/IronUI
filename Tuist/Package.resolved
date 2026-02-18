@@ -1,5 +1,5 @@
 {
-  "originHash" : "00c46bf23d4414f39444ccd4a1cfe966db9545adf9b96e93e97903c69bf7dd5f",
+  "originHash" : "c2d91c6f23510523fa3610bf1e62bb86ec78def820afc2865617025f08ae0cda",
   "pins" : [
     {
       "identity" : "combine-schedulers",
@@ -26,6 +26,15 @@
       "state" : {
         "revision" : "aa0079aeb82a4bf00324561a40bffe68c6fe1c26",
         "version" : "7.9.0"
+      }
+    },
+    {
+      "identity" : "lists",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Iron-Ham/Lists",
+      "state" : {
+        "revision" : "b3acb5ec7e268c95af31c94e7363352adbe5c1ed",
+        "version" : "0.6.1"
       }
     },
     {

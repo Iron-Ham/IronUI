@@ -1,6 +1,15 @@
 {
-  "originHash" : "81f20426adf3044023617ccee885a404f6d543e0eaa35d0214c269db68997f9f",
+  "originHash" : "d8f8aec4cef0150fbb21c389c59d62c0d248013da1bbe9ed0bf9a556b6a02c1d",
   "pins" : [
+    {
+      "identity" : "lists",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Iron-Ham/Lists",
+      "state" : {
+        "revision" : "b3acb5ec7e268c95af31c94e7363352adbe5c1ed",
+        "version" : "0.6.1"
+      }
+    },
     {
       "identity" : "noora",
       "kind" : "remoteSourceControl",

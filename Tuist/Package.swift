@@ -58,5 +58,10 @@ let package = Package(
       url: "https://github.com/pointfreeco/sqlite-data",
       from: "1.4.2",
     ),
+    // ListKit (serialized diffable data source)
+    .package(
+      url: "https://github.com/Iron-Ham/Lists",
+      from: "0.6.0",
+    ),
   ],
 )
