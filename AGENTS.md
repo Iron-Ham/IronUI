@@ -64,6 +64,20 @@ not an afterthought.
 - Prefer stacked PRs; open draft PRs when possible.
 - Use conventional commit messages (feat:, fix:, docs:, etc.).
 
+### Pre-Commit Artifact Regeneration
+
+<!-- Updated: 2026-02-18 -->
+
+Before committing, check whether your changes require regenerating derived artifacts:
+
+- **Documentation**: If you added, removed, or renamed any public API (types, methods,
+  properties), regenerate docs with `./Scripts/ironui-cli docs`.
+- **Snapshots**: If you changed any component's visual appearance or layout, re-record
+  affected snapshot tests with `./Scripts/ironui-cli snapshots --record`. Then export
+  updated snapshots to DocC with `./Scripts/ironui-cli export-snapshots`.
+
+Include regenerated artifacts in the same commit as the source changes.
+
 ## Architecture & Modules
 
 - Follow the ADR-defined module hierarchy in `adrs/`.
