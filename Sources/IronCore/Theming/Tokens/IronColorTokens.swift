@@ -128,7 +128,7 @@ public struct IronDefaultColorTokens: IronColorTokens {
   }
 
   public var secondary: Color {
-    Color(red: 0.55, green: 0.35, blue: 0.85) // Rich purple
+    Color(red: 0.55, green: 0.35, blue: 0.85)
   }
 
   public var secondaryVariant: Color {
@@ -136,7 +136,7 @@ public struct IronDefaultColorTokens: IronColorTokens {
   }
 
   public var accent: Color {
-    Color(red: 0.95, green: 0.45, blue: 0.25) // Warm orange
+    Color(red: 0.95, green: 0.45, blue: 0.25)
   }
 
   public var success: Color {
@@ -170,7 +170,12 @@ public struct IronDefaultColorTokens: IronColorTokens {
   }
 
   public var info: Color {
-    Color(red: 0.2, green: 0.6, blue: 0.85)
+    Color(
+      light: Color(red: 0.2, green: 0.6, blue: 0.85),
+      dark: Color(red: 0.2, green: 0.6, blue: 0.85),
+      highContrastLight: Color(red: 0.1, green: 0.5, blue: 0.75),
+      highContrastDark: Color(red: 0.3, green: 0.7, blue: 0.95),
+    )
   }
 
   public var background: Color {
@@ -194,15 +199,20 @@ public struct IronDefaultColorTokens: IronColorTokens {
   }
 
   public var surfaceElevated: Color {
-    Color(light: .white, dark: Color(white: 0.16))
+    Color(
+      light: .white,
+      dark: Color(white: 0.16),
+      highContrastLight: .white,
+      highContrastDark: Color(white: 0.1),
+    )
   }
 
   public var onPrimary: Color {
-    .white
+    Color(light: .white, dark: .white, highContrastLight: .white, highContrastDark: .white)
   }
 
   public var onSecondary: Color {
-    .white
+    Color(light: .white, dark: .white, highContrastLight: .white, highContrastDark: .white)
   }
 
   public var onBackground: Color {
@@ -226,7 +236,7 @@ public struct IronDefaultColorTokens: IronColorTokens {
   }
 
   public var onError: Color {
-    .white
+    Color(light: .white, dark: .white, highContrastLight: .white, highContrastDark: .white)
   }
 
   public var textPrimary: Color {
@@ -298,7 +308,7 @@ public struct IronDefaultColorTokens: IronColorTokens {
 
 extension Color {
   /// Creates a color that automatically adapts to light and dark mode.
-  init(light: Color, dark: Color) {
+  public init(light: Color, dark: Color) {
     self.init(
       light: light,
       dark: dark,
@@ -319,25 +329,26 @@ extension Color {
   ///     If `nil`, the standard light color is used.
   ///   - highContrastDark: The color to use in dark mode with increased contrast.
   ///     If `nil`, the standard dark color is used.
-  init(light: Color, dark: Color, highContrastLight: Color?, highContrastDark: Color?) {
+  public init(light: Color, dark: Color, highContrastLight: Color?, highContrastDark: Color?) {
     #if canImport(UIKit)
     self.init(uiColor: UIColor { traits in
       let isDark = traits.userInterfaceStyle == .dark
       let isHighContrast = traits.accessibilityContrast == .high
 
       if isDark {
-        return isHighContrast && highContrastDark != nil
-          ? UIColor(highContrastDark!)
-          : UIColor(dark)
+        if isHighContrast, let hcDark = highContrastDark {
+          return UIColor(hcDark)
+        }
+        return UIColor(dark)
       } else {
-        return isHighContrast && highContrastLight != nil
-          ? UIColor(highContrastLight!)
-          : UIColor(light)
+        if isHighContrast, let hcLight = highContrastLight {
+          return UIColor(hcLight)
+        }
+        return UIColor(light)
       }
     })
     #elseif canImport(AppKit)
     let nsColor = NSColor(name: nil) { appearance in
-      // Check all four appearance variants for proper automatic updates
       let allAppearances: [NSAppearance.Name] = [
         .aqua,
         .darkAqua,
@@ -351,16 +362,20 @@ extension Color {
         || match == .accessibilityHighContrastDarkAqua
 
       if isDark {
-        return isHighContrast && highContrastDark != nil
-          ? NSColor(highContrastDark!)
-          : NSColor(dark)
+        if isHighContrast, let hcDark = highContrastDark {
+          return NSColor(hcDark)
+        }
+        return NSColor(dark)
       } else {
-        return isHighContrast && highContrastLight != nil
-          ? NSColor(highContrastLight!)
-          : NSColor(light)
+        if isHighContrast, let hcLight = highContrastLight {
+          return NSColor(hcLight)
+        }
+        return NSColor(light)
       }
     }
     self.init(nsColor: nsColor)
+    #else
+    #error("IronColorTokens requires UIKit or AppKit")
     #endif
   }
 }
