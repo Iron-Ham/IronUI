@@ -74,6 +74,7 @@ let project = Project(
         .target(name: "IronCore"),
         .target(name: "IronPrimitives"),
         .target(name: "IronComponents"),
+        .external(name: "ListKit", condition: .when([.ios])),
       ],
     ),
 

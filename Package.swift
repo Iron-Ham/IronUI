@@ -74,6 +74,11 @@ let package = Package(
       url: "https://github.com/tuist/Noora",
       branch: "main",
     ),
+    // ListKit (serialized diffable data source)
+    .package(
+      url: "https://github.com/Iron-Ham/Lists",
+      from: "0.6.0",
+    ),
   ],
   targets: [
     // MARK: - Core Module (No internal dependencies)
@@ -154,7 +159,12 @@ let package = Package(
     // MARK: - Data Display Module
     .target(
       name: "IronDataDisplay",
-      dependencies: ["IronCore", "IronPrimitives", "IronComponents"],
+      dependencies: [
+        "IronCore",
+        "IronPrimitives",
+        "IronComponents",
+        .product(name: "ListKit", package: "Lists", condition: .when(platforms: [.iOS])),
+      ],
       path: "Sources/IronDataDisplay",
     ),
     .testTarget(
