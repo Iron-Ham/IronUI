@@ -103,6 +103,7 @@ struct IronChipSnapshotTests {
       IronChip("Filled", variant: .filled)
       IronChip("Outlined", variant: .outlined)
       IronChip("Elevated", variant: .elevated)
+      IronChip("Tinted", variant: .tinted)
     }
     .padding()
 
@@ -142,6 +143,7 @@ struct IronChipSnapshotTests {
       IronChip("Swift") { }
       IronChip("SwiftUI", variant: .outlined) { }
       IronChip("iOS", variant: .elevated) { }
+      IronChip("Status", variant: .tinted) { }
     }
     .padding()
 

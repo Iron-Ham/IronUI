@@ -5,6 +5,7 @@ import Testing
 // MARK: - IronDatabaseTests
 
 @Suite("IronDatabase")
+@MainActor
 struct IronDatabaseTests {
 
   @Test("initializes with name and empty collections")
@@ -527,6 +528,7 @@ struct IronSemanticColorTests {
 // MARK: - IronDatabaseFilterTests
 
 @Suite("IronDatabaseFilter")
+@MainActor
 struct IronDatabaseFilterTests {
 
   @Test("text filter contains matches substring")

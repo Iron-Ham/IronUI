@@ -170,10 +170,11 @@ struct IronChipVariantTests {
   @Test("all variants are available")
   func allVariantsAvailable() {
     let variants = IronChipVariant.allCases
-    #expect(variants.count == 3)
+    #expect(variants.count == 4)
     #expect(variants.contains(.filled))
     #expect(variants.contains(.outlined))
     #expect(variants.contains(.elevated))
+    #expect(variants.contains(.tinted))
   }
 }
 
